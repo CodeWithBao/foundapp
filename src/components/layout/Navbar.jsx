@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, Home, Search, PlusCircle, User, Shield, HelpCircle, FileText, CheckSquare, LogOut } from 'lucide-react';
+import { Bell, Menu, X, Home, Search, PlusCircle, User, Shield, HelpCircle, FileText, CheckSquare, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DNTULogo from '../common/DNTULogo';
 import Avatar from '../common/Avatar';
@@ -12,6 +12,27 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [userDropdownOpen]);
 
   const navLinks = [
     { to: '/', label: 'Trang chủ' },
@@ -87,7 +108,7 @@ export default function Navbar() {
               </Link>
 
               {/* User Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 p-1 rounded-full hover:bg-cream-100 transition-colors"
@@ -107,6 +128,14 @@ export default function Navbar() {
                     >
                       <User className="w-4 h-4 text-warm-gray-400" />
                       Hồ sơ cá nhân
+                    </Link>
+                    <Link
+                      to="/student-card"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-text-dark hover:bg-cream-100"
+                    >
+                      <CreditCard className="w-4 h-4 text-warm-gray-400" />
+                      Thẻ sinh viên
                     </Link>
                     <Link
                       to="/my-posts"
@@ -189,6 +218,13 @@ export default function Navbar() {
                 className="block px-3 py-2 rounded-lg text-base font-medium text-warm-gray-600 hover:bg-cream-100"
               >
                 Hồ sơ
+              </Link>
+              <Link
+                to="/student-card"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-warm-gray-600 hover:bg-cream-100"
+              >
+                Thẻ sinh viên
               </Link>
               <Link
                 to="/my-posts"

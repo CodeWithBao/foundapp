@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: unifind-dntu-backend
+    env: go
+    buildCommand: cd backend && go build -o server ./cmd/server
+    startCommand: cd backend && ./server
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: GIN_MODE
+        value: release
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: JWT_SECRET
+        generateValue: true

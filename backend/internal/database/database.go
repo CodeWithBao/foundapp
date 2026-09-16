@@ -8,8 +8,8 @@ import (
 
 	"unifind-dntu/internal/models"
 
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -20,11 +20,30 @@ func InitDB() *gorm.DB {
 	driver := strings.ToLower(os.Getenv("DB_DRIVER"))
 	dbURL := os.Getenv("DATABASE_URL")
 
-	if dbURL == "" {
-		dbURL = "unifind.db"
-	}
-
-	if driver == "postgres" || strings.HasPrefix(dbURL, "postgres://") {
+	if driver == "postgres" || strings.HasPrefix(dbURL, "postgres://") || strings.HasPrefix(dbURL, "host=") {
+		if dbURL == "" {
+			host := os.Getenv("DB_HOST")
+			if host == "" {
+				host = "localhost"
+			}
+			port := os.Getenv("DB_PORT")
+			if port == "" {
+				port = "5432"
+			}
+			user := os.Getenv("DB_USER")
+			if user == "" {
+				user = "unifind"
+			}
+			pass := os.Getenv("DB_PASSWORD")
+			if pass == "" {
+				pass = "unifind_password"
+			}
+			name := os.Getenv("DB_NAME")
+			if name == "" {
+				name = "unifind_db"
+			}
+			dbURL = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, pass, name, port)
+		}
 		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 		if err != nil {
 			log.Printf("[DB Warning] Failed to connect to Postgres (%v). Falling back to SQLite.", err)

@@ -13,6 +13,7 @@ dist-ssr
 *.local
 *.exe
 *.rar
+*.db
 .env
 .env.*
 !.env.example

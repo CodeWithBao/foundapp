@@ -59,7 +59,10 @@ export default function MobileNavigation() {
       )}
 
       {/* Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-cream-300 shadow-lg px-2 py-1.5 flex items-center justify-around">
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-cream-300 shadow-lg px-2 flex items-center justify-around"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.375rem', height: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
+      >
         {/* Home */}
         <NavLink
           to="/"

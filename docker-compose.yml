@@ -4,15 +4,13 @@ services:
     container_name: unifind_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: unifind
-      POSTGRES_PASSWORD: unifind_password
-      POSTGRES_DB: unifind_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USER:-unifind}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-unifind_password}
+      POSTGRES_DB: ${DB_NAME:-unifind_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U unifind -d unifind_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-unifind} -d ${DB_NAME:-unifind_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,17 +21,15 @@ services:
       dockerfile: Dockerfile
     container_name: unifind_backend
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
       PORT: 8080
       DB_DRIVER: postgres
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: unifind
-      DB_PASSWORD: unifind_password
-      DB_NAME: unifind_db
-      JWT_SECRET: unifind_dntu_secret_key_2026
+      DB_USER: ${DB_USER:-unifind}
+      DB_PASSWORD: ${DB_PASSWORD:-unifind_password}
+      DB_NAME: ${DB_NAME:-unifind_db}
+      JWT_SECRET: ${JWT_SECRET:-unifind_dntu_secret_key_2026}
       GIN_MODE: release
     depends_on:
       postgres:
@@ -46,7 +42,7 @@ services:
     container_name: unifind_frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "8080:80"
     depends_on:
       - backend
 

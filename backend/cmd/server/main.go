@@ -76,12 +76,14 @@ func main() {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 
-	r.GET("/api/health", func(c *gin.Context) {
+	healthHandler := func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
 			"message": "UniFind DNTU Backend Server Running",
 		})
-	})
+	}
+	r.GET("/health", healthHandler)
+	r.GET("/api/health", healthHandler)
 
 	apiV1 := r.Group("/api/v1")
 	authMiddleware := middleware.AuthRequired()

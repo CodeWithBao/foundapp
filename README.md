@@ -2,6 +2,15 @@
 
 Hệ thống quản lý, tìm kiếm và hoàn trả tài sản thất lạc dành cho Trường Đại học Công nghệ Đồng Nai (DNTU).
 
+## 🌐 Online Demo
+
+- **Frontend (Cloudflare Pages):**
+  https://unifind-dntu.pages.dev
+- **Backend Health Check:**
+  https://unifind-dntu-backend.onrender.com/health
+
+*(Ghi chú: Thay thế URL chính xác sau khi hoàn tất các bước deploy trên Render và Cloudflare Pages theo hướng dẫn tại [DEPLOY_ONLINE.md](DEPLOY_ONLINE.md)).*
+
 ## 🚀 Giới thiệu & Tech Stack
 
 UniFind DNTU kết nối sinh viên, giảng viên và bộ phận quản lý tài sản thất lạc tại khuôn viên trường. Ứng dụng mô phỏng quy trình tiếp nhận, đối soát, xác minh quyền sở hữu và bàn giao đồ thất lạc minh bạch và bảo mật.

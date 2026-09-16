@@ -23,6 +23,7 @@ import MyPostsPage from './pages/user/MyPostsPage';
 import MyClaimsPage from './pages/user/MyClaimsPage';
 import MatchesPage from './pages/user/MatchesPage';
 import NotificationsPage from './pages/user/NotificationsPage';
+import StudentCardPage from './pages/user/StudentCardPage';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/student-card" element={<ProtectedRoute><StudentCardPage /></ProtectedRoute>} />
           </Route>
 
           {/* Standalone Public Pages */}
