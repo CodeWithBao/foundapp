@@ -284,14 +284,16 @@ export default function StaffLayout() {
         }`}
       >
         {/* Top Header Bar */}
-        <header className="relative sticky top-0 z-40 h-[72px] overflow-hidden border-b border-[#E8E2DD] bg-white/97 shadow-xs">
-          {/* DNTU Campus Watermark Background */}
-          <img
-            src="/DNTU_Web_Asset_Kit/watermarks/dntu-campus-clean.png"
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 z-0 w-[600px] max-w-[65vw] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.32] select-none"
-          />
+        <header className="relative sticky top-0 z-40 h-[72px] border-b border-[#E8E2DD] bg-white/97 shadow-xs">
+          {/* DNTU Campus Watermark Background Container */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <img
+              src="/DNTU_Web_Asset_Kit/watermarks/dntu-campus-clean.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute left-1/2 top-1/2 w-[600px] max-w-[65vw] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.32] select-none"
+            />
+          </div>
 
           <div className="relative z-10 flex h-full items-center justify-between px-4 sm:px-6">
             {/* Left: DNTU Logo Button Toggle & Staff Portal Breadcrumb */}
