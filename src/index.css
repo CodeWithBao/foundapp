@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cream-100 text-text-dark;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-cream-200;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-warm-gray-400 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-warm-gray-500;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-burgundy-700 text-white px-6 py-2.5 rounded-card font-medium
+           hover:bg-burgundy-800 active:bg-burgundy-900
+           transition-all duration-200 ease-in-out
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-burgundy-400 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-burgundy-700 border border-burgundy-200 px-6 py-2.5 rounded-card font-medium
+           hover:bg-burgundy-50 hover:border-burgundy-300
+           transition-all duration-200 ease-in-out
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-burgundy-400 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply text-warm-gray-500 px-4 py-2 rounded-card font-medium
+           hover:bg-cream-200 hover:text-text-dark
+           transition-all duration-200 ease-in-out;
+  }
+
+  .card {
+    @apply bg-white border border-cream-300 rounded-card shadow-card;
+  }
+
+  .card-hover {
+    @apply bg-white border border-cream-300 rounded-card shadow-card
+           hover:shadow-card-hover hover:-translate-y-0.5
+           transition-all duration-200 ease-in-out;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-card border border-cream-300
+           bg-white text-text-dark placeholder:text-warm-gray-400
+           focus:outline-none focus:ring-2 focus:ring-burgundy-400 focus:border-burgundy-400
+           transition-colors duration-200;
+  }
+
+  .badge-lost {
+    @apply bg-red-50 text-red-700 border border-red-200;
+  }
+
+  .badge-found {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+
+  .badge-returned {
+    @apply bg-blue-50 text-blue-700 border border-blue-200;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
+           transition-all duration-200;
+  }
+
+  .sidebar-link-active {
+    @apply bg-white/10 text-white;
+  }
+
+  .sidebar-link-inactive {
+    @apply text-white/60 hover:bg-white/5 hover:text-white/90;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .hero-title {
+    @apply font-serif text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight;
+  }
+
+  .section-title {
+    @apply text-2xl md:text-3xl font-bold text-text-dark;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out forwards;
+}

@@ -1,0 +1,16 @@
+export const mockLocations = [
+  { id: 'LOC01', name: 'Nhà A', building: 'A' },
+  { id: 'LOC02', name: 'Nhà B', building: 'B' },
+  { id: 'LOC03', name: 'Nhà C', building: 'C' },
+  { id: 'LOC04', name: 'Giảng đường A', building: 'GĐ-A' },
+  { id: 'LOC05', name: 'Giảng đường B', building: 'GĐ-B' },
+  { id: 'LOC06', name: 'Giảng đường C', building: 'GĐ-C' },
+  { id: 'LOC07', name: 'Thư viện', building: 'TV' },
+  { id: 'LOC08', name: 'Căng tin', building: 'CT' },
+  { id: 'LOC09', name: 'Sân thể thao', building: 'STT' },
+  { id: 'LOC10', name: 'Bãi xe', building: 'BX' },
+  { id: 'LOC11', name: 'Phòng Lab', building: 'LAB' },
+  { id: 'LOC12', name: 'Ký túc xá', building: 'KTX' },
+  { id: 'LOC13', name: 'Hội trường', building: 'HT' },
+  { id: 'LOC14', name: 'Phòng tự học', building: 'PTH' },
+];

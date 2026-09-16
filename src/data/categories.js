@@ -1,0 +1,16 @@
+export const mockCategories = [
+  { id: 'CAT01', name: 'Điện thoại', icon: '📱' },
+  { id: 'CAT02', name: 'Laptop', icon: '💻' },
+  { id: 'CAT03', name: 'Tai nghe', icon: '🎧' },
+  { id: 'CAT04', name: 'Ví / Bóp', icon: '👛' },
+  { id: 'CAT05', name: 'Thẻ sinh viên', icon: '🪪' },
+  { id: 'CAT06', name: 'Chìa khóa', icon: '🔑' },
+  { id: 'CAT07', name: 'Balo / Túi xách', icon: '🎒' },
+  { id: 'CAT08', name: 'Bình nước', icon: '🧴' },
+  { id: 'CAT09', name: 'Kính', icon: '👓' },
+  { id: 'CAT10', name: 'Sách / Tài liệu', icon: '📚' },
+  { id: 'CAT11', name: 'Đồng hồ', icon: '⌚' },
+  { id: 'CAT12', name: 'Quần áo', icon: '👕' },
+  { id: 'CAT13', name: 'Thiết bị điện tử', icon: '🔌' },
+  { id: 'CAT14', name: 'Khác', icon: '📦' },
+];
