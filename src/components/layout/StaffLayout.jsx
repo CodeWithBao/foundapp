@@ -202,7 +202,9 @@ export default function StaffLayout() {
           prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
         );
       }
-      if (
+      if (notif.relatedId?.startsWith('CL')) {
+        navigate(`/staff/claims/${notif.relatedId}`);
+      } else if (
         notif.type?.includes('claim') ||
         notif.type?.includes('handover') ||
         notif.type?.includes('match')
@@ -217,6 +219,7 @@ export default function StaffLayout() {
   };
 
   const handleMarkAllRead = async () => {
+    if (!user?.id) return;
     try {
       await notificationService.markAllAsRead(user.id);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -333,7 +336,13 @@ export default function StaffLayout() {
               <div ref={notifMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setNotifDropdownOpen((prev) => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotifDropdownOpen((prev) => {
+                      if (!prev) setUserDropdownOpen(false);
+                      return !prev;
+                    });
+                  }}
                   aria-label="Thông báo"
                   title="Xem thông báo"
                   className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[#667085] hover:bg-[#F8F6F3] hover:text-[#981B1E] transition-colors"
@@ -422,9 +431,10 @@ export default function StaffLayout() {
                     <div className="border-t border-[#E8E2DD] bg-[#F8F6F3]/50 p-2 text-center">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setNotifDropdownOpen(false);
-                          navigate('/notifications');
+                          navigate('/staff/claims');
                         }}
                         className="text-xs font-semibold text-[#981B1E] hover:underline"
                       >
@@ -441,7 +451,13 @@ export default function StaffLayout() {
               <div ref={userMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => setUserDropdownOpen((prev) => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setUserDropdownOpen((prev) => {
+                      if (!prev) setNotifDropdownOpen(false);
+                      return !prev;
+                    });
+                  }}
                   className="flex items-center gap-2.5 rounded-xl p-1.5 pr-2.5 hover:bg-[#F8F6F3] transition-colors"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#981B1E]/15 bg-[#FBEDEE] text-sm font-bold text-[#981B1E] shrink-0">
