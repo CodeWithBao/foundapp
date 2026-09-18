@@ -42,6 +42,7 @@ export default function AdminCategories() {
     { emoji: '📄', label: 'Tài liệu' },
     { emoji: '🔌', label: 'Sạc / Cáp' },
     { emoji: '🪖', label: 'Mũ bảo hiểm' },
+    { emoji: '👕', label: 'Quần áo' },
     { emoji: '📦', label: 'Khác' },
   ];
 

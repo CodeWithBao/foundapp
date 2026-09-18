@@ -10,6 +10,7 @@ type AdminRepository interface {
 	GetStats() (*AdminStatsDTO, error)
 	GetAllUsers(page, limit int, search string) ([]models.User, int64, error)
 	UpdateUserStatus(userID uint, status string, role string) error
+	UpdateUserPassword(userID uint, passwordHash string) error
 	GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error)
 	CreateAuditLog(log *models.AuditLog) error
 }
@@ -69,6 +70,10 @@ func (r *adminRepository) UpdateUserStatus(userID uint, status string, role stri
 		updates["role"] = role
 	}
 	return r.db.Model(&models.User{}).Where("id = ?", userID).Updates(updates).Error
+}
+
+func (r *adminRepository) UpdateUserPassword(userID uint, passwordHash string) error {
+	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("password_hash", passwordHash).Error
 }
 
 func (r *adminRepository) GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error) {

@@ -74,6 +74,26 @@ func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 	response.Success(c, http.StatusOK, "User status updated", nil)
 }
 
+func (h *AdminHandler) ResetUserPassword(c *gin.Context) {
+	adminIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	if err := h.adminService.ResetUserPassword(adminIDVal.(uint), uint(targetID), c.ClientIP()); err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, http.StatusOK, "User password reset successfully", nil)
+}
+
 func (h *AdminHandler) GetAuditLogs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -99,6 +119,7 @@ func (h *AdminHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Han
 		adminGroup.GET("/stats", h.GetStats)
 		adminGroup.GET("/users", h.GetUsers)
 		adminGroup.PUT("/users/:id/status", h.UpdateUserStatus)
+		adminGroup.PUT("/users/:id/reset-password", h.ResetUserPassword)
 		adminGroup.GET("/audit-logs", h.GetAuditLogs)
 	}
 }

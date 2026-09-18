@@ -103,6 +103,21 @@ const userService = {
       }
     );
   },
+
+  async resetPassword(id) {
+    return withFallback(
+      async () => apiClient.put(`/admin/users/${id}/reset-password`),
+      async () => {
+        await delay();
+        const users = storageService.get(STORAGE_KEYS.USERS) || [];
+        const idx = users.findIndex(u => u.id === id);
+        if (idx === -1) throw new Error('User not found');
+        users[idx].password = '123456';
+        storageService.set(STORAGE_KEYS.USERS, users);
+        return { success: true };
+      }
+    );
+  },
 };
 
 export default userService;

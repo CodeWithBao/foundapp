@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Building, Save, Camera, Edit3, KeyRound, List, PackageCheck, Clock, ShieldCheck, Award } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, Building, Save, Camera, Edit3, KeyRound, List, PackageCheck, Clock, ShieldCheck, Award, Upload } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
 import claimService from '../../services/claimService';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
+  const avatarInputRef = useRef(null);
   
   const [stats, setStats] = useState({ posts: 0, claims: 0, returned: 0 });
   const [loading, setLoading] = useState(true);
@@ -88,6 +89,25 @@ export default function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file hình ảnh hợp lệ');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Ảnh đại diện không được vượt quá 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setEditForm(p => ({ ...p, avatar: String(reader.result || '') }));
+    reader.onerror = () => toast.error('Không thể đọc file ảnh');
+    reader.readAsDataURL(file);
   };
 
   const handleSavePassword = async (e) => {
@@ -296,12 +316,36 @@ export default function ProfilePage() {
             onChange={e => setEditForm(p => ({ ...p, faculty: e.target.value }))}
           />
 
-          <Input
-            label="URL Ảnh đại diện (Avatar)"
-            placeholder="https://example.com/avatar.jpg"
-            value={editForm.avatar}
-            onChange={e => setEditForm(p => ({ ...p, avatar: e.target.value }))}
-          />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-text-dark">Ảnh đại diện</label>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-button border border-cream-300 bg-cream-100 p-3">
+              {editForm.avatar ? (
+                <img src={editForm.avatar} alt="Xem trước ảnh đại diện" className="h-16 w-16 shrink-0 rounded-full object-cover border-2 border-white shadow-sm" />
+              ) : (
+                <div className="h-16 w-16 shrink-0 rounded-full bg-cream-300 flex items-center justify-center text-warm-gray-500">
+                  <User className="h-7 w-7" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <Button type="button" variant="secondary" size="sm" onClick={() => avatarInputRef.current?.click()}>
+                  <Upload className="w-4 h-4 mr-1.5" /> Tải ảnh từ thiết bị
+                </Button>
+                <p className="mt-1.5 text-xs text-warm-gray-500">Hỗ trợ JPG, PNG, WEBP; tối đa 2MB.</p>
+              </div>
+              {editForm.avatar && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setEditForm(p => ({ ...p, avatar: '' }))}>
+                  Xóa ảnh
+                </Button>
+              )}
+            </div>
+          </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-cream-200">
             <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>

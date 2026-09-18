@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Shield, ShieldOff, Lock, Unlock, UserCheck, ShieldAlert, Filter, UserCog } from 'lucide-react';
+import { Search, Shield, ShieldOff, Lock, Unlock, UserCheck, ShieldAlert, Filter, UserCog, KeyRound } from 'lucide-react';
 import userService from '../../services/userService';
 import itemService from '../../services/itemService';
 import Select from '../../components/common/Select';
@@ -20,6 +20,7 @@ export default function AdminUsers() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [actionUser, setActionUser] = useState(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [changingRoleUser, setChangingRoleUser] = useState(null);
   const perPage = 10;
 
@@ -69,6 +70,18 @@ export default function AdminUsers() {
       setChangingRoleUser(null);
     } catch (err) {
       toast.error(err.message || 'Lỗi khi đổi vai trò');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser) return;
+    try {
+      await userService.resetPassword(resetPasswordUser.id);
+      toast.success(`Đã đặt mật khẩu của ${resetPasswordUser.name} về mặc định 123456`);
+    } catch (err) {
+      toast.error(err.message || 'Không thể đặt lại mật khẩu');
+    } finally {
+      setResetPasswordUser(null);
     }
   };
 
@@ -262,6 +275,15 @@ export default function AdminUsers() {
 
                           {/* Lock / Unlock button */}
                           <button
+                            onClick={() => setResetPasswordUser(user)}
+                            className="p-1.5 rounded text-amber-700 hover:bg-amber-100 transition-colors"
+                            title="Đặt lại mật khẩu về mặc định"
+                            aria-label={`Đặt lại mật khẩu cho ${user.name}`}
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </button>
+
+                          <button
                             onClick={() => setActionUser(user)}
                             className={`p-1.5 rounded transition-colors ${
                               isBlocked
@@ -317,6 +339,16 @@ export default function AdminUsers() {
         }
         confirmText={actionUser?.status === 'blocked' ? 'Mở khóa ngay' : 'Khóa tài khoản'}
         variant={actionUser?.status === 'blocked' ? 'primary' : 'danger'}
+      />
+
+      <ConfirmModal
+        isOpen={!!resetPasswordUser}
+        onClose={() => setResetPasswordUser(null)}
+        onConfirm={handleResetPassword}
+        title="Đặt lại mật khẩu"
+        message={`Đặt mật khẩu của "${resetPasswordUser?.name}" (${resetPasswordUser?.email}) về mật khẩu mặc định 123456? Hãy yêu cầu người dùng đổi mật khẩu sau khi đăng nhập.`}
+        confirmText="Đặt lại mật khẩu"
+        variant="danger"
       />
     </div>
   );

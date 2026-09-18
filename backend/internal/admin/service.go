@@ -5,12 +5,15 @@ import (
 	"time"
 
 	"unifind-dntu/internal/models"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AdminService interface {
 	GetStats() (*AdminStatsDTO, error)
 	GetUsers(page, limit int, search string) ([]models.User, int64, error)
 	UpdateUserStatus(adminID uint, targetUserID uint, status string, role string, ip string) error
+	ResetUserPassword(adminID uint, targetUserID uint, ip string) error
 	GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error)
 }
 
@@ -51,6 +54,28 @@ func (s *adminService) UpdateUserStatus(adminID uint, targetUserID uint, status 
 	}
 	_ = s.repo.CreateAuditLog(&audit)
 
+	return nil
+}
+
+func (s *adminService) ResetUserPassword(adminID uint, targetUserID uint, ip string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.UpdateUserPassword(targetUserID, string(hash)); err != nil {
+		return err
+	}
+
+	audit := models.AuditLog{
+		UserID:      adminID,
+		Action:      "RESET_USER_PASSWORD",
+		Entity:      "USER",
+		EntityID:    targetUserID,
+		Description: fmt.Sprintf("Reset password for user #%d to the system default", targetUserID),
+		IPAddress:   ip,
+		CreatedAt:   time.Now(),
+	}
+	_ = s.repo.CreateAuditLog(&audit)
 	return nil
 }
 
