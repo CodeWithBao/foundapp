@@ -5,6 +5,7 @@ import (
 )
 
 type UserService interface {
+	GetAllUsers() ([]models.User, error)
 	UpdateProfile(userID uint, dto UpdateProfileDTO) (*models.User, error)
 }
 
@@ -14,6 +15,10 @@ type userService struct {
 
 func NewUserService(userRepo UserRepository) UserService {
 	return &userService{userRepo: userRepo}
+}
+
+func (s *userService) GetAllUsers() ([]models.User, error) {
+	return s.userRepo.FindAll()
 }
 
 func (s *userService) UpdateProfile(userID uint, dto UpdateProfileDTO) (*models.User, error) {

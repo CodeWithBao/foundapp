@@ -29,6 +29,24 @@ const authService = {
     );
   },
 
+  async googleLogin(idToken) {
+    return withFallback(
+      async () => {
+        const data = await apiClient.post('/auth/google', { credential: idToken, id_token: idToken });
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        const user = data.user || data;
+        storageService.set(STORAGE_KEYS.CURRENT_USER, user);
+        return user;
+      },
+      async () => {
+        await delay();
+        throw new Error('Google authentication requires active backend server');
+      }
+    );
+  },
+
   async register(data) {
     return withFallback(
       async () => {

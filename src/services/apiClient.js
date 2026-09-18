@@ -1,5 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
-const DEFAULT_TIMEOUT = 3000;
+const rawBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api/v1';
+const BASE_URL = (typeof rawBase === 'string' && rawBase.startsWith('http')) ? '/api/v1' : rawBase;
+const DEFAULT_TIMEOUT = 5000;
 
 export async function apiFetch(endpoint, options = {}) {
   const controller = new AbortController();
@@ -30,14 +31,15 @@ export async function apiFetch(endpoint, options = {}) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const error = new Error(data.message || data.error || `HTTP Error ${response.status}`);
+      error.status = response.status;
+      error.code = data.error;
       if (response.status >= 500) {
-        const error = new Error(`Server Error (${response.status})`);
         error.isServerError = true;
         error.isNetworkError = true;
-        throw error;
       }
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || data.error || `HTTP Error ${response.status}`);
+      throw error;
     }
 
     const data = await response.json();

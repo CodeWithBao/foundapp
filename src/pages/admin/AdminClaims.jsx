@@ -46,7 +46,7 @@ export default function AdminClaims() {
     const s = search.toLowerCase();
     return claims.filter(
       c =>
-        c.id?.toLowerCase().includes(s) ||
+        String(c.id || '').toLowerCase().includes(s) ||
         c.item?.title?.toLowerCase().includes(s) ||
         c.claimantName?.toLowerCase().includes(s) ||
         c.claimantEmail?.toLowerCase().includes(s) ||

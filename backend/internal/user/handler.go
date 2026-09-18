@@ -16,6 +16,15 @@ func NewUserHandler(userService UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
+func (h *UserHandler) GetAllUsers(c *gin.Context) {
+	users, err := h.userService.GetAllUsers()
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, http.StatusOK, "Users retrieved", users)
+}
+
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -43,6 +52,7 @@ func (h *UserHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Hand
 	usersGroup := r.Group("/users")
 	usersGroup.Use(authMiddleware)
 	{
+		usersGroup.GET("", h.GetAllUsers)
 		usersGroup.PUT("/profile", h.UpdateProfile)
 	}
 }

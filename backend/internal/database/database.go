@@ -46,8 +46,12 @@ func InitDB() *gorm.DB {
 		}
 		DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 		if err != nil {
-			log.Printf("[DB Warning] Failed to connect to Postgres (%v). Falling back to SQLite.", err)
-			driver = "sqlite"
+			if os.Getenv("ALLOW_SQLITE_FALLBACK") == "true" {
+				log.Printf("[DB Warning] Failed to connect to Postgres (%v). Falling back to SQLite.", err)
+				driver = "sqlite"
+			} else {
+				log.Fatalf("[DB Fatal] Failed to connect to PostgreSQL: %v", err)
+			}
 		} else {
 			log.Println("[DB] Connected to PostgreSQL successfully")
 		}
@@ -87,5 +91,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Notification{},
 		&models.AuditLog{},
 		&models.Match{},
+		&models.Report{},
 	)
 }

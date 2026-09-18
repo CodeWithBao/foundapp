@@ -19,30 +19,64 @@ import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import { formatDateTime } from '../../utils';
 
+import claimService from '../../services/claimService';
+import itemService from '../../services/itemService';
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [monthlyData, setMonthlyData] = useState([]);
   const [recentLogs, setRecentLogs] = useState([]);
+  const [claimsData, setClaimsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [s, m, logs] = await Promise.all([
+        const [s, m, logs, claimsRes, itemsRes] = await Promise.all([
           adminService.getStats(),
-          adminService.getMonthlyStats(),
-          adminService.getAuditLogs()
+          adminService.getMonthlyStats().catch(() => []),
+          adminService.getAuditLogs(),
+          claimService.getClaims(),
+          itemService.getItems()
         ]);
+        
         setStats(s);
-        setMonthlyData(m && m.length ? m.slice(-6) : [
-          { month: 'T4', lost: 18, found: 24 },
-          { month: 'T5', lost: 25, found: 30 },
-          { month: 'T6', lost: 20, found: 28 },
-          { month: 'T7', lost: 15, found: 22 },
-          { month: 'T8', lost: 28, found: 35 },
-          { month: 'T9', lost: 22, found: 29 },
-        ]);
+        setClaimsData(claimsRes || []);
+
+        let dynamicMonthly = [];
+        if (itemsRes && itemsRes.length > 0) {
+          const now = new Date();
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthLabel = `T${d.getMonth() + 1}`;
+            const year = d.getFullYear();
+            const month = d.getMonth();
+            
+            const countLost = itemsRes.filter(item => {
+              const itemDate = new Date(item.createdAt || item.created_at);
+              return itemDate.getFullYear() === year && itemDate.getMonth() === month && (item.type === 'LOST' || item.type === 'lost');
+            }).length;
+
+            const countFound = itemsRes.filter(item => {
+              const itemDate = new Date(item.createdAt || item.created_at);
+              return itemDate.getFullYear() === year && itemDate.getMonth() === month && (item.type === 'FOUND' || item.type === 'found');
+            }).length;
+
+            dynamicMonthly.push({ month: monthLabel, lost: countLost, found: countFound });
+          }
+        } else {
+          dynamicMonthly = [
+            { month: 'T4', lost: 0, found: 0 },
+            { month: 'T5', lost: 0, found: 0 },
+            { month: 'T6', lost: 0, found: 0 },
+            { month: 'T7', lost: 0, found: 0 },
+            { month: 'T8', lost: 0, found: 0 },
+            { month: 'T9', lost: 0, found: 0 },
+          ];
+        }
+
+        setMonthlyData(m && m.length > 0 && m[0].lost !== undefined ? m.slice(-6) : dynamicMonthly);
         setRecentLogs(logs ? logs.slice(0, 5) : []);
       } catch (err) {
         console.error(err);
@@ -53,10 +87,30 @@ export default function AdminDashboard() {
     load();
   }, []);
 
+  const totalClaimsCount = claimsData.length;
+  let returnedCount = 0;
+  let pendingCount = 0;
+  let rejectedCount = 0;
+
+  claimsData.forEach(c => {
+    const st = (c.status || '').toUpperCase();
+    if (['COMPLETED', 'APPROVED', 'HANDOVER_COMPLETED'].includes(st)) {
+      returnedCount++;
+    } else if (['PENDING', 'UNDER_REVIEW'].includes(st)) {
+      pendingCount++;
+    } else if (['REJECTED', 'CANCELLED'].includes(st)) {
+      rejectedCount++;
+    }
+  });
+
+  const returnedPct = totalClaimsCount > 0 ? Math.round((returnedCount / totalClaimsCount) * 100) : 0;
+  const pendingPct = totalClaimsCount > 0 ? Math.round((pendingCount / totalClaimsCount) * 100) : 0;
+  const rejectedPct = totalClaimsCount > 0 ? Math.max(0, 100 - returnedPct - pendingPct) : 0;
+
   const donutData = [
-    { name: 'Đã hoàn trả', value: 87, color: '#26965C' },
-    { name: 'Đang xử lý', value: 10, color: '#D8B26A' },
-    { name: 'Từ chối', value: 3, color: '#8F1725' },
+    { name: 'Đã hoàn trả', value: returnedPct, color: '#26965C' },
+    { name: 'Đang xử lý', value: pendingPct, color: '#D8B26A' },
+    { name: 'Từ chối', value: rejectedPct, color: '#8F1725' },
   ];
 
   if (loading) {
@@ -95,30 +149,27 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Tổng bài đăng"
-          value={stats?.totalItems || 128}
+          value={stats?.totalItems ?? 0}
           icon={Package}
           color="burgundy"
-          trend={12}
         />
         <StatCard
           title="Người dùng"
-          value={stats?.totalUsers || 86}
+          value={stats?.totalUsers ?? 0}
           icon={Users}
           color="green"
-          trend={8}
         />
         <StatCard
           title="Đang xử lý"
-          value={stats?.pendingClaims || 24}
+          value={stats?.pendingClaims ?? 0}
           icon={Clock}
           color="gold"
         />
         <StatCard
-          title="Lượt truy cập"
-          value="2,540"
-          icon={Eye}
+          title="Đã hoàn trả"
+          value={stats?.returnedItems ?? 0}
+          icon={ShieldCheck}
           color="blue"
-          trend={24}
         />
       </div>
 
@@ -171,7 +222,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-text-dark">Tỷ lệ xử lý</h3>
             <span className="text-xs font-semibold text-burgundy-700 bg-burgundy-50 px-2.5 py-1 rounded-md">
-              Hiệu suất 87%
+              Hiệu suất {returnedPct}%
             </span>
           </div>
 
@@ -195,7 +246,7 @@ export default function AdminDashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-extrabold text-burgundy-900">87%</span>
+              <span className="text-3xl font-extrabold text-burgundy-900">{returnedPct}%</span>
               <span className="text-xs text-warm-gray-500">Thành công</span>
             </div>
           </div>

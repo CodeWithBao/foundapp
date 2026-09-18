@@ -9,7 +9,7 @@ import (
 type AdminRepository interface {
 	GetStats() (*AdminStatsDTO, error)
 	GetAllUsers(page, limit int, search string) ([]models.User, int64, error)
-	UpdateUserStatus(userID uint, status string) error
+	UpdateUserStatus(userID uint, status string, role string) error
 	GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error)
 	CreateAuditLog(log *models.AuditLog) error
 }
@@ -61,8 +61,14 @@ func (r *adminRepository) GetAllUsers(page, limit int, search string) ([]models.
 	return users, total, err
 }
 
-func (r *adminRepository) UpdateUserStatus(userID uint, status string) error {
-	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("status", status).Error
+func (r *adminRepository) UpdateUserStatus(userID uint, status string, role string) error {
+	updates := map[string]interface{}{
+		"status": status,
+	}
+	if role != "" {
+		updates["role"] = role
+	}
+	return r.db.Model(&models.User{}).Where("id = ?", userID).Updates(updates).Error
 }
 
 func (r *adminRepository) GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error) {

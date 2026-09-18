@@ -133,7 +133,7 @@ export default function AdminAuditLogs() {
                 ))
               ) : paginated.length > 0 ? (
                 paginated.map(log => {
-                  const num = parseInt(log.id?.replace(/\D/g, '') || '10', 10);
+                  const num = parseInt(String(log.id || '').replace(/\D/g, '') || '10', 10);
                   const ip = log.ip || `10.20.4.${(num * 7) % 240 + 10}`;
                   return (
                     <tr key={log.id} className="hover:bg-cream-100 transition-colors">

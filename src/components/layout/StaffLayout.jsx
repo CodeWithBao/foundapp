@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardCheck, Package, History, X,
-  LogOut, ChevronDown, UserRound, Bell, ShieldCheck, CheckCheck
+  LogOut, ChevronDown, UserRound, Bell, ShieldCheck, CheckCheck, Home
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
@@ -202,7 +202,8 @@ export default function StaffLayout() {
           prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
         );
       }
-      if (notif.relatedId?.startsWith('CL')) {
+      const relIdStr = String(notif.relatedId || '');
+      if (relIdStr.startsWith('CL')) {
         navigate(`/staff/claims/${notif.relatedId}`);
       } else if (
         notif.type?.includes('claim') ||
@@ -494,6 +495,18 @@ export default function StaffLayout() {
                     >
                       <UserRound className="w-[17px] h-[17px]" />
                       Hồ sơ cá nhân
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        navigate('/');
+                      }}
+                      className="flex h-11 w-full items-center gap-3 px-4 text-left text-sm text-[#344054] hover:bg-[#F8F6F3] transition-colors duration-150"
+                    >
+                      <Home className="w-[17px] h-[17px]" />
+                      Về trang User
                     </button>
 
                     <div className="border-t border-[#EEE8E3] my-1" />

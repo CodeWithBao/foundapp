@@ -99,7 +99,7 @@ export default function AdminLocations() {
     if (!search.trim()) return locations;
     const s = search.toLowerCase();
     return locations.filter(l =>
-      l.id?.toLowerCase().includes(s) ||
+      String(l.id || '').toLowerCase().includes(s) ||
       l.name?.toLowerCase().includes(s) ||
       l.building?.toLowerCase().includes(s)
     );

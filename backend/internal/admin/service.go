@@ -10,7 +10,7 @@ import (
 type AdminService interface {
 	GetStats() (*AdminStatsDTO, error)
 	GetUsers(page, limit int, search string) ([]models.User, int64, error)
-	UpdateUserStatus(adminID uint, targetUserID uint, status string, ip string) error
+	UpdateUserStatus(adminID uint, targetUserID uint, status string, role string, ip string) error
 	GetAuditLogs(page, limit int) ([]models.AuditLog, int64, error)
 }
 
@@ -30,9 +30,14 @@ func (s *adminService) GetUsers(page, limit int, search string) ([]models.User, 
 	return s.repo.GetAllUsers(page, limit, search)
 }
 
-func (s *adminService) UpdateUserStatus(adminID uint, targetUserID uint, status string, ip string) error {
-	if err := s.repo.UpdateUserStatus(targetUserID, status); err != nil {
+func (s *adminService) UpdateUserStatus(adminID uint, targetUserID uint, status string, role string, ip string) error {
+	if err := s.repo.UpdateUserStatus(targetUserID, status, role); err != nil {
 		return err
+	}
+
+	desc := fmt.Sprintf("Changed user #%d status to %s", targetUserID, status)
+	if role != "" {
+		desc += fmt.Sprintf(", role to %s", role)
 	}
 
 	audit := models.AuditLog{
@@ -40,7 +45,7 @@ func (s *adminService) UpdateUserStatus(adminID uint, targetUserID uint, status 
 		Action:      "UPDATE_USER_STATUS",
 		Entity:      "USER",
 		EntityID:    targetUserID,
-		Description: fmt.Sprintf("Changed user #%d status to %s", targetUserID, status),
+		Description: desc,
 		IPAddress:   ip,
 		CreatedAt:   time.Now(),
 	}

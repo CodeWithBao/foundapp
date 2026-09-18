@@ -8,7 +8,16 @@ const adminService = {
   async getStats() {
     return withFallback(
       async () => {
-        return await apiClient.get('/admin/stats');
+        const data = await apiClient.get('/admin/stats');
+        return {
+          totalItems: (data.total_lost_items || 0) + (data.total_found_items || 0),
+          totalUsers: data.total_users || 0,
+          pendingClaims: data.total_pending_claims || 0,
+          totalHandovers: data.total_returned_items || 0,
+          lostItems: data.total_lost_items || 0,
+          foundItems: data.total_found_items || 0,
+          returnedItems: data.total_returned_items || 0,
+        };
       },
       async () => {
         await delay();

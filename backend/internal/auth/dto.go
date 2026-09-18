@@ -7,13 +7,17 @@ type LoginDTO struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type GoogleLoginDTO struct {
+	IdToken    string `json:"id_token"`
+	Credential string `json:"credential"`
+}
+
 type RegisterDTO struct {
-	Name      string      `json:"name" binding:"required"`
-	Email     string      `json:"email" binding:"required,email"`
-	Password  string      `json:"password" binding:"required,min=6"`
-	Phone     string      `json:"phone"`
-	StudentID string      `json:"student_id"`
-	Role      models.Role `json:"role"`
+	Name      string `json:"name" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=6"`
+	Phone     string `json:"phone"`
+	StudentID string `json:"student_id"`
 }
 
 type ChangePasswordDTO struct {

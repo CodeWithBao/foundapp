@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Tag, Search, LayoutGrid } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Plus, Edit2, Trash2, Tag, Search, LayoutGrid, Smile } from 'lucide-react';
 import adminService from '../../services/adminService';
 import itemService from '../../services/itemService';
 import Button from '../../components/common/Button';
@@ -22,6 +22,47 @@ export default function AdminCategories() {
   const [editItem, setEditItem] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ name: '', icon: '📦' });
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useRef(null);
+
+  const EMOJI_OPTIONS = [
+    { emoji: '🔑', label: 'Chìa khóa' },
+    { emoji: '👛', label: 'Ví / Túi' },
+    { emoji: '📱', label: 'Điện thoại' },
+    { emoji: '💻', label: 'Máy tính' },
+    { emoji: '🎒', label: 'Balo' },
+    { emoji: '🪪', label: 'Thẻ / Giấy tờ' },
+    { emoji: '📚', label: 'Sách / Vở' },
+    { emoji: '🎧', label: 'Tai nghe' },
+    { emoji: '☂️', label: 'Ô / Dù' },
+    { emoji: '🧴', label: 'Đồ cá nhân' },
+    { emoji: '👓', label: 'Kính mắt' },
+    { emoji: '⌚', label: 'Đồng hồ' },
+    { emoji: '💍', label: 'Trang sức' },
+    { emoji: '📄', label: 'Tài liệu' },
+    { emoji: '🔌', label: 'Sạc / Cáp' },
+    { emoji: '🪖', label: 'Mũ bảo hiểm' },
+    { emoji: '📦', label: 'Khác' },
+  ];
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setShowPicker(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -105,7 +146,7 @@ export default function AdminCategories() {
     if (!search.trim()) return categories;
     const s = search.toLowerCase();
     return categories.filter(c =>
-      c.id?.toLowerCase().includes(s) ||
+      String(c.id || '').toLowerCase().includes(s) ||
       c.name?.toLowerCase().includes(s)
     );
   }, [categories, search]);
@@ -260,13 +301,59 @@ export default function AdminCategories() {
             placeholder="Nhập tên, VD: Chìa khóa"
             autoFocus
           />
-          <Input
-            label="Emoji Icon"
-            value={form.icon}
-            onChange={(e) => setForm({ ...form, icon: e.target.value })}
-            placeholder="Nhập một emoji, VD: 🔑"
-            maxLength={2}
-          />
+          <div className="space-y-1.5 relative" ref={pickerRef}>
+            <label className="block text-sm font-medium text-text-dark">
+              Biểu tượng danh mục
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  readOnly
+                  value={form.icon}
+                  onClick={() => setShowPicker(!showPicker)}
+                  className="w-full px-3.5 py-2.5 bg-cream-100 border border-cream-300 rounded-button text-xl text-center text-text-dark cursor-pointer focus:outline-none focus:ring-2 focus:ring-burgundy-500/20"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPicker(!showPicker)}
+                className="px-3 py-2 bg-cream-200 hover:bg-cream-300 text-warm-gray-700 rounded-button text-lg flex items-center gap-1 transition-colors border border-cream-300"
+                title="Chọn biểu tượng"
+              >
+                😊
+              </button>
+            </div>
+
+            {showPicker && (
+              <div className="absolute left-0 right-0 top-full mt-1 p-3 bg-white border border-cream-300 rounded-lg shadow-xl z-50 animate-scaleIn">
+                <div className="text-xs font-semibold text-warm-gray-500 mb-2">
+                  Chọn một biểu tượng phù hợp:
+                </div>
+                <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+                  {EMOJI_OPTIONS.map((item) => (
+                    <button
+                      key={item.emoji}
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, icon: item.emoji });
+                        setShowPicker(false);
+                      }}
+                      title={item.label}
+                      className={`p-2 text-2xl rounded hover:bg-cream-200 transition-transform transform hover:scale-110 flex items-center justify-center relative group ${
+                        form.icon === item.emoji ? 'bg-burgundy-50 border border-burgundy-300' : ''
+                      }`}
+                    >
+                      {item.emoji}
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-text-dark text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap shadow z-10 pointer-events-none">
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-cream-200 mt-2">
             <Button variant="ghost" onClick={() => setShowModal(false)}>

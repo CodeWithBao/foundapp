@@ -39,6 +39,15 @@ func (m *mockUserRepo) FindByEmail(email string) (*models.User, error) {
 	return u, nil
 }
 
+func (m *mockUserRepo) FindByGoogleSub(googleSub string) (*models.User, error) {
+	for _, u := range m.users {
+		if u.GoogleSub != nil && *u.GoogleSub == googleSub {
+			return u, nil
+		}
+	}
+	return nil, errors.New("User not found")
+}
+
 func (m *mockUserRepo) FindByID(id uint) (*models.User, error) {
 	u, ok := m.byID[id]
 	if !ok {

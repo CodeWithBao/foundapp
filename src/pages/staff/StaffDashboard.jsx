@@ -15,10 +15,10 @@ import { formatRelative, formatDate } from '../../utils';
 
 export default function StaffDashboard() {
   const [stats, setStats] = useState({
-    pending: 25,
-    todayNew: 18,
-    todayProcessed: 32,
-    itemsInStorage: 12,
+    pending: 0,
+    todayNew: 0,
+    todayProcessed: 0,
+    itemsInStorage: 0,
   });
   const [reviewList, setReviewList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,10 +49,10 @@ export default function StaffDashboard() {
       const storageItems = allItems.filter(i => i.status === 'FOUND');
 
       setStats({
-        pending: pendingClaims.length || 25,
-        todayNew: todayClaims.length || 18,
-        todayProcessed: processedClaims.length || 32,
-        itemsInStorage: storageItems.length || 12,
+        pending: pendingClaims.length,
+        todayNew: todayClaims.length,
+        todayProcessed: processedClaims.length,
+        itemsInStorage: storageItems.length,
       });
 
       // 5-10 latest pending or under review claims
@@ -63,8 +63,9 @@ export default function StaffDashboard() {
           const item = itemsMap.get(c.itemId);
           const claimant = usersMap.get(c.claimantId);
           // Format display ID like #CLM-001 or use c.id
-          const formattedId = c.id.startsWith('C') && !c.id.startsWith('CLM') 
-            ? `#CLM-${c.id.replace('C', '').padStart(3, '0')}`
+          const idStr = String(c.id || '');
+          const formattedId = idStr.startsWith('C') && !idStr.startsWith('CLM')
+            ? `#CLM-${idStr.replace('C', '').padStart(3, '0')}`
             : `#${c.id}`;
 
           return {

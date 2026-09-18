@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Users, ShieldCheck, FolderTree,
   MapPin, BarChart2, ScrollText, Settings, X, LogOut,
-  ChevronDown, UserRound, Bell, CheckCheck, Home
+  ChevronDown, UserRound, Bell, CheckCheck, Home, Flag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
@@ -15,6 +15,7 @@ const menuItems = [
   { to: '/admin/posts', label: 'Bài đăng', icon: FileText },
   { to: '/admin/users', label: 'Người dùng', icon: Users },
   { to: '/admin/claims', label: 'Xác minh', icon: ShieldCheck },
+  { to: '/admin/reports', label: 'Báo cáo', icon: Flag },
   { to: '/admin/categories', label: 'Danh mục', icon: FolderTree },
   { to: '/admin/locations', label: 'Địa điểm', icon: MapPin },
   { to: '/admin/statistics', label: 'Thống kê', icon: BarChart2 },

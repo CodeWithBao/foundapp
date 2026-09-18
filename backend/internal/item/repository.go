@@ -48,6 +48,7 @@ func (r *itemRepository) FindAll(filter ItemFilterDTO) ([]models.Item, int64, er
 	var total int64
 
 	query := r.db.Model(&models.Item{}).
+		Where("is_hidden = ?", false).
 		Preload("Category").
 		Preload("Location").
 		Preload("User").

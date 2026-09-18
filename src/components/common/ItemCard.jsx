@@ -14,7 +14,14 @@ const categoryEmoji = {
 
 export default function ItemCard({ item, onClick }) {
   const [imgError, setImgError] = useState(false);
-  const hasImage = item.images?.length > 0 && !imgError;
+  const hasImage = item.images?.length > 0 && typeof item.images[0] === 'string' && !imgError;
+  
+  const locationText = typeof item.location === 'object' && item.location !== null
+    ? item.location.name
+    : (item.locationName || (typeof item.location === 'string' ? item.location : ''));
+  const categoryText = typeof item.category === 'object' && item.category !== null
+    ? item.category.name
+    : (typeof item.category === 'string' ? item.category : '');
 
   return (
     <div
@@ -32,7 +39,7 @@ export default function ItemCard({ item, onClick }) {
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-burgundy-100 to-cream-200 flex items-center justify-center">
-            <span className="text-4xl">{categoryEmoji[item.category] || '📦'}</span>
+            <span className="text-4xl">{categoryEmoji[categoryText] || '📦'}</span>
           </div>
         )}
         <div className="absolute top-3 left-3">
@@ -46,10 +53,10 @@ export default function ItemCard({ item, onClick }) {
           {item.title}
         </h3>
         <div className="space-y-1.5 text-xs text-warm-gray-500">
-          {item.location && (
+          {locationText && (
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{item.locationName || item.location}</span>
+              <span className="truncate">{locationText}</span>
             </div>
           )}
           <div className="flex items-center justify-between">

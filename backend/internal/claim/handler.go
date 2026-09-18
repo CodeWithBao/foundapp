@@ -50,6 +50,15 @@ func (h *ClaimHandler) GetAll(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Claims retrieved", claims)
 }
 
+func (h *ClaimHandler) GetHandovers(c *gin.Context) {
+	handovers, err := h.repo.FindAllHandovers()
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(c, http.StatusOK, "Handovers retrieved", handovers)
+}
+
 func (h *ClaimHandler) GetByID(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	claim, err := h.repo.FindByID(uint(id))
@@ -127,6 +136,7 @@ func (h *ClaimHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Han
 	{
 		claimsGroup.POST("", h.SubmitClaim)
 		claimsGroup.GET("", h.GetAll)
+		claimsGroup.GET("/handovers", h.GetHandovers)
 		claimsGroup.GET("/:id", h.GetByID)
 
 		staffGroup := claimsGroup.Group("")

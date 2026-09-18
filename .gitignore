@@ -28,3 +28,51 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android build output and local SDK settings
+android/.gradle/
+android/local.properties
+android/**/build/
+android/gradle-*/
+android/gradle-*.zip
+android/jdk21/
+android/jdk21.zip
+*.jks
+*.keystore
+
+# Local documentation - never commit/push Markdown files
+*.md
+*.markdown
+
+# Secrets and credentials
+.cf-secrets.json
+*secret*.json
+*secrets*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials.json
+service-account*.json
+
+# Database data, dumps and backups
+*.sql
+*.dump
+*.backup
+*.sqlite
+*.sqlite3
+backups/
+pgdata/
+postgres-data/
+
+# Local exports and sensitive user data
+*.csv
+*.xlsx
+*.xls
+*.doc
+*.docx
+*.apk
+exports/
+private/

@@ -17,6 +17,7 @@ import (
 	"unifind-dntu/internal/notification"
 	"unifind-dntu/internal/patterns/facade"
 	"unifind-dntu/internal/patterns/observer"
+	"unifind-dntu/internal/report"
 	"unifind-dntu/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,14 @@ import (
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("[INFO] No .env file found or error loading, using system environment variables")
+	}
+
+	// Fail-fast security validation
+	if os.Getenv("PROXY_SECURITY_ENABLED") == "true" || os.Getenv("PROXY_SECURITY_ENABLED") == "1" {
+		if os.Getenv("ORIGIN_PROXY_SECRET") == "" {
+			log.Fatalf("[FATAL] PROXY_SECURITY_ENABLED is enabled, but ORIGIN_PROXY_SECRET is empty. Startup aborted.")
+		}
+		log.Println("[SECURITY] Proxy security enabled with X-Origin-Secret validation")
 	}
 
 	db := database.InitDB()
@@ -73,19 +82,29 @@ func main() {
 	adminService := admin.NewAdminService(adminRepo)
 	adminHandler := admin.NewAdminHandler(adminService)
 
+	reportRepo := report.NewReportRepository(db)
+	reportService := report.NewReportService(reportRepo)
+	reportHandler := report.NewReportHandler(reportService)
+
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 
 	healthHandler := func(c *gin.Context) {
+		dbStatus := "ok"
+		if sqlDB, err := db.DB(); err != nil || sqlDB.Ping() != nil {
+			dbStatus = "unavailable"
+		}
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"message": "UniFind DNTU Backend Server Running",
+			"db":      dbStatus,
+			"service": "UniFind DNTU Backend",
 		})
 	}
 	r.GET("/health", healthHandler)
 	r.GET("/api/health", healthHandler)
 
 	apiV1 := r.Group("/api/v1")
+	apiV1.Use(middleware.ProxySecretMiddleware())
 	authMiddleware := middleware.AuthRequired()
 	requireStaff := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
 	requireStaffOrAdmin := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
@@ -100,6 +119,7 @@ func main() {
 	catHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	locHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	adminHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)
+	reportHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)
 
 	port := os.Getenv("PORT")
 	if port == "" {

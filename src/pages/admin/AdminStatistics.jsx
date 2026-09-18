@@ -31,23 +31,48 @@ export default function AdminStatistics() {
       setLoading(true);
       try {
         const [monthly, items, claims] = await Promise.all([
-          adminService.getMonthlyStats(),
-          itemService.getItems(),
-          claimService.getClaims ? claimService.getClaims() : Promise.resolve([])
+          adminService.getMonthlyStats().catch(() => []),
+          itemService.getItems().catch(() => []),
+          claimService.getClaims ? claimService.getClaims().catch(() => []) : Promise.resolve([])
         ]);
 
-        setMonthlyData(monthly && monthly.length ? monthly : [
-          { month: 'Tháng 1', lost: 12, found: 15 },
-          { month: 'Tháng 2', lost: 19, found: 22 },
-          { month: 'Tháng 3', lost: 15, found: 18 },
-          { month: 'Tháng 4', lost: 22, found: 25 },
-          { month: 'Tháng 5', lost: 30, found: 28 },
-          { month: 'Tháng 6', lost: 25, found: 32 },
-        ]);
+        let dynamicMonthly = [];
+        if (items && items.length > 0) {
+          const now = new Date();
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthLabel = `Tháng ${d.getMonth() + 1}`;
+            const year = d.getFullYear();
+            const month = d.getMonth();
+
+            const countLost = items.filter(item => {
+              const itemDate = new Date(item.createdAt || item.created_at);
+              return itemDate.getFullYear() === year && itemDate.getMonth() === month && (item.type === 'LOST' || item.type === 'lost');
+            }).length;
+
+            const countFound = items.filter(item => {
+              const itemDate = new Date(item.createdAt || item.created_at);
+              return itemDate.getFullYear() === year && itemDate.getMonth() === month && (item.type === 'FOUND' || item.type === 'found');
+            }).length;
+
+            dynamicMonthly.push({ month: monthLabel, lost: countLost, found: countFound });
+          }
+        } else {
+          dynamicMonthly = [
+            { month: 'Tháng 1', lost: 0, found: 0 },
+            { month: 'Tháng 2', lost: 0, found: 0 },
+            { month: 'Tháng 3', lost: 0, found: 0 },
+            { month: 'Tháng 4', lost: 0, found: 0 },
+            { month: 'Tháng 5', lost: 0, found: 0 },
+            { month: 'Tháng 6', lost: 0, found: 0 },
+          ];
+        }
+
+        setMonthlyData(monthly && monthly.length > 0 && monthly[0].lost !== undefined ? monthly : dynamicMonthly);
 
         // 1. Claim status distribution
         const statusMap = { PENDING: 0, UNDER_REVIEW: 0, APPROVED: 0, REJECTED: 0, READY_FOR_HANDOVER: 0, COMPLETED: 0 };
-        claims.forEach(c => {
+        (claims || []).forEach(c => {
           if (c.status) statusMap[c.status] = (statusMap[c.status] || 0) + 1;
         });
 
@@ -77,48 +102,34 @@ export default function AdminStatistics() {
           }));
 
         setClaimStatusData(claimFormatted.length ? claimFormatted : [
-          { name: 'Hoàn tất bàn giao', value: 45, color: '#26965C' },
-          { name: 'Đang xem xét', value: 18, color: '#D8B26A' },
-          { name: 'Chờ bàn giao', value: 12, color: '#527BA8' },
-          { name: 'Từ chối', value: 5, color: '#8F1725' },
+          { name: 'Chưa có yêu cầu', value: 1, color: '#E6E1DA' }
         ]);
 
         // 2. Category distribution
         const catMap = {};
-        items.forEach(i => {
-          if (i.category) catMap[i.category] = (catMap[i.category] || 0) + 1;
+        (items || []).forEach(i => {
+          const catName = i.category?.name || i.category || 'Khác';
+          catMap[catName] = (catMap[catName] || 0) + 1;
         });
         const catSorted = Object.entries(catMap)
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value)
           .slice(0, 7);
 
-        setCategoryData(catSorted.length ? catSorted : [
-          { name: 'Điện thoại', value: 34 },
-          { name: 'Ví / Bóp', value: 28 },
-          { name: 'Thẻ sinh viên', value: 25 },
-          { name: 'Laptop', value: 18 },
-          { name: 'Tai nghe', value: 15 },
-          { name: 'Chìa khóa', value: 12 },
-        ]);
+        setCategoryData(catSorted);
 
         // 3. Location distribution
         const locMap = {};
-        items.forEach(i => {
-          if (i.location) locMap[i.location] = (locMap[i.location] || 0) + 1;
+        (items || []).forEach(i => {
+          const locName = i.location?.name || i.location || 'Khác';
+          locMap[locName] = (locMap[locName] || 0) + 1;
         });
         const locSorted = Object.entries(locMap)
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value)
           .slice(0, 6);
 
-        setLocationData(locSorted.length ? locSorted : [
-          { name: 'Thư viện DNTU', value: 42 },
-          { name: 'Giảng đường A', value: 35 },
-          { name: 'Căng tin', value: 29 },
-          { name: 'Bãi xe sinh viên', value: 22 },
-          { name: 'Sân thể thao', value: 16 },
-        ]);
+        setLocationData(locSorted);
 
       } catch (err) {
         console.error(err);
@@ -228,19 +239,25 @@ export default function AdminStatistics() {
             </div>
           </div>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E6E1DA" />
-                <XAxis dataKey="name" stroke="#7C746E" fontSize={11} interval={0} />
-                <YAxis stroke="#7C746E" fontSize={12} />
-                <Tooltip contentStyle={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E6E1DA' }} />
-                <Bar dataKey="value" name="Số bài đăng" radius={[4, 4, 0, 0]}>
-                  {categoryData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={DNTU_PALETTE[index % DNTU_PALETTE.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {categoryData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E6E1DA" />
+                  <XAxis dataKey="name" stroke="#7C746E" fontSize={11} interval={0} />
+                  <YAxis stroke="#7C746E" fontSize={12} />
+                  <Tooltip contentStyle={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E6E1DA' }} />
+                  <Bar dataKey="value" name="Số bài đăng" radius={[4, 4, 0, 0]}>
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={DNTU_PALETTE[index % DNTU_PALETTE.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-warm-gray-400 text-sm">
+                Chưa có dữ liệu danh mục
+              </div>
+            )}
           </div>
         </div>
 
@@ -256,15 +273,21 @@ export default function AdminStatistics() {
             </div>
           </div>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={locationData} layout="vertical" margin={{ top: 10, right: 20, left: 20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E6E1DA" />
-                <XAxis type="number" stroke="#7C746E" fontSize={12} />
-                <YAxis dataKey="name" type="category" stroke="#7C746E" fontSize={11} width={110} />
-                <Tooltip contentStyle={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E6E1DA' }} />
-                <Bar dataKey="value" name="Lượt ghi nhận" fill="#527BA8" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {locationData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={locationData} layout="vertical" margin={{ top: 10, right: 20, left: 20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E6E1DA" />
+                  <XAxis type="number" stroke="#7C746E" fontSize={12} />
+                  <YAxis dataKey="name" type="category" stroke="#7C746E" fontSize={11} width={110} />
+                  <Tooltip contentStyle={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E6E1DA' }} />
+                  <Bar dataKey="value" name="Lượt ghi nhận" fill="#527BA8" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-warm-gray-400 text-sm">
+                Chưa có dữ liệu địa điểm
+              </div>
+            )}
           </div>
         </div>
       </div>

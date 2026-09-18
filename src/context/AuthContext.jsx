@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
     return u;
   }, []);
 
+  const googleLogin = useCallback(async (idToken) => {
+    const u = await authService.googleLogin(idToken);
+    setUser(u);
+    return u;
+  }, []);
+
   const register = useCallback(async (data) => {
     const u = await authService.register(data);
     setUser(u);
@@ -43,7 +49,7 @@ export function AuthProvider({ children }) {
   const isUser = user?.role === ROLES.USER;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, isAdmin, isStaff, isUser }}>
+    <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, updateProfile, isAdmin, isStaff, isUser }}>
       {children}
     </AuthContext.Provider>
   );

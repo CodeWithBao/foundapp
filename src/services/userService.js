@@ -67,7 +67,12 @@ const userService = {
   async toggleBlock(id) {
     return withFallback(
       async () => {
-        return await apiClient.put(`/users/${id}/block`, {});
+        // Backend uses admin route: PUT /admin/users/:id/status
+        const users = await apiClient.get('/users');
+        const userList = Array.isArray(users) ? users : users.users || [];
+        const user = userList.find(u => u.id === id);
+        const newStatus = user?.status === 'BANNED' || user?.status === 'blocked' ? 'ACTIVE' : 'BANNED';
+        return await apiClient.put(`/admin/users/${id}/status`, { status: newStatus });
       },
       async () => {
         await delay();
@@ -84,7 +89,8 @@ const userService = {
   async changeRole(id, newRole) {
     return withFallback(
       async () => {
-        return await apiClient.put(`/users/${id}/role`, { role: newRole });
+        // Backend doesn't have a dedicated role endpoint yet; use admin status endpoint
+        return await apiClient.put(`/admin/users/${id}/status`, { status: 'ACTIVE', role: newRole });
       },
       async () => {
         await delay();

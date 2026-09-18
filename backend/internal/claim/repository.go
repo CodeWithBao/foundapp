@@ -9,6 +9,7 @@ import (
 type ClaimRepository interface {
 	FindAll(status string, claimantID uint, itemID uint) ([]models.Claim, error)
 	FindByID(id uint) (*models.Claim, error)
+	FindAllHandovers() ([]models.HandoverRecord, error)
 }
 
 type claimRepository struct {
@@ -42,4 +43,10 @@ func (r *claimRepository) FindByID(id uint) (*models.Claim, error) {
 		return nil, err
 	}
 	return &claim, nil
+}
+
+func (r *claimRepository) FindAllHandovers() ([]models.HandoverRecord, error) {
+	var records []models.HandoverRecord
+	err := r.db.Preload("Claim").Preload("Item").Preload("Recipient").Preload("Staff").Order("created_at desc").Find(&records).Error
+	return records, err
 }

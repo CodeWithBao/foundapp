@@ -11,6 +11,7 @@ import { ItemTypeBadge, StatusBadge } from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Textarea from '../../components/common/Textarea';
+import ReportModal from '../../components/common/ReportModal';
 import Avatar from '../../components/common/Avatar';
 import ItemCard from '../../components/common/ItemCard';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
@@ -148,7 +149,12 @@ export default function ItemDetailPage() {
   };
 
   const handleReportViolation = () => {
-    toast.info('Yêu cầu báo cáo đã được chuyển tới Ban quản trị hệ thống DNTU.');
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để báo cáo bài viết');
+      navigate('/login');
+      return;
+    }
+    setShowReportModal(true);
   };
 
   if (loading) {
@@ -542,6 +548,14 @@ export default function ItemDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* REPORT POST MODAL */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        postId={item.id}
+        postTitle={item.title}
+      />
 
     </div>
   );

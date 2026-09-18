@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -eu
+
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ZERO_SHA=0000000000000000000000000000000000000000
+tmp_file=$(mktemp)
+trap 'rm -f "$tmp_file"' EXIT HUP INT TERM
+
+# stdin format: local_ref local_sha remote_ref remote_sha
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO_SHA" ] && continue
+
+  if [ "$remote_sha" = "$ZERO_SHA" ]; then
+    # New remote branch: inspect commits that are not already on any remote.
+    commits=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || true)
+    if [ -n "$commits" ]; then
+      for commit in $commits; do
+        git diff-tree --no-commit-id --name-only -r --root "$commit" >> "$tmp_file"
+      done
+    fi
+  else
+    git diff --name-only "$remote_sha..$local_sha" >> "$tmp_file"
+  fi
+done
+
+sort -u "$tmp_file" | "$HOOK_DIR/check-protected-files.sh"
+
+exit 0

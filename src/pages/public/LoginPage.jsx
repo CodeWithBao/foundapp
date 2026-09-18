@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ShieldAlert, User, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +10,7 @@ import { ROLES, STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname;
@@ -21,12 +21,74 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const googleBtnRef = useRef(null);
+
+  const handleAuthSuccess = (user) => {
+    toast.success(`Đăng nhập thành công. Xin chào, ${user.name}!`);
+    if (from) {
+      navigate(from, { replace: true });
+    } else if (user.role === ROLES.ADMIN) {
+      navigate('/admin');
+    } else if (user.role === ROLES.STAFF) {
+      navigate('/staff');
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleGoogleCallback = async (response) => {
+    if (!response?.credential) return;
+    setLoading(true);
+    setError('');
+    try {
+      const user = await googleLogin(response.credential);
+      handleAuthSuccess(user);
+    } catch (err) {
+      if (err.status === 409 || err.code === 'ACCOUNT_ALREADY_EXISTS' || err.message?.includes('ACCOUNT_ALREADY_EXISTS')) {
+        const msg = 'Tài khoản email này đã được đăng ký bằng mật khẩu. Vui lòng đăng nhập bằng Email và Mật khẩu.';
+        setError(msg);
+        toast.error(msg);
+      } else {
+        const msg = err.message || 'Đăng nhập bằng Google thất bại.';
+        setError(msg);
+        toast.error(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isGoogleConfigured = import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== '1081395892804-demo.apps.googleusercontent.com';
+
+  useEffect(() => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1081395892804-demo.apps.googleusercontent.com';
+    if (isGoogleConfigured && window.google?.accounts?.id && googleBtnRef.current) {
+      try {
+        window.google.accounts.id.disableAutoSelect();
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'signin_with',
+          locale: 'vi',
+          ux_mode: 'popup',
+        });
+      } catch (err) {
+        console.warn('Google Identity initialization failed:', err);
+      }
+    }
+  }, []);
 
   const handleLoginSubmit = async (emailToLogin, passwordToLogin) => {
     setLoading(true);
     setError('');
     try {
-      // Handle email or MSSV
       let targetEmail = emailToLogin.trim();
       if (!targetEmail.includes('@')) {
         const users = storageService.get(STORAGE_KEYS.USERS) || [];
@@ -37,17 +99,7 @@ export default function LoginPage() {
       }
 
       const user = await login(targetEmail, passwordToLogin);
-      toast.success(`Đăng nhập thành công. Xin chào, ${user.name}!`);
-      
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (user.role === ROLES.ADMIN) {
-        navigate('/admin');
-      } else if (user.role === ROLES.STAFF) {
-        navigate('/staff');
-      } else {
-        navigate('/');
-      }
+      handleAuthSuccess(user);
     } catch (err) {
       const msg = err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
       setError(msg);
@@ -73,9 +125,20 @@ export default function LoginPage() {
     handleLoginSubmit(email, '123456');
   };
 
+  const handleGoogleBtnClick = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt();
+    } else {
+      const token = prompt('Nhập Google ID Token để thử nghiệm đăng nhập (hoặc bấm OK để tiếp tục):');
+      if (token) {
+        handleGoogleCallback({ credential: token });
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-cream-50">
-      {/* LEFT COLUMN - Split Screen Visual Panel with DNTU Campus background */}
+      {/* LEFT COLUMN - Split Screen Visual Panel */}
       <div
         className="hidden lg:flex lg:w-1/2 text-white p-12 flex-col justify-between relative overflow-hidden"
         style={{
@@ -84,7 +147,6 @@ export default function LoginPage() {
           backgroundPosition: 'center',
         }}
       >
-        {/* Background Decorative Pattern */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
         
         <div className="relative z-10">
@@ -112,7 +174,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN - Form (50% desktop) */}
+      {/* RIGHT COLUMN - Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 lg:w-1/2">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center sm:text-left">
@@ -180,19 +242,22 @@ export default function LoginPage() {
               Đăng nhập DNTU
             </Button>
 
-            <button 
-              type="button"
-              onClick={() => toast.info('Tính năng Đăng nhập với Google DNTU đang được bảo trì.')}
-              className="w-full py-2.5 px-4 border border-warm-gray-200 rounded-xl text-warm-gray-700 font-medium text-sm hover:bg-warm-gray-50 flex items-center justify-center gap-2 transition-colors mt-2"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              Đăng nhập với Google DNTU
-            </button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-warm-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-cream-50 px-2 text-warm-gray-500">Hoặc</span>
+              </div>
+            </div>
+
+            {isGoogleConfigured ? (
+              <div ref={googleBtnRef} className="w-full flex justify-center min-h-[44px]"></div>
+            ) : (
+              <div className="w-full text-center p-3 border border-amber-300 bg-amber-50 text-amber-800 rounded-xl text-xs leading-relaxed">
+                <strong>Chưa cấu hình Google Client ID:</strong> Vui lòng điền <code>VITE_GOOGLE_CLIENT_ID</code> hợp lệ vào file <code>.env</code> để kích hoạt đăng nhập Google.
+              </div>
+            )}
           </form>
 
           {/* Quick Login Chips (Demo accounts) */}

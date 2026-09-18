@@ -66,7 +66,7 @@ export default function AdminPosts() {
     const s = search.toLowerCase();
     return items.filter(
       i =>
-        i.id?.toLowerCase().includes(s) ||
+        String(i.id || '').toLowerCase().includes(s) ||
         i.title?.toLowerCase().includes(s) ||
         i.userName?.toLowerCase().includes(s) ||
         i.category?.toLowerCase().includes(s) ||

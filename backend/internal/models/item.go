@@ -40,6 +40,7 @@ type Item struct {
 	Views                  int            `gorm:"default:0" json:"views"`
 	UserID                 uint           `gorm:"not null;index" json:"user_id"`
 	IsLocked               bool           `gorm:"default:false" json:"is_locked"`
+	IsHidden               bool           `gorm:"default:false" json:"is_hidden"`
 	CreatedAt              time.Time      `json:"created_at"`
 	UpdatedAt              time.Time      `json:"updated_at"`
 	DeletedAt              gorm.DeletedAt `gorm:"index" json:"-"`

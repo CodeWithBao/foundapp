@@ -30,25 +30,35 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
     setCameraError('');
     try {
       stopCamera();
-      const constraints = {
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+      } catch (e) {
+        // Fallback for laptops/desktops without rear camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
+      streamRef.current = stream;
       setIsCameraActive(true);
     } catch (err) {
       console.error('Camera error:', err);
-      setCameraError('Không thể kết nối Camera. Vui lòng cho phép quyền truy cập camera hoặc chọn tải ảnh lên.');
+      setCameraError('Không thể kết nối Camera. Vui lòng cho phép quyền truy cập camera trong trình duyệt hoặc tải tệp ảnh lên.');
       setIsCameraActive(false);
     }
   };
+
+  // Attach stream to video element whenever camera turns active
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(err => console.error('Video play error:', err));
+    }
+  }, [isCameraActive]);
 
   const capturePhoto = () => {
     if (!videoRef.current) return;

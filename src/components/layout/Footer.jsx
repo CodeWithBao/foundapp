@@ -104,7 +104,7 @@ export default function Footer() {
         {/* Bottom footer */}
         <div className="pt-6 border-t border-burgundy-800 flex flex-col md:flex-row items-center justify-between text-xs text-cream-300 gap-2">
           <p>© 2026 UniFind DNTU - Trường Đại học Công nghệ Đồng Nai. All rights reserved.</p>
-          <p className="text-champagne-400/80">Sản phẩm nghiên cứu học tập</p>
+          <p className="text-champagne-400/80">UniFind là sản phẩm được phát triển nhằm phục vụ mục đích nghiên cứu và học tập và không đại diện cho nền tảng chính thức của nhà trường.</p>
         </div>
       </div>
     </footer>

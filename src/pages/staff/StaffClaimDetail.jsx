@@ -197,11 +197,13 @@ export default function StaffClaimDetail() {
 
   if (!claim) return null;
 
-  const displayId = claim.id.startsWith('C') && !claim.id.startsWith('CLM')
-    ? `#CLM-${claim.id.replace('C', '').padStart(3, '0')}`
-    : claim.id.startsWith('CLM') ? `#${claim.id}` : `#CLM-${claim.id}`;
+  const claimIdStr = String(claim?.id || '');
+  const displayId = claimIdStr.startsWith('C') && !claimIdStr.startsWith('CLM')
+    ? `#CLM-${claimIdStr.replace('C', '').padStart(3, '0')}`
+    : claimIdStr.startsWith('CLM') ? `#${claimIdStr}` : `#CLM-${claimIdStr}`;
 
-  const itemDisplayId = item?.id ? (item.id.startsWith('P') ? item.id : `P${String(item.id).padStart(3, '0')}`) : 'P005';
+  const itemIdStr = String(item?.id || '');
+  const itemDisplayId = item?.id ? (itemIdStr.startsWith('P') ? itemIdStr : `P${itemIdStr.padStart(3, '0')}`) : 'P005';
 
   return (
     <div className="space-y-4 pb-32">

@@ -60,8 +60,9 @@ export default function StaffClaims() {
         const item = itemsMap.get(c.itemId);
         const claimant = usersMap.get(c.claimantId);
         
-        const formattedId = c.id.startsWith('C') && !c.id.startsWith('CLM') 
-          ? `#CLM-${c.id.replace('C', '').padStart(3, '0')}`
+        const idStr = String(c.id || '');
+        const formattedId = idStr.startsWith('C') && !idStr.startsWith('CLM')
+          ? `#CLM-${idStr.replace('C', '').padStart(3, '0')}`
           : `#${c.id}`;
 
         return {

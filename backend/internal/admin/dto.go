@@ -2,6 +2,7 @@ package admin
 
 type UpdateUserStatusDTO struct {
 	Status string `json:"status" binding:"required"`
+	Role   string `json:"role,omitempty"`
 }
 
 type AdminStatsDTO struct {

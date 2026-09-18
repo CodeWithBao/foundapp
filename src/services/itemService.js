@@ -5,6 +5,39 @@ import apiClient, { withFallback } from './apiClient';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
+export function normalizeItem(item) {
+  if (!item || typeof item !== 'object') return item;
+  const locationName = typeof item.location === 'object' && item.location !== null
+    ? item.location.name
+    : (item.locationName || item.location || '');
+  const categoryName = typeof item.category === 'object' && item.category !== null
+    ? item.category.name
+    : (item.categoryName || item.category || '');
+  
+  let images = [];
+  if (Array.isArray(item.images)) {
+    images = item.images.map(img => typeof img === 'object' && img !== null ? (img.image_url || img.imageUrl || '') : img).filter(Boolean);
+  } else if (typeof item.images === 'string' && item.images.trim()) {
+    try {
+      const parsed = JSON.parse(item.images);
+      images = Array.isArray(parsed) ? parsed : [item.images];
+    } catch {
+      images = [item.images];
+    }
+  }
+
+  return {
+    ...item,
+    location: locationName,
+    locationName: locationName,
+    category: categoryName,
+    categoryName: categoryName,
+    images: images,
+    createdAt: item.createdAt || item.created_at,
+    updatedAt: item.updatedAt || item.updated_at,
+  };
+}
+
 const itemService = {
   async getItems(filters = {}) {
     return withFallback(
@@ -20,7 +53,8 @@ const itemService = {
 
         const queryString = queryParams.toString();
         const res = await apiClient.get(`/items${queryString ? '?' + queryString : ''}`);
-        return Array.isArray(res) ? res : res.items || [];
+        const rawList = Array.isArray(res) ? res : (res.items || []);
+        return rawList.map(normalizeItem);
       },
       async () => {
         await delay();
@@ -71,7 +105,8 @@ const itemService = {
   async getItemById(id) {
     return withFallback(
       async () => {
-        return await apiClient.get(`/items/${id}`);
+        const res = await apiClient.get(`/items/${id}`);
+        return normalizeItem(res);
       },
       async () => {
         await delay();
@@ -91,7 +126,45 @@ const itemService = {
   async createItem(data) {
     return withFallback(
       async () => {
-        return await apiClient.post('/items', data);
+        // Resolve category_id and location_id
+        let categoryId = Number(data.category_id || data.categoryId) || 0;
+        let locationId = Number(data.location_id || data.locationId) || 0;
+
+        if (!categoryId || !locationId) {
+          const [catsRes, locsRes] = await Promise.all([
+            apiClient.get('/categories').catch(() => []),
+            apiClient.get('/locations').catch(() => []),
+          ]);
+          const cats = Array.isArray(catsRes) ? catsRes : catsRes?.categories || [];
+          const locs = Array.isArray(locsRes) ? locsRes : locsRes?.locations || [];
+
+          if (!categoryId && data.category) {
+            const found = cats.find(c => c.name === data.category || c.id === data.category || String(c.id) === String(data.category));
+            categoryId = found?.id ? Number(found.id) : (cats[0]?.id ? Number(cats[0].id) : 1);
+          }
+          if (!locationId && data.location) {
+            const found = locs.find(l => l.name === data.location || l.id === data.location || String(l.id) === String(data.location));
+            locationId = found?.id ? Number(found.id) : (locs[0]?.id ? Number(locs[0].id) : 1);
+          }
+        }
+
+        const apiPayload = {
+          title: data.title,
+          type: data.type || 'LOST',
+          category_id: categoryId || 1,
+          location_id: locationId || 1,
+          date: data.date || '',
+          time: data.time || '',
+          description: data.description || '',
+          color: data.color || '',
+          brand: data.brand || '',
+          distinct_features: data.distinct_features || data.feature || '',
+          current_storage_location: data.current_storage_location || data.storageLocation || '',
+          custody_status: data.custody_status || data.holdingStatus || '',
+          images: data.images || []
+        };
+
+        return await apiClient.post('/items', apiPayload);
       },
       async () => {
         await delay(400);
@@ -117,7 +190,22 @@ const itemService = {
   async updateItem(id, data) {
     return withFallback(
       async () => {
-        return await apiClient.put(`/items/${id}`, data);
+        const apiPayload = {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.category_id !== undefined && { category_id: Number(data.category_id) }),
+          ...(data.location_id !== undefined && { location_id: Number(data.location_id) }),
+          ...(data.date !== undefined && { date: data.date }),
+          ...(data.time !== undefined && { time: data.time }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.color !== undefined && { color: data.color }),
+          ...(data.brand !== undefined && { brand: data.brand }),
+          ...(data.distinct_features !== undefined ? { distinct_features: data.distinct_features } : (data.feature !== undefined ? { distinct_features: data.feature } : {})),
+          ...(data.current_storage_location !== undefined ? { current_storage_location: data.current_storage_location } : (data.storageLocation !== undefined ? { current_storage_location: data.storageLocation } : {})),
+          ...(data.custody_status !== undefined ? { custody_status: data.custody_status } : (data.holdingStatus !== undefined ? { custody_status: data.holdingStatus } : {})),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.images !== undefined && { images: data.images }),
+        };
+        return await apiClient.put(`/items/${id}`, apiPayload);
       },
       async () => {
         await delay();
@@ -164,7 +252,7 @@ const itemService = {
       async () => {
         const res = await apiClient.get(`/items?limit=${limit}`);
         const list = Array.isArray(res) ? res : res.items || [];
-        return list.slice(0, limit);
+        return list.map(normalizeItem).slice(0, limit);
       },
       async () => {
         const items = storageService.get(STORAGE_KEYS.ITEMS) || [];

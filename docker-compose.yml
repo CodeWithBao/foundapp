@@ -9,11 +9,32 @@ services:
       POSTGRES_DB: ${DB_NAME:-unifind_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - unifind_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-unifind} -d ${DB_NAME:-unifind_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: unifind_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@unifind.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-unifind_pgadmin_2026}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+      PGADMIN_CONFIG_LOGIN_BANNER: "'UniFind DNTU - PostgreSQL Administration'"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:5050:80"
+    networks:
+      - unifind_net
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   backend:
     build:
@@ -21,6 +42,8 @@ services:
       dockerfile: Dockerfile
     container_name: unifind_backend
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
       PORT: 8080
       DB_DRIVER: postgres
@@ -30,7 +53,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-unifind_password}
       DB_NAME: ${DB_NAME:-unifind_db}
       JWT_SECRET: ${JWT_SECRET:-unifind_dntu_secret_key_2026}
+      PROXY_SECURITY_ENABLED: ${PROXY_SECURITY_ENABLED:-true}
+      ORIGIN_PROXY_SECRET: ${ORIGIN_PROXY_SECRET:-unifind_secret_proxy_token_2026}
+      GOOGLE_AUTH_MODE: ${GOOGLE_AUTH_MODE:-any_google}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GIN_MODE: release
+      ALLOW_SQLITE_FALLBACK: "false"
+    networks:
+      - unifind_net
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,9 +72,28 @@ services:
     container_name: unifind_frontend
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
+    networks:
+      - unifind_net
     depends_on:
       - backend
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: unifind_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://frontend:80
+    networks:
+      - unifind_net
+    depends_on:
+      - frontend
+
 volumes:
   pgdata:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  unifind_net:
+    driver: bridge

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 
 	"unifind-dntu/pkg/response"
@@ -48,6 +49,46 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "Registration successful", res)
 }
 
+func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	var dto GoogleLoginDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request payload: credential or id_token is required")
+		return
+	}
+
+	// Accept both "credential" and "id_token" fields
+	token := dto.Credential
+	if token == "" {
+		token = dto.IdToken
+	}
+	if token == "" {
+		response.Error(c, http.StatusBadRequest, "credential or id_token is required")
+		return
+	}
+
+	res, err := h.authService.GoogleLogin(c.Request.Context(), token)
+	if err != nil {
+		if errors.Is(err, ErrAccountAlreadyExists) || err.Error() == "ACCOUNT_ALREADY_EXISTS" {
+			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
+				"error":   "ACCOUNT_ALREADY_EXISTS",
+				"message": "An account with this email already exists with password authentication. Please login using email and password.",
+			})
+			return
+		}
+		// Token verification failures -> 401
+		msg := err.Error()
+		if msg == "invalid or expired Google token" || msg == "empty token" || msg == "email not verified" || msg == "invalid audience" {
+			response.Error(c, http.StatusUnauthorized, msg)
+			return
+		}
+		response.Error(c, http.StatusBadRequest, msg)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Google login successful", res)
+}
+
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -92,6 +133,7 @@ func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Hand
 	{
 		authGroup.POST("/login", h.Login)
 		authGroup.POST("/register", h.Register)
+		authGroup.POST("/google", h.GoogleLogin)
 		authGroup.GET("/me", authMiddleware, h.GetMe)
 		authGroup.POST("/change-password", authMiddleware, h.ChangePassword)
 	}

@@ -66,7 +66,7 @@ func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 	}
 
 	ip := c.ClientIP()
-	if err := h.adminService.UpdateUserStatus(adminIDVal.(uint), uint(targetID), dto.Status, ip); err != nil {
+	if err := h.adminService.UpdateUserStatus(adminIDVal.(uint), uint(targetID), dto.Status, dto.Role, ip); err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}

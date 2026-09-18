@@ -41,7 +41,7 @@ import AdminPosts from './pages/admin/AdminPosts';
 import AdminClaims from './pages/admin/AdminClaims';
 import AdminAuditLogs from './pages/admin/AdminAuditLogs';
 import AdminStatistics from './pages/admin/AdminStatistics';
-
+import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 
 // Error Pages
@@ -90,6 +90,7 @@ export default function App() {
         <Route path="locations" element={<AdminLocations />} />
         <Route path="posts" element={<AdminPosts />} />
         <Route path="claims" element={<AdminClaims />} />
+        <Route path="reports" element={<AdminReports />} />
         <Route path="audit-logs" element={<AdminAuditLogs />} />
         <Route path="statistics" element={<AdminStatistics />} />
         <Route path="settings" element={<AdminSettings />} />
