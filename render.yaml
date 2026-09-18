@@ -4,6 +4,7 @@ services:
     env: go
     buildCommand: cd backend && go build -o server ./cmd/server
     startCommand: cd backend && ./server
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 8080
