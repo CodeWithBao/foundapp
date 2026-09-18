@@ -67,6 +67,11 @@ export async function withFallback(apiFn, fallbackFn) {
   try {
     return await apiFn();
   } catch (err) {
+    // Production must use the real online API/database and must never silently
+    // switch to browser mock data when the backend is unavailable.
+    if (import.meta.env.PROD) {
+      throw err;
+    }
     if (
       err.isNetworkError ||
       err.isServerError ||

@@ -9,17 +9,19 @@ services:
         value: 8080
       - key: GIN_MODE
         value: release
-      - key: DB_HOST
+      - key: DB_DRIVER
+        value: postgres
+      - key: DATABASE_URL
         sync: false
-      - key: DB_PORT
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: DB_SSLMODE
-        value: require
+      - key: ALLOW_SQLITE_FALLBACK
+        value: "false"
       - key: JWT_SECRET
         generateValue: true
+      - key: PROXY_SECURITY_ENABLED
+        value: "true"
+      - key: ORIGIN_PROXY_SECRET
+        sync: false
+      - key: GOOGLE_AUTH_MODE
+        value: any_google
+      - key: GOOGLE_CLIENT_ID
+        sync: false
