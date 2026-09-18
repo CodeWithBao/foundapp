@@ -102,6 +102,18 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
     stopCamera();
   };
 
+  const handleRetakePhoto = () => {
+    onChange('');
+    setUrlInput('');
+    setActiveTab('camera');
+  };
+
+  useEffect(() => {
+    if (!value && activeTab === 'camera') {
+      startCamera();
+    }
+  }, [value, activeTab]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab !== 'camera') {
@@ -124,9 +136,9 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
                 variant="outline"
                 size="sm"
                 className="bg-white/90 hover:bg-white text-gray-800"
-                onClick={handleRemoveImage}
+                onClick={handleRetakePhoto}
               >
-                <RefreshCw className="w-4 h-4 mr-1.5" /> Chụp lại / Đổi ảnh
+                <RefreshCw className="w-4 h-4 mr-1.5" /> Chụp lại
               </Button>
               <Button
                 type="button"

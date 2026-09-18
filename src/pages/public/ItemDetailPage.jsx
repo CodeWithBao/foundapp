@@ -39,6 +39,7 @@ export default function ItemDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [similarItems, setSimilarItems] = useState([]);
   const [showContact, setShowContact] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   
   // Bookmark state
   const [isSaved, setIsSaved] = useState(false);
@@ -171,6 +172,12 @@ export default function ItemDetailPage() {
   const isOwner = user && user.id === item.userId;
   const isReturned = item.status === 'RETURNED';
   const hasImages = item.images && item.images.length > 0;
+  const categoryText = typeof item.category === 'object' && item.category !== null
+    ? item.category.name || ''
+    : item.category || item.categoryName || '';
+  const locationText = typeof item.location === 'object' && item.location !== null
+    ? item.location.name || ''
+    : item.location || item.locationName || '';
 
   return (
     <div className="bg-cream-50 min-h-screen pb-16">
@@ -203,7 +210,7 @@ export default function ItemDetailPage() {
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-warm-gray-400">
-                    <span className="text-6xl mb-2">{categoryEmoji[item.category] || '📦'}</span>
+                    <span className="text-6xl mb-2">{categoryEmoji[categoryText] || '📦'}</span>
                     <span className="text-sm font-medium">Không có hình ảnh đính kèm</span>
                   </div>
                 )}
@@ -254,7 +261,7 @@ export default function ItemDetailPage() {
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warm-gray-100 text-warm-gray-700 text-xs font-medium">
-                  Danh mục: {item.category}
+                  Danh mục: {categoryText}
                 </span>
               </div>
             </div>
@@ -266,7 +273,7 @@ export default function ItemDetailPage() {
                 Địa điểm & Nơi lưu giữ
               </h3>
               <div className="space-y-2 text-sm text-warm-gray-700">
-                <p><strong>Vị trí ghi nhận:</strong> {item.locationName || item.location}</p>
+                <p><strong>Vị trí ghi nhận:</strong> {item.locationName || locationText}</p>
                 {item.holdingLocation && (
                   <p className="text-burgundy-800 bg-burgundy-50 p-3 rounded-xl border border-burgundy-100 mt-2">
                     📍 <strong>Nơi đang lưu giữ hiện tại:</strong> {item.holdingLocation}
@@ -299,7 +306,7 @@ export default function ItemDetailPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-warm-gray-500">
                     <MapPin className="w-4 h-4 shrink-0 text-burgundy-600" />
-                    <span className="truncate">{item.location}</span>
+                    <span className="truncate">{locationText}</span>
                   </div>
                   <div className="flex items-center gap-2 text-warm-gray-500">
                     <Calendar className="w-4 h-4 shrink-0 text-burgundy-600" />
@@ -463,12 +470,12 @@ export default function ItemDetailPage() {
               {hasImages ? (
                 <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xl">{categoryEmoji[item.category] || '📦'}</span>
+                <span className="text-xl">{categoryEmoji[categoryText] || '📦'}</span>
               )}
             </div>
             <div>
               <h4 className="font-semibold text-sm text-gray-900 truncate max-w-xs">{item.title}</h4>
-              <p className="text-xs text-warm-gray-500">{item.category} • {item.location}</p>
+              <p className="text-xs text-warm-gray-500">{categoryText} • {locationText}</p>
             </div>
           </div>
 

@@ -97,7 +97,7 @@ const itemService = {
         else if (sort === 'oldest') items.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         else if (sort === 'views') items.sort((a, b) => (b.views || 0) - (a.views || 0));
 
-        return items;
+        return items.map(normalizeItem);
       }
     );
   },
@@ -118,7 +118,7 @@ const itemService = {
         const idx = items.findIndex(i => i.id === id);
         items[idx] = item;
         storageService.set(STORAGE_KEYS.ITEMS, items);
-        return item;
+        return normalizeItem(item);
       }
     );
   },
@@ -164,7 +164,7 @@ const itemService = {
           images: data.images || []
         };
 
-        return await apiClient.post('/items', apiPayload);
+        return normalizeItem(await apiClient.post('/items', apiPayload));
       },
       async () => {
         await delay(400);
@@ -205,7 +205,7 @@ const itemService = {
           ...(data.status !== undefined && { status: data.status }),
           ...(data.images !== undefined && { images: data.images }),
         };
-        return await apiClient.put(`/items/${id}`, apiPayload);
+        return normalizeItem(await apiClient.put(`/items/${id}`, apiPayload));
       },
       async () => {
         await delay();
@@ -237,7 +237,8 @@ const itemService = {
     return withFallback(
       async () => {
         const res = await apiClient.get('/items/user/me');
-        return Array.isArray(res) ? res : res.items || [];
+        const list = Array.isArray(res) ? res : res.items || [];
+        return list.map(normalizeItem);
       },
       async () => {
         await delay();
