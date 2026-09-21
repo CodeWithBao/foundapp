@@ -153,3 +153,93 @@
 .animate-scaleIn {
   animation: scaleIn 0.2s ease-out forwards;
 }
+
+
+/* DNTU campus watermark background */
+.dntu-app-shell { position: relative; isolation: isolate; }
+.dntu-campus-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, .90), rgba(255, 252, 247, .96)),
+    url('/DNTU_Web_Asset_Kit/backgrounds/dntu-campus-clean-1920.webp') center 20% / cover no-repeat;
+}
+
+/* Draggable DNTU owl assistant */
+.dntu-owl-widget {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  width: 84px;
+  height: 84px;
+  user-select: none;
+  touch-action: none;
+}
+.dntu-owl-mascot {
+  width: 84px;
+  height: 84px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: grab;
+  filter: drop-shadow(0 14px 18px rgba(65, 25, 36, .22));
+  transition: filter .2s ease, transform .2s ease;
+}
+.dntu-owl-mascot:active { cursor: grabbing; transform: scale(.96); }
+.dntu-owl-mascot img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.dntu-owl-idle .dntu-owl-mascot { animation: owlFloat 3.2s ease-in-out infinite; }
+.dntu-owl-searching .dntu-owl-mascot { animation: owlSearch 1.5s ease-in-out infinite; }
+.dntu-owl-found .dntu-owl-mascot { animation: owlFound .8s cubic-bezier(.34,1.56,.64,1) infinite alternate; }
+.dntu-owl-sleeping .dntu-owl-mascot { animation: owlSleep 4s ease-in-out infinite; filter: grayscale(.12) drop-shadow(0 10px 14px rgba(65, 25, 36, .14)); }
+.dntu-owl-panel {
+  position: absolute;
+  right: 0;
+  bottom: 92px;
+  width: min(340px, calc(100vw - 24px));
+  padding: 16px;
+  border: 1px solid rgba(124, 45, 64, .16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 24px 60px rgba(71, 31, 43, .22);
+  backdrop-filter: blur(16px);
+  touch-action: auto;
+  user-select: text;
+}
+.dntu-owl-panel::after {
+  content: '';
+  position: absolute;
+  right: 28px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+  border-right: 1px solid rgba(124, 45, 64, .16);
+  border-bottom: 1px solid rgba(124, 45, 64, .16);
+  background: white;
+}
+.dntu-owl-close { position: absolute; right: 12px; top: 12px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; color: #78716c; }
+.dntu-owl-close:hover { background: #f5ebe5; color: #7c2d40; }
+.dntu-owl-status-dot { width: 8px; height: 8px; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.14); }
+.dntu-owl-action { margin-top: 14px; display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; background: #7c2d40; padding: 10px 14px; color: white; font-size: 13px; font-weight: 700; transition: transform .2s ease, background .2s ease; }
+.dntu-owl-action:hover { background: #641f32; transform: translateY(-1px); }
+.dntu-owl-unread { position: absolute; right: 2px; top: 0; z-index: 2; display: grid; min-width: 24px; height: 24px; place-items: center; border: 3px solid white; border-radius: 999px; background: #dc2626; color: white; font-size: 11px; font-weight: 800; animation: owlPulse 1.6s ease-in-out infinite; }
+
+@keyframes owlFloat { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-8px) rotate(1deg); } }
+@keyframes owlSearch { 0%,100% { transform: translateX(-3px) rotate(-2deg); } 50% { transform: translateX(3px) rotate(2deg); } }
+@keyframes owlFound { from { transform: translateY(0) scale(1); } to { transform: translateY(-7px) scale(1.04); } }
+@keyframes owlSleep { 0%,100% { transform: translateY(0) rotate(-1deg) scale(1); opacity: .9; } 50% { transform: translateY(3px) rotate(1deg) scale(.98); opacity: .78; } }
+@keyframes owlPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+@media (max-width: 640px) {
+  .dntu-owl-widget { right: 14px; bottom: 82px; width: 72px; height: 72px; }
+  .dntu-owl-mascot { width: 72px; height: 72px; }
+  .dntu-owl-panel { bottom: 80px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dntu-owl-mascot, .dntu-owl-unread { animation: none !important; }
+}
+
