@@ -48,25 +48,25 @@ export default function ItemCard({ item, onClick }) {
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="font-semibold text-text-dark text-sm line-clamp-2 mb-2 group-hover:text-burgundy-700 transition-colors">
+      <div className="p-5 md:p-6">
+        <h3 className="font-bold text-text-dark text-base md:text-lg leading-snug line-clamp-2 mb-3 group-hover:text-burgundy-700 transition-colors">
           {item.title}
         </h3>
-        <div className="space-y-1.5 text-xs text-warm-gray-500">
+        <div className="space-y-2 text-sm text-warm-gray-500">
           {locationText && (
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <MapPin className="w-4 h-4 shrink-0" />
               <span className="truncate">{locationText}</span>
             </div>
           )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              <Calendar className="w-4 h-4 shrink-0" />
               <span>{formatDate(item.date || item.createdAt)}</span>
             </div>
             {item.views != null && (
               <div className="flex items-center gap-1">
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-4 h-4" />
                 <span>{item.views}</span>
               </div>
             )}
@@ -76,3 +76,4 @@ export default function ItemCard({ item, onClick }) {
     </div>
   );
 }
+
