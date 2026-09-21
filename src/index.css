@@ -152,12 +152,14 @@ header .page-container nav a[aria-current='page'] {
 
 .unifind-home .card-hover {
   border-radius: 20px;
-  box-shadow: 0 10px 35px rgba(65, 25, 36, .07);
+  border-color: #ece5e0;
+  box-shadow: 0 6px 24px rgba(65, 25, 36, .05);
 }
 
 .unifind-home .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 45px rgba(65, 25, 36, .12);
+  transform: translateY(-3px);
+  border-color: #dcc9c2;
+  box-shadow: 0 16px 36px rgba(65, 25, 36, .09);
 }
 
 .unifind-hero::after {
@@ -166,8 +168,25 @@ header .page-container nav a[aria-current='page'] {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 72% 32%, rgba(216, 178, 106, .20), transparent 28%),
-    linear-gradient(180deg, transparent 55%, rgba(42, 5, 9, .18));
+    linear-gradient(180deg, transparent 65%, rgba(42, 5, 9, .16));
+}
+
+.minimal-action-card {
+  box-shadow: 0 8px 28px rgba(65, 25, 36, .055);
+}
+
+.minimal-action-card:hover {
+  transform: translateY(-3px);
+  border-color: #d7c0b7;
+  box-shadow: 0 16px 36px rgba(65, 25, 36, .09);
+}
+
+.minimal-stat-card {
+  background: rgba(255, 255, 255, .065);
+}
+
+.minimal-stat-card:hover {
+  background: rgba(255, 255, 255, .10);
 }
 
 footer {
