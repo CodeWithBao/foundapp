@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, AlertTriangle, HelpCircle, CheckCircle, TrendingUp, Users, Package, MapPin, Building2, GraduationCap, Heart, Shield } from 'lucide-react';
+import { Search, AlertTriangle, HelpCircle, CheckCircle, TrendingUp, Package, MapPin, Building2, GraduationCap } from 'lucide-react';
 import ItemCard from '../../components/common/ItemCard';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import itemService from '../../services/itemService';
@@ -36,27 +36,20 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
-  const coreValues = [
-    { icon: Shield, label: 'TRUNG THỰC', sub: 'Honesty', color: 'text-burgundy-600', bg: 'bg-burgundy-50' },
-    { icon: Users, label: 'CỘNG ĐỒNG', sub: 'Community', color: 'text-champagne-600', bg: 'bg-champagne-50' },
-    { icon: Heart, label: 'TRÁCH NHIỆM', sub: 'Responsibility', color: 'text-burgundy-800', bg: 'bg-burgundy-100/50' },
-    { icon: GraduationCap, label: 'PHÁT TRIỂN', sub: 'For a Better Tomorrow', color: 'text-burgundy-600', bg: 'bg-burgundy-50' },
-  ];
-
   return (
-    <div className="unifind-home bg-cream-50 min-h-screen">
+    <div className="unifind-home bg-[#fbfaf8] min-h-screen">
       {/* Hero Section */}
       <section
-        className="unifind-hero relative min-h-[560px] md:min-h-[650px] flex flex-col justify-center px-4 sm:px-6 overflow-hidden"
+        className="unifind-hero relative min-h-[520px] md:min-h-[600px] flex flex-col justify-center px-4 sm:px-6 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(92,13,17,.90), rgba(116,18,22,.70), rgba(40,10,10,.85)), url(/DNTU_Web_Asset_Kit/backgrounds/dntu-campus-clean-1600.webp)`,
+          backgroundImage: `linear-gradient(90deg, rgba(55,8,13,.92) 0%, rgba(75,12,18,.78) 48%, rgba(55,8,13,.46) 100%), url(/DNTU_Web_Asset_Kit/backgrounds/dntu-campus-clean-1600.webp)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
         <div className="page-container w-full relative z-10"><div className="max-w-4xl">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 mb-7">
             <span className="w-2 h-2 rounded-full bg-champagne-400 animate-pulse" />
             <span className="text-cream-100 text-sm font-semibold tracking-wide">UNIFIND DNTU - Nền tảng tìm đồ thất lạc</span>
           </div>
@@ -69,7 +62,7 @@ export default function HomePage() {
           </p>
           
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="max-w-3xl relative flex shadow-card-hover rounded-2xl overflow-hidden bg-white border border-white/70 ring-4 ring-white/10">
+          <form onSubmit={handleSearch} className="max-w-3xl relative flex rounded-2xl overflow-hidden bg-white border border-white/80 shadow-[0_18px_50px_rgba(30,5,10,.22)]">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-warm-gray-400" />
             </div>
@@ -95,10 +88,10 @@ export default function HomePage() {
         <div className="grid md:grid-cols-2 gap-5 md:gap-6">
           <Link
             to="/report-lost"
-            className="flex items-center gap-5 p-6 md:p-8 bg-white border border-burgundy-100 rounded-xl shadow-card hover:-translate-y-0.5 hover:shadow-card-hover transition-all group"
+            className="minimal-action-card flex items-center gap-5 p-6 md:p-8 bg-white border border-[#eadfda] rounded-2xl transition-all group"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-burgundy-600 to-burgundy-800 flex items-center justify-center shrink-0 shadow-sm">
-              <AlertTriangle className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-burgundy-50 border border-burgundy-100 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-8 h-8 text-burgundy-700" />
             </div>
             <div>
               <h3 className="font-bold text-text-dark text-xl md:text-2xl group-hover:text-burgundy-600 transition-colors">Báo mất đồ</h3>
@@ -108,36 +101,16 @@ export default function HomePage() {
           
           <Link
             to="/report-found"
-            className="flex items-center gap-5 p-6 md:p-8 bg-white border border-amber-100 rounded-xl shadow-card hover:-translate-y-0.5 hover:shadow-card-hover transition-all group"
+            className="minimal-action-card flex items-center gap-5 p-6 md:p-8 bg-white border border-[#eadfda] rounded-2xl transition-all group"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-champagne-500 to-champagne-700 flex items-center justify-center shrink-0 shadow-sm">
-              <HelpCircle className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-[#fbf5e8] border border-[#ecdfc1] flex items-center justify-center shrink-0">
+              <HelpCircle className="w-8 h-8 text-champagne-600" />
             </div>
             <div>
               <h3 className="font-bold text-text-dark text-xl md:text-2xl group-hover:text-champagne-600 transition-colors">Báo nhặt được</h3>
               <p className="text-base leading-relaxed text-warm-gray-500">Thông báo vật phẩm bạn nhặt được để trao trả đúng chủ nhân</p>
             </div>
           </Link>
-        </div>
-      </section>
-
-      {/* Core Values Bar */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-16">
-        <div className="bg-white rounded-xl border border-cream-200 shadow-card p-6 md:p-8">
-          <p className="text-center text-sm font-semibold text-burgundy-700 uppercase tracking-widest mb-4">
-            Giá trị cốt lõi DNTU — <span className="text-champagne-600 font-serif italic normal-case tracking-normal">Tri thức Kiến tạo tương lai</span>
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {coreValues.map(v => (
-              <div key={v.label} className={`flex flex-col items-center gap-3 p-4 md:p-5 rounded-xl ${v.bg}`}>
-                <v.icon className={`w-6 h-6 ${v.color}`} />
-                <div className="text-center">
-                  <p className={`font-bold text-base ${v.color}`}>{v.label}</p>
-                  <p className="text-xs md:text-sm text-warm-gray-500">{v.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -176,7 +149,7 @@ export default function HomePage() {
 
       {/* Returned Items */}
       {returnedItems.length > 0 && (
-        <section className="bg-gradient-to-b from-cream-50 to-white py-16 md:py-24">
+        <section className="bg-white border-y border-[#eee7e2] py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
@@ -208,7 +181,7 @@ export default function HomePage() {
       )}
 
       {/* Campus / Stats Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-br from-burgundy-900 via-burgundy-800 to-burgundy-700 text-white relative overflow-hidden">
+      <section className="py-16 md:py-24 bg-[#4d0b13] text-white relative overflow-hidden">
         {/* Decorative */}
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
         
@@ -227,22 +200,22 @@ export default function HomePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-8 border border-white/15 text-center hover:bg-white/15 transition-colors">
+            <div className="minimal-stat-card rounded-2xl p-7 md:p-8 border border-white/15 text-center">
               <Package className="w-8 h-8 text-champagne-400 mx-auto mb-3" />
               <p className="text-3xl md:text-4xl font-bold text-white">{stats.total}</p>
               <p className="text-cream-200/80 text-base mt-2">Tổng bài đăng</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-8 border border-white/15 text-center hover:bg-white/15 transition-colors">
+            <div className="minimal-stat-card rounded-2xl p-7 md:p-8 border border-white/15 text-center">
               <AlertTriangle className="w-8 h-8 text-red-300 mx-auto mb-3" />
               <p className="text-3xl md:text-4xl font-bold text-white">{stats.lost}</p>
               <p className="text-cream-200/80 text-base mt-2">Đang tìm kiếm</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-8 border border-white/15 text-center hover:bg-white/15 transition-colors">
+            <div className="minimal-stat-card rounded-2xl p-7 md:p-8 border border-white/15 text-center">
               <HelpCircle className="w-8 h-8 text-amber-300 mx-auto mb-3" />
               <p className="text-3xl md:text-4xl font-bold text-white">{stats.found}</p>
               <p className="text-cream-200/80 text-base mt-2">Đã nhặt được</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-8 border border-white/15 text-center hover:bg-white/15 transition-colors">
+            <div className="minimal-stat-card rounded-2xl p-7 md:p-8 border border-white/15 text-center">
               <CheckCircle className="w-8 h-8 text-green-300 mx-auto mb-3" />
               <p className="text-3xl md:text-4xl font-bold text-white">{stats.returned}</p>
               <p className="text-cream-200/80 text-base mt-2">Đã trao trả</p>
