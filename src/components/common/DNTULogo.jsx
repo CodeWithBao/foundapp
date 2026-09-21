@@ -3,8 +3,8 @@ const logoWhite = '/DNTU_Web_Asset_Kit/branding/dntu-symbol-white.png';
 
 const sizeMap = {
   sm: { img: 'w-8 h-8', text: 'text-sm', subtitle: 'text-[9px]' },
-  md: { img: 'w-10 h-10', text: 'text-lg', subtitle: 'text-[10px]' },
-  lg: { img: 'w-12 h-12', text: 'text-xl', subtitle: 'text-xs' },
+  md: { img: 'w-12 h-12', text: 'text-xl', subtitle: 'text-[11px]' },
+  lg: { img: 'w-14 h-14', text: 'text-2xl', subtitle: 'text-sm' },
 };
 
 export default function DNTULogo({ size = 'md', showText = true, light = false }) {
@@ -29,3 +29,4 @@ export default function DNTULogo({ size = 'md', showText = true, light = false }
     </div>
   );
 }
+
