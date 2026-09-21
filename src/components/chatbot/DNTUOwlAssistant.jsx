@@ -74,9 +74,12 @@ export default function DNTUOwlAssistant() {
 
   const onPointerMove = event => {
     if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+    const widget = event.currentTarget.parentElement.getBoundingClientRect();
+    const safeWidth = widget.width || 132;
+    const safeHeight = widget.height || 132;
     const next = {
-      left: Math.max(8, Math.min(window.innerWidth - 92, event.clientX - drag.current.offsetX)),
-      top: Math.max(72, Math.min(window.innerHeight - 100, event.clientY - drag.current.offsetY)),
+      left: Math.max(8, Math.min(window.innerWidth - safeWidth - 8, event.clientX - drag.current.offsetX)),
+      top: Math.max(72, Math.min(window.innerHeight - safeHeight - 8, event.clientY - drag.current.offsetY)),
     };
     if (Math.abs(event.clientX - drag.current.startX) + Math.abs(event.clientY - drag.current.startY) > 5) drag.current.moved = true;
     setPosition(next);
