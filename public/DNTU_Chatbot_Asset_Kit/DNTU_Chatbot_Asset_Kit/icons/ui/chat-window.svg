@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 620" role="img" aria-label="Khung cửa sổ chatbot">
+ <rect x="3" y="3" width="374" height="614" rx="28" fill="#fff" stroke="#DCE7F7" stroke-width="6"/>
+ <path d="M31 3h318a28 28 0 0128 28v69H3V31A28 28 0 0131 3z" fill="#0B5CAD"/>
+ <circle cx="52" cy="51" r="27" fill="#fff"/><text x="93" y="47" font-family="sans-serif" font-size="18" font-weight="700" fill="#fff">Trợ lý DNTU</text>
+ <text x="93" y="71" font-family="sans-serif" font-size="13" fill="#BFE0FF">● Đang hoạt động</text>
+ <rect x="22" y="537" width="336" height="58" rx="29" fill="#F1F5FA"/><circle cx="327" cy="566" r="22" fill="#D71920"/>
+</svg>

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DNTU Lost & Found Item",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "itemName",
+    "category",
+    "location",
+    "eventTime",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^LF-[0-9]{4,}$"
+    },
+    "type": {
+      "enum": [
+        "lost",
+        "found"
+      ]
+    },
+    "itemName": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "eventTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        "searching",
+        "found",
+        "returned",
+        "closed"
+      ]
+    },
+    "ownerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "contactHidden": {
+      "type": "boolean"
+    }
+  }
+}

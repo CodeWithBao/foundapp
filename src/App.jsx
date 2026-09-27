@@ -31,6 +31,7 @@ import StaffItems from './pages/staff/StaffItems';
 import StaffClaims from './pages/staff/StaffClaims';
 import StaffClaimDetail from './pages/staff/StaffClaimDetail';
 import StaffHandovers from './pages/staff/StaffHandovers';
+import StaffTickets from './pages/staff/StaffTickets';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -65,7 +66,7 @@ export default function App() {
             <Route path="/my-posts" element={<ProtectedRoute><MyPostsPage /></ProtectedRoute>} />
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/student-card" element={<ProtectedRoute><StudentCardPage /></ProtectedRoute>} />
           </Route>
 
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="claims" element={<StaffClaims />} />
             <Route path="claims/:id" element={<StaffClaimDetail />} />
             <Route path="handovers" element={<StaffHandovers />} />
+            <Route path="tickets" element={<StaffTickets />} />
           </Route>
 
       {/* Admin Routes */}

@@ -1,0 +1,67 @@
+[
+  {
+    "id": "phone",
+    "label": "Điện thoại",
+    "icon": "icons/categories/phone.svg"
+  },
+  {
+    "id": "laptop",
+    "label": "Laptop",
+    "icon": "icons/categories/laptop.svg"
+  },
+  {
+    "id": "wallet",
+    "label": "Ví tiền",
+    "icon": "icons/categories/wallet.svg"
+  },
+  {
+    "id": "student-card",
+    "label": "Thẻ sinh viên",
+    "icon": "icons/categories/student-card.svg"
+  },
+  {
+    "id": "key",
+    "label": "Chìa khóa",
+    "icon": "icons/categories/key.svg"
+  },
+  {
+    "id": "headphones",
+    "label": "Tai nghe",
+    "icon": "icons/categories/headphones.svg"
+  },
+  {
+    "id": "watch",
+    "label": "Đồng hồ",
+    "icon": "icons/categories/watch.svg"
+  },
+  {
+    "id": "books",
+    "label": "Sách/vở",
+    "icon": "icons/categories/books.svg"
+  },
+  {
+    "id": "bottle",
+    "label": "Bình nước",
+    "icon": "icons/categories/bottle.svg"
+  },
+  {
+    "id": "backpack",
+    "label": "Balo/túi xách",
+    "icon": "icons/categories/backpack.svg"
+  },
+  {
+    "id": "documents",
+    "label": "Giấy tờ",
+    "icon": "icons/categories/documents.svg"
+  },
+  {
+    "id": "clothes",
+    "label": "Quần áo",
+    "icon": "icons/categories/clothes.svg"
+  },
+  {
+    "id": "other",
+    "label": "Vật dụng khác",
+    "icon": "icons/categories/other.svg"
+  }
+]

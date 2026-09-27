@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="icon-send" viewBox="0 0 24 24"><path d="M3 20 22 12 3 4l3 7 10 1-10 1z" fill="currentColor"/></symbol>
+  <symbol id="icon-attach" viewBox="0 0 24 24"><path d="M8 12.5 14.5 6a3.5 3.5 0 0 1 5 5L11 19.5a5 5 0 0 1-7-7L13 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-location" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-13a7 7 0 1 0-14 0c0 6.8 7 13 7 13Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.5" fill="currentColor"/></symbol>
+  <symbol id="icon-time" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v13H4z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="icon-lost" viewBox="0 0 24 24"><path d="M5 7h14v13H5zM8 7V5h8v2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M12 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="icon-found" viewBox="0 0 24 24"><path d="M5 7h14v13H5zM8 7V5h8v2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 13 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+

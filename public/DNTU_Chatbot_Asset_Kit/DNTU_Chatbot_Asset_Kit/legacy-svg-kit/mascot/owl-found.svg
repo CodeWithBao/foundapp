@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Cú DNTU tìm thấy đồ">
+  <ellipse cx="120" cy="216" rx="70" ry="11" fill="#14532d" opacity=".15"/>
+  <path d="M62 82 52 32l43 28M178 82l10-50-43 28" fill="#22c55e" stroke="#166534" stroke-width="6"/>
+  <ellipse cx="120" cy="133" rx="70" ry="82" fill="#4ade80" stroke="#166534" stroke-width="6"/>
+  <ellipse cx="120" cy="158" rx="45" ry="50" fill="#dcfce7"/>
+  <circle cx="89" cy="105" r="29" fill="#fff"/><circle cx="151" cy="105" r="29" fill="#fff"/>
+  <path d="m78 104 9 9 16-18M140 104l9 9 16-18" fill="none" stroke="#166534" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m120 119-14 11 14 11 14-11z" fill="#f59e0b"/><path d="M98 158q22 24 44 0" fill="#fff" stroke="#166534" stroke-width="4"/>
+  <circle cx="202" cy="52" r="25" fill="#fef3c7" stroke="#f59e0b" stroke-width="5"/><path d="m190 52 8 8 16-19" fill="none" stroke="#16a34a" stroke-width="6" stroke-linecap="round"/>
+  <text x="120" y="187" text-anchor="middle" font-family="Arial" font-size="16" font-weight="700" fill="#166534">FOUND!</text>
+</svg>
+

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "LF-0001",
+    "type": "lost",
+    "itemName": "Ví da màu đen",
+    "category": "wallet",
+    "description": "Ví có thẻ sinh viên bên trong",
+    "location": "Thư viện DNTU",
+    "eventTime": "2026-09-20T14:30:00+07:00",
+    "images": [
+      "items/sample/wallet.webp"
+    ],
+    "status": "searching",
+    "ownerId": "USER001",
+    "contactHidden": true
+  },
+  {
+    "id": "LF-0002",
+    "type": "found",
+    "itemName": "Chìa khóa xe máy",
+    "category": "key",
+    "description": "Một chìa khóa có móc màu đỏ",
+    "location": "Sảnh G",
+    "eventTime": "2026-09-20T09:15:00+07:00",
+    "images": [
+      "items/sample/key.webp"
+    ],
+    "status": "found",
+    "ownerId": null,
+    "contactHidden": true
+  },
+  {
+    "id": "LF-0003",
+    "type": "lost",
+    "itemName": "Thẻ sinh viên Nguyễn A",
+    "category": "student-card",
+    "description": "Thẻ DNTU nền xanh",
+    "location": "Căn tin",
+    "eventTime": "2026-09-19T11:45:00+07:00",
+    "images": [
+      "items/sample/student-card.webp"
+    ],
+    "status": "returned",
+    "ownerId": "USER014",
+    "contactHidden": true
+  },
+  {
+    "id": "LF-0004",
+    "type": "found",
+    "itemName": "Bình nước xanh",
+    "category": "bottle",
+    "description": "Bình giữ nhiệt màu xanh, 750 ml",
+    "location": "Phòng A201",
+    "eventTime": "2026-09-18T16:10:00+07:00",
+    "images": [
+      "items/sample/bottle.webp"
+    ],
+    "status": "closed",
+    "ownerId": null,
+    "contactHidden": true
+  },
+  {
+    "id": "LF-0005",
+    "type": "lost",
+    "itemName": "Tai nghe không dây",
+    "category": "headphones",
+    "description": "Hộp tai nghe màu trắng có vết xước nhỏ",
+    "location": "Sân thể thao",
+    "eventTime": "2026-09-20T18:00:00+07:00",
+    "images": [
+      "items/sample/headphones.webp"
+    ],
+    "status": "searching",
+    "ownerId": "USER021",
+    "contactHidden": true
+  },
+  {
+    "id": "LF-0006",
+    "type": "found",
+    "itemName": "Balo màu xám",
+    "category": "backpack",
+    "description": "Balo laptop có móc khóa hình ngôi sao",
+    "location": "Nhà xe sinh viên",
+    "eventTime": "2026-09-21T07:20:00+07:00",
+    "images": [
+      "items/sample/backpack.webp"
+    ],
+    "status": "found",
+    "ownerId": null,
+    "contactHidden": true
+  }
+]

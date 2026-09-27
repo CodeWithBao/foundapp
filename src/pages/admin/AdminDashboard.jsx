@@ -116,15 +116,15 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-text-dark">Tổng quan hệ thống Admin</h1>
+        <h1 className="page-title text-2xl font-serif text-[#1C2530]">Tổng quan hệ thống Quản trị</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-28 bg-cream-200 rounded-card animate-pulse" />
+            <div key={i} className="h-28 surface animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-80 bg-cream-200 rounded-card animate-pulse" />
-          <div className="h-80 bg-cream-200 rounded-card animate-pulse" />
+          <div className="lg:col-span-2 h-80 surface animate-pulse" />
+          <div className="h-80 surface animate-pulse" />
         </div>
       </div>
     );
@@ -134,13 +134,14 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-dark">Tổng quan hệ thống</h1>
-          <p className="text-sm text-warm-gray-500">Báo cáo hoạt động & chỉ số vận hành DNTU UniFind</p>
+          <span className="label-micro text-[#AD222B]">Trung tâm Điều hành</span>
+          <h1 className="page-title text-2xl sm:text-3xl text-[#1C2530] mt-0.5">Tổng quan hệ thống</h1>
+          <p className="text-xs sm:text-sm text-[#5B6574]">Báo cáo hoạt động & chỉ số vận hành DNTU UniFind</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-mono font-semibold rounded-full border border-emerald-200/80">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            Hệ thống hoạt động tốt
+            Hệ thống vận hành ổn định
           </span>
         </div>
       </div>
@@ -176,13 +177,14 @@ export default function AdminDashboard() {
       {/* Grid 2 Biểu đồ (Recharts) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart 1: Lượt bài đăng theo ngày / tháng */}
-        <div className="lg:col-span-2 card p-5">
+        <div className="lg:col-span-2 surface p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-text-dark">Lượt bài đăng gần đây</h3>
-              <p className="text-xs text-warm-gray-500">Thống kê so sánh bài báo mất vs báo nhặt được</p>
+              <span className="label-micro text-[#AD222B]">Biểu đồ phát sinh</span>
+              <h3 className="font-serif font-semibold text-lg text-[#1C2530] mt-0.5">Lượt bài đăng gần đây</h3>
+              <p className="text-xs text-[#5B6574]">Thống kê so sánh bài báo mất vs báo nhặt được</p>
             </div>
-            <span className="text-xs font-medium text-warm-gray-500 bg-cream-200 px-2.5 py-1 rounded-md">6 tháng qua</span>
+            <span className="text-xs font-mono font-medium text-[#5B6574] bg-[#FAF8F2] border border-[#E0E2E6] px-2.5 py-1 rounded-lg">6 tháng qua</span>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -218,15 +220,18 @@ export default function AdminDashboard() {
         </div>
 
         {/* Chart 2: Tỷ lệ xử lý Donut PieChart */}
-        <div className="card p-5 flex flex-col justify-between">
+        <div className="surface p-5 sm:p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-text-dark">Tỷ lệ xử lý</h3>
-            <span className="text-xs font-semibold text-burgundy-700 bg-burgundy-50 px-2.5 py-1 rounded-md">
-              Hiệu suất {returnedPct}%
+            <div>
+              <span className="label-micro text-[#AD222B]">Chỉ số hoàn tất</span>
+              <h3 className="font-serif font-semibold text-lg text-[#1C2530] mt-0.5">Tỷ lệ xử lý</h3>
+            </div>
+            <span className="text-xs font-mono font-semibold text-[#AD222B] bg-red-50 border border-red-200/80 px-2.5 py-1 rounded-lg">
+              {returnedPct}%
             </span>
           </div>
 
-          <div className="relative h-60 flex items-center justify-center">
+          <div className="relative h-56 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -234,7 +239,7 @@ export default function AdminDashboard() {
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={85}
+                  outerRadius={82}
                   paddingAngle={4}
                   dataKey="value"
                 >
@@ -246,19 +251,19 @@ export default function AdminDashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-extrabold text-burgundy-900">{returnedPct}%</span>
-              <span className="text-xs text-warm-gray-500">Thành công</span>
+              <span className="text-3xl font-serif font-bold text-[#1C2530]">{returnedPct}%</span>
+              <span className="text-xs text-[#5B6574] font-mono">Thành công</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-cream-300 text-center">
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#E0E2E6] text-center">
             {donutData.map(d => (
               <div key={d.name}>
                 <div className="flex items-center justify-center gap-1">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
-                  <span className="text-xs font-medium text-warm-gray-600">{d.name}</span>
+                  <span className="text-xs font-medium text-[#5B6574]">{d.name}</span>
                 </div>
-                <p className="text-sm font-bold text-text-dark mt-0.5">{d.value}%</p>
+                <p className="text-sm font-mono font-bold text-[#1C2530] mt-0.5">{d.value}%</p>
               </div>
             ))}
           </div>
@@ -266,23 +271,23 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Audit Activity Table */}
-      <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-cream-300 flex items-center justify-between">
+      <div className="surface overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#E0E2E6] flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-text-dark">Nhật ký hoạt động mới nhất</h3>
-            <p className="text-xs text-warm-gray-500">Các thao tác gần đây của người dùng & quản trị viên</p>
+            <h3 className="font-serif font-semibold text-lg text-[#1C2530]">Nhật ký hoạt động mới nhất</h3>
+            <p className="text-xs text-[#5B6574]">Các thao tác gần đây của người dùng & quản trị viên</p>
           </div>
           <Link
             to="/admin/audit-logs"
-            className="text-xs font-semibold text-burgundy-700 hover:text-burgundy-800 flex items-center gap-1"
+            className="text-xs font-mono font-bold text-[#AD222B] hover:text-[#8A1A22] flex items-center gap-1"
           >
             Xem tất cả <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-warm-gray-600">
-            <thead className="bg-cream-200 text-warm-gray-700 uppercase font-medium">
+          <table className="w-full text-left text-xs text-[#5B6574]">
+            <thead className="bg-[#FAF8F2] border-b border-[#E0E2E6] text-[#5B6574] uppercase font-mono font-semibold">
               <tr>
                 <th className="px-6 py-3">Thời gian</th>
                 <th className="px-6 py-3">Người thực hiện</th>
@@ -291,7 +296,7 @@ export default function AdminDashboard() {
                 <th className="px-6 py-3">Mô tả</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-cream-300">
+            <tbody className="divide-y divide-[#E0E2E6]">
               {recentLogs.length > 0 ? (
                 recentLogs.map((log) => {
                   let badgeVariant = 'default';
@@ -303,20 +308,20 @@ export default function AdminDashboard() {
                   if (log.action === 'HANDOVER') badgeVariant = 'burgundy';
 
                   return (
-                    <tr key={log.id} className="hover:bg-cream-100 transition-colors">
-                      <td className="px-6 py-3.5 font-mono text-warm-gray-500 whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-[#FAF8F2]/60 transition-colors">
+                      <td className="px-6 py-3.5 font-mono text-[#8C95A3] whitespace-nowrap">
                         {formatDateTime(log.createdAt)}
                       </td>
-                      <td className="px-6 py-3.5 font-medium text-text-dark whitespace-nowrap">
+                      <td className="px-6 py-3.5 font-medium text-[#1C2530] whitespace-nowrap">
                         {log.userName}
                       </td>
                       <td className="px-6 py-3.5 whitespace-nowrap">
                         <Badge variant={badgeVariant}>{log.action}</Badge>
                       </td>
-                      <td className="px-6 py-3.5 font-mono text-warm-gray-500 whitespace-nowrap">
+                      <td className="px-6 py-3.5 font-mono text-[#8C95A3] whitespace-nowrap">
                         {log.entity} ({log.entityId})
                       </td>
-                      <td className="px-6 py-3.5 text-warm-gray-700 max-w-xs truncate">
+                      <td className="px-6 py-3.5 text-[#1C2530] max-w-xs truncate">
                         {log.description}
                       </td>
                     </tr>
@@ -324,7 +329,7 @@ export default function AdminDashboard() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-warm-gray-400">
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#8C95A3]">
                     Chưa có nhật ký hoạt động nào.
                   </td>
                 </tr>

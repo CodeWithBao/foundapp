@@ -4,17 +4,26 @@ import apiClient, { withFallback } from './apiClient';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
+export const normalizeNotification = notification => ({
+  ...notification,
+  userId: notification.userId ?? notification.user_id,
+  relatedId: notification.relatedId ?? notification.related_id,
+  read: notification.read ?? notification.is_read ?? false,
+  createdAt: notification.createdAt || notification.created_at,
+});
+
 const notificationService = {
   async getByUser(userId) {
     return withFallback(
       async () => {
         const res = await apiClient.get('/notifications');
-        return Array.isArray(res) ? res : res.notifications || [];
+        const list = Array.isArray(res) ? res : res.notifications || [];
+        return list.map(normalizeNotification);
       },
       async () => {
         await delay(200);
         const notifications = storageService.get(STORAGE_KEYS.NOTIFICATIONS) || [];
-        return notifications.filter(n => n.userId === userId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return notifications.filter(n => String(n.userId) === String(userId)).map(normalizeNotification).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       }
     );
   },
@@ -77,3 +86,4 @@ const notificationService = {
 };
 
 export default notificationService;
+

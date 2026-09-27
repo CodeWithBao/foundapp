@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Cú DNTU cảnh báo">
+  <ellipse cx="120" cy="216" rx="70" ry="11" fill="#7c2d12" opacity=".14"/>
+  <path d="M62 83 52 33l43 27M178 83l10-50-43 27" fill="#fb923c" stroke="#9a3412" stroke-width="6"/>
+  <ellipse cx="120" cy="134" rx="70" ry="82" fill="#fb923c" stroke="#9a3412" stroke-width="6"/>
+  <ellipse cx="120" cy="159" rx="44" ry="50" fill="#ffedd5"/>
+  <circle cx="89" cy="106" r="29" fill="#fff"/><circle cx="151" cy="106" r="29" fill="#fff"/>
+  <circle cx="89" cy="106" r="11" fill="#431407"/><circle cx="151" cy="106" r="11" fill="#431407"/>
+  <path d="M70 75l29 11M170 75l-29 11" stroke="#9a3412" stroke-width="7" stroke-linecap="round"/>
+  <path d="m120 120-14 11 14 10 14-10z" fill="#fde047"/><path d="M101 168h38" stroke="#9a3412" stroke-width="5" stroke-linecap="round"/>
+  <path d="m199 38 29 53h-58z" fill="#fef3c7" stroke="#eab308" stroke-width="5"/><text x="199" y="79" text-anchor="middle" font-family="Arial" font-size="34" font-weight="900" fill="#b45309">!</text>
+</svg>
+

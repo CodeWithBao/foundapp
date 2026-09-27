@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0B5CAD">
+  <title>DNTU Owl Chatbot — Lost & Found</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="control-panel" aria-label="Bảng điều khiển asset">
+      <div class="eyebrow">DNTU · LOST &amp; FOUND</div>
+      <h1>Cú trợ lý <span>hiền, học thức</span> và hoạt động được.</h1>
+      <p class="lead">Chọn vai trò hoặc trạng thái để xem WebP động. Demo này chạy offline, không cần framework.</p>
+
+      <div class="control-block">
+        <div class="control-title"><span>Vai trò</span><b id="role-label">Guest</b></div>
+        <div class="role-grid" id="role-grid">
+          <button class="role active" data-role="guest">Guest<small>Tìm cơ bản</small></button>
+          <button class="role" data-role="user">User<small>Sinh viên</small></button>
+          <button class="role" data-role="staff">Staff<small>Duyệt hồ sơ</small></button>
+          <button class="role" data-role="admin">Admin<small>Quản trị</small></button>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-title"><span>16 trạng thái</span><b id="state-label">idle</b></div>
+        <div class="state-grid" id="state-grid">
+          <button class="state active" data-state="idle">idle</button><button class="state" data-state="welcome">welcome</button>
+          <button class="state" data-state="thinking">thinking</button><button class="state" data-state="typing">typing</button>
+          <button class="state" data-state="searching">searching</button><button class="state" data-state="found">found</button>
+          <button class="state" data-state="not_found">not_found</button><button class="state" data-state="success">success</button>
+          <button class="state" data-state="warning">warning</button><button class="state" data-state="error">error</button>
+          <button class="state" data-state="sleeping">sleeping</button><button class="state" data-state="login">login</button>
+          <button class="state" data-state="register">register</button><button class="state" data-state="user">user</button>
+          <button class="state" data-state="staff">staff</button><button class="state" data-state="admin">admin</button>
+        </div>
+      </div>
+
+      <div class="sound-row"><button id="toggle-sound" class="plain-button">🔊 Âm thanh bật</button><button id="enable-notifications" class="plain-button">🔔 Bật thông báo</button><button id="simulate-match" class="plain-button">Thử cảnh báo trùng khớp</button><button id="simulate-sleep" class="plain-button">Thử cho cú ngủ</button><button id="show-assets" class="plain-button">Xem danh mục</button></div>
+    </section>
+
+    <section class="chat" id="chat-widget" aria-label="Demo chatbot tìm đồ thất lạc">
+      <header class="chat-header">
+        <div class="avatar-wrap"><img id="avatar" src="icons/ui/avatar-owl.png" alt="Avatar Cú DNTU"><span></span></div>
+        <div class="chat-title"><strong id="chat-title">Trợ lý Cú DNTU</strong><small id="presence">Guest · Đang hoạt động</small></div>
+        <button class="header-icon notification-icon" id="notification-button" aria-label="Thông báo"><span>🔔</span><b id="notification-count">0</b></button>
+        <button class="header-icon" id="minimize-chat" aria-label="Thu nhỏ"><img src="icons/ui/minimize.svg" alt=""></button>
+        <button class="header-icon" id="close-chat" aria-label="Ẩn chatbot"><img src="icons/ui/close.svg" alt=""></button>
+      </header>
+
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="mascot-stage"><span class="state-pill" id="state-pill">IDLE</span><img id="mascot" src="mascot/animated/idle.webp" alt="Cú DNTU đang đứng chờ"></div>
+        <div id="home-menu">
+          <div class="bubble bot">Chào bạn! Mình là Cú DNTU. Bạn cần tìm đồ bị mất hay báo đồ vừa nhặt được?</div>
+          <div class="quick-actions">
+            <button data-action="lost"><img src="icons/lostfound/lost-item.svg" alt="">Tôi bị mất đồ</button>
+            <button data-action="found"><img src="icons/lostfound/found-item.svg" alt="">Tôi nhặt được đồ</button>
+            <button data-action="search"><img src="icons/lostfound/search.svg" alt="">Tra cứu hồ sơ</button>
+          </div>
+          <div class="human-support">
+            <button id="human-chat-button"><span class="support-icon">🎧</span><span><strong>Chat với nhân viên</strong><small>Giải quyết xác minh, khiếu nại hoặc yêu cầu cần hỗ trợ trực tiếp</small></span><b>›</b></button>
+          </div>
+          <div class="item-card" id="sample-card">
+            <img src="items/sample/wallet.webp" alt="Ví da màu đen">
+            <div><div class="item-top"><strong>Ví da màu đen</strong><span id="item-status">Đang tìm</span></div><p>📍 Thư viện DNTU · 20/09/2026</p><small>Mã hồ sơ: LF-0001</small><div class="item-actions"><button id="watch-case">Theo dõi hồ sơ</button><button id="claim-button">Xem và xác minh</button></div></div>
+          </div>
+        </div>
+        <section class="flow-view" id="flow-view" hidden>
+          <header class="flow-header"><button id="flow-back" aria-label="Quay lại menu">←</button><div><strong id="flow-title">Hỗ trợ</strong><small id="flow-subtitle">Hoàn thành hoặc quay lại menu</small></div></header>
+          <div id="flow-messages"></div>
+        </section>
+      </div>
+
+      <div class="typing-indicator" id="typing-indicator" hidden><span></span><span></span><span></span><small>Cú DNTU đang nhập</small></div>
+      <footer class="composer">
+        <button class="composer-icon" aria-label="Đính kèm ảnh"><img src="icons/ui/attach.svg" alt=""></button>
+        <input id="message-input" autocomplete="off" placeholder="Nhập nội dung..." aria-label="Nội dung tin nhắn">
+        <button class="composer-icon" aria-label="Ghi âm"><img src="icons/ui/microphone.svg" alt=""></button>
+        <button id="send-button" class="send-button" aria-label="Gửi tin nhắn"><img src="icons/ui/send.svg" alt=""></button>
+      </footer>
+      <div class="feedback">Câu trả lời có hữu ích? <button aria-label="Hữu ích">👍</button><button aria-label="Không hữu ích">👎</button></div>
+    </section>
+  </main>
+
+  <button id="chat-launcher" class="chat-launcher" aria-label="Mở trợ lý Cú DNTU. Có thể kéo để di chuyển." title="Kéo để di chuyển · Bấm để mở" hidden>
+    <img src="mascot/animated/welcome.webp" alt="Cú DNTU">
+    <span class="launcher-unread" id="launcher-unread"></span>
+  </button>
+  <div class="toast-region" id="toast-region" aria-live="assertive" aria-atomic="true"></div>
+
+  <dialog id="verify-dialog"><button class="dialog-close" id="dialog-close" aria-label="Đóng">×</button><img src="icons/lostfound/qr-verify.svg" alt="QR xác minh LF-0001"><h2>Xác minh nhận lại đồ</h2><p>Đưa mã <strong>LF-0001</strong> cho nhân viên phụ trách. Không chia sẻ thông tin cá nhân trong chat công khai.</p><button id="confirm-claim" class="primary-button">Xác nhận đã nhận</button></dialog>
+  <dialog id="asset-dialog" class="asset-dialog"><button class="dialog-close" id="asset-close" aria-label="Đóng">×</button><h2>13 danh mục đồ vật</h2><div class="category-grid" id="category-grid"></div></dialog>
+  <script src="js/demo.js"></script>
+</body>
+</html>

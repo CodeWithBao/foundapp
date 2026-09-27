@@ -12,7 +12,7 @@ const Input = forwardRef(function Input({ label, error, icon: Icon, className = 
         )}
         <input
           ref={ref}
-          className={`input-field ${Icon ? 'pl-10' : ''} ${error ? 'border-dntu-danger focus:ring-dntu-danger focus:border-dntu-danger' : ''}`}
+          className={`input-field bg-slate-50 border-slate-200 rounded-lg ${Icon ? 'pl-10' : ''} ${error ? 'border-dntu-danger focus:ring-dntu-danger focus:border-dntu-danger' : ''}`}
           {...props}
         />
       </div>

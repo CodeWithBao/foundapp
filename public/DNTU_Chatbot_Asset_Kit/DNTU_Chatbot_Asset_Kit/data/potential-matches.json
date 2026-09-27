@@ -1,0 +1,13 @@
+[
+  {
+    "matchId": "MATCH-LF-0001-FOUND-0007",
+    "caseId": "LF-0001",
+    "candidateItemId": "FOUND-0007",
+    "itemName": "Ví da màu đen",
+    "candidateTitle": "Ví da màu đen nhặt tại thư viện",
+    "location": "Thư viện DNTU",
+    "matchScore": 70,
+    "createdAt": "2026-09-21T08:50:00+07:00",
+    "status": "pending_review"
+  }
+]

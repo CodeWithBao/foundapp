@@ -76,3 +76,9 @@ postgres-data/
 *.apk
 exports/
 private/
+
+# Local custom folders and references
+tailieu/
+tailieu
+.reference-site.*
+UniFind_DNTU_FINAL_SELECTED_DESIGNS/

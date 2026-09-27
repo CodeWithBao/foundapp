@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, MapPin, FileText, CheckSquare, Send } from 'lucide-react';
 import ImageUploadCamera from '../../components/common/ImageUploadCamera';
@@ -41,6 +41,8 @@ export default function ReportLostPage() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const submitRequestId = useRef(null);
 
   const validateStep = (step) => {
     const e = {};
@@ -67,7 +69,12 @@ export default function ReportLostPage() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    // Chặn double-click trước khi bắt đầu request; request id giúp backend
+    // nhận diện cùng một lần gửi nếu client retry hoặc có nhiều tab/request.
+    if (submittingRef.current) return;
     if (!validateStep(4)) return;
+    submitRequestId.current ||= crypto.randomUUID();
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       await itemService.createItem({
@@ -84,10 +91,13 @@ export default function ReportLostPage() {
         status: 'LOST',
         userId: user.id,
         userName: user.name,
+        clientRequestId: submitRequestId.current,
       });
       toast.success('Gửi báo cáo mất đồ thành công!');
       navigate('/my-posts');
     } catch (err) {
+      submittingRef.current = false;
+      submitRequestId.current = null;
       toast.error(err.message || 'Có lỗi xảy ra khi tạo báo cáo');
     } finally {
       setSubmitting(false);
@@ -109,12 +119,12 @@ export default function ReportLostPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-warm-gray-600 hover:text-burgundy-700 mb-4 transition-colors"
+        className="inline-flex items-center gap-2 text-xs font-mono font-medium text-[#5B6574] hover:text-[#AD222B] mb-5 transition-colors group"
       >
-        <ArrowLeft className="w-4 h-4" /> Quay lại
+        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" /> Quay lại trang trước
       </button>
 
       <PageHeader
@@ -122,45 +132,49 @@ export default function ReportLostPage() {
         subtitle="Cung cấp chi tiết thông tin giúp hệ thống tự động đối chiếu với danh sách nhặt được."
       />
 
-      <div className="flex flex-col md:flex-row gap-8 mt-6">
+      <div className="flex flex-col lg:flex-row gap-8 mt-8">
         {/* Left: Progress Steps */}
-        <div className="w-full md:w-64 shrink-0">
-          <div className="bg-white rounded-card border border-cream-300 p-6 shadow-card sticky top-24">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-burgundy-700 mb-5">
-              Tiến trình báo cáo
-            </h3>
-            <div className="space-y-6">
+        <div className="w-full lg:w-72 shrink-0">
+          <div className="surface p-6 sticky top-24 space-y-5">
+            <div>
+              <span className="label-micro text-[#AD222B]">Quy trình 4 bước</span>
+              <h3 className="font-serif font-semibold text-lg text-[#1C2530] mt-0.5">
+                Tiến trình báo cáo
+              </h3>
+            </div>
+
+            <div className="space-y-4 pt-2">
               {STEPS.map((step, idx) => {
                 const Icon = step.icon;
                 const isActive = currentStep === step.id;
                 const isCompleted = currentStep > step.id;
                 return (
-                  <div key={step.id} className="flex items-start gap-3">
+                  <div key={step.id} className="relative flex items-start gap-3.5">
                     <div className="flex flex-col items-center">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold transition-all duration-200 ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-mono font-bold transition-all duration-200 ${
                           isActive
-                            ? 'bg-burgundy-600 text-white ring-4 ring-burgundy-100 shadow-sm'
+                            ? 'bg-[#AD222B] text-white ring-4 ring-[#AD222B]/15 shadow-sm'
                             : isCompleted
-                            ? 'bg-burgundy-700 text-white'
-                            : 'bg-cream-200 text-warm-gray-500 border border-cream-300'
+                            ? 'bg-[#1C2530] text-[#FAF8F2]'
+                            : 'bg-[#F2EFE9] text-[#8C95A3] border border-[#E0E2E6]'
                         }`}
                       >
-                        {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                        {isCompleted ? <CheckCircle2 className="w-4 h-4 text-[#E4C87F]" /> : <Icon className="w-4 h-4" />}
                       </div>
                       {idx !== STEPS.length - 1 && (
                         <div
-                          className={`w-0.5 h-8 my-1 transition-colors ${
-                            isCompleted ? 'bg-burgundy-600' : 'bg-cream-200'
+                          className={`w-0.5 h-7 my-1 transition-colors ${
+                            isCompleted ? 'bg-[#1C2530]' : 'bg-[#E0E2E6]'
                           }`}
                         />
                       )}
                     </div>
-                    <div className="pt-1">
-                      <p className={`text-xs uppercase font-bold tracking-wider ${isActive ? 'text-burgundy-700' : 'text-warm-gray-400'}`}>
+                    <div className="pt-0.5">
+                      <p className={`text-[11px] font-mono uppercase tracking-wider ${isActive ? 'text-[#AD222B] font-bold' : 'text-[#8C95A3]'}`}>
                         Bước {step.id}
                       </p>
-                      <p className={`text-sm font-semibold ${isActive || isCompleted ? 'text-text-dark' : 'text-warm-gray-500'}`}>
+                      <p className={`text-sm font-medium ${isActive ? 'text-[#1C2530] font-semibold' : isCompleted ? 'text-[#1C2530]' : 'text-[#8C95A3]'}`}>
                         {step.title}
                       </p>
                     </div>
@@ -173,14 +187,15 @@ export default function ReportLostPage() {
 
         {/* Right: Step Content Form */}
         <div className="flex-1">
-          <div className="bg-white rounded-card border border-cream-300 shadow-card overflow-hidden">
+          <div className="surface overflow-hidden">
             <div className="p-6 sm:p-8">
               {/* Step 1: Thông tin cơ bản */}
               {currentStep === 1 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
-                  <div className="border-b border-cream-200 pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-burgundy-900">Bước 1: Thông tin cơ bản</h3>
-                    <p className="text-xs text-warm-gray-500">Nhập tên vật phẩm, thời gian và địa điểm bị mất</p>
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-[#E0E2E6] pb-4">
+                    <span className="label-micro text-[#AD222B]">Bước 1 / 4</span>
+                    <h3 className="font-serif font-semibold text-xl text-[#1C2530] mt-0.5">Thông tin cơ bản</h3>
+                    <p className="text-xs text-[#5B6574] mt-0.5">Nhập tên vật phẩm, thời gian và địa điểm bị mất</p>
                   </div>
 
                   <Input
@@ -221,10 +236,11 @@ export default function ReportLostPage() {
 
               {/* Step 2: Mô tả chi tiết */}
               {currentStep === 2 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
-                  <div className="border-b border-cream-200 pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-burgundy-900">Bước 2: Mô tả chi tiết</h3>
-                    <p className="text-xs text-warm-gray-500">Các đặc điểm giúp phân biệt chính xác vật phẩm của bạn</p>
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-[#E0E2E6] pb-4">
+                    <span className="label-micro text-[#AD222B]">Bước 2 / 4</span>
+                    <h3 className="font-serif font-semibold text-xl text-[#1C2530] mt-0.5">Mô tả chi tiết</h3>
+                    <p className="text-xs text-[#5B6574] mt-0.5">Các đặc điểm giúp phân biệt chính xác vật phẩm của bạn</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -262,10 +278,11 @@ export default function ReportLostPage() {
 
               {/* Step 3: Hình ảnh */}
               {currentStep === 3 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
-                  <div className="border-b border-cream-200 pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-burgundy-900">Bước 3: Hình ảnh minh họa (Tùy chọn)</h3>
-                    <p className="text-xs text-warm-gray-500">Tải ảnh mẫu hoặc ảnh cũ của món đồ để tăng tỉ lệ nhận diện</p>
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-[#E0E2E6] pb-4">
+                    <span className="label-micro text-[#AD222B]">Bước 3 / 4</span>
+                    <h3 className="font-serif font-semibold text-xl text-[#1C2530] mt-0.5">Hình ảnh minh họa</h3>
+                    <p className="text-xs text-[#5B6574] mt-0.5">Tải ảnh mẫu hoặc ảnh cũ của món đồ để tăng tỉ lệ nhận diện</p>
                   </div>
 
                   <ImageUploadCamera
@@ -278,74 +295,75 @@ export default function ReportLostPage() {
 
               {/* Step 4: Xác nhận & Gửi */}
               {currentStep === 4 && (
-                <div className="space-y-6 animate-in fade-in duration-200">
-                  <div className="border-b border-cream-200 pb-4 mb-2">
-                    <h3 className="text-lg font-bold text-burgundy-900">Bước 4: Xác nhận & Gửi báo cáo</h3>
-                    <p className="text-xs text-warm-gray-500">Kiểm tra lại toàn bộ thông tin trước khi gửi lên hệ thống</p>
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-[#E0E2E6] pb-4">
+                    <span className="label-micro text-[#AD222B]">Bước 4 / 4</span>
+                    <h3 className="font-serif font-semibold text-xl text-[#1C2530] mt-0.5">Xác nhận & Gửi báo cáo</h3>
+                    <p className="text-xs text-[#5B6574] mt-0.5">Kiểm tra lại toàn bộ thông tin trước khi gửi lên hệ thống</p>
                   </div>
 
-                  <div className="bg-cream-50 rounded-card p-5 border border-cream-300 text-sm">
+                  <div className="bg-[#FAF8F2] rounded-xl p-5 border border-[#E0E2E6] text-sm">
                     <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                       <div>
-                        <dt className="text-xs text-warm-gray-500 uppercase font-medium">Tên vật phẩm</dt>
-                        <dd className="font-semibold text-text-dark mt-0.5">{form.title}</dd>
+                        <dt className="label-micro text-[#8C95A3]">Tên vật phẩm</dt>
+                        <dd className="font-semibold text-[#1C2530] mt-0.5">{form.title}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-warm-gray-500 uppercase font-medium">Danh mục</dt>
-                        <dd className="font-semibold text-text-dark mt-0.5">{form.category}</dd>
+                        <dt className="label-micro text-[#8C95A3]">Danh mục</dt>
+                        <dd className="font-semibold text-[#1C2530] mt-0.5">{form.category}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-warm-gray-500 uppercase font-medium">Ngày mất</dt>
-                        <dd className="font-semibold text-text-dark mt-0.5">{form.date}</dd>
+                        <dt className="label-micro text-[#8C95A3]">Ngày mất</dt>
+                        <dd className="font-mono text-xs font-semibold text-[#1C2530] mt-0.5">{form.date}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-warm-gray-500 uppercase font-medium">Địa điểm mất</dt>
-                        <dd className="font-semibold text-text-dark mt-0.5">{form.location}</dd>
+                        <dt className="label-micro text-[#8C95A3]">Địa điểm mất</dt>
+                        <dd className="font-semibold text-[#1C2530] mt-0.5">{form.location}</dd>
                       </div>
                       {form.color && (
                         <div>
-                          <dt className="text-xs text-warm-gray-500 uppercase font-medium">Màu sắc</dt>
-                          <dd className="font-semibold text-text-dark mt-0.5">{form.color}</dd>
+                          <dt className="label-micro text-[#8C95A3]">Màu sắc</dt>
+                          <dd className="font-semibold text-[#1C2530] mt-0.5">{form.color}</dd>
                         </div>
                       )}
                       {form.brand && (
                         <div>
-                          <dt className="text-xs text-warm-gray-500 uppercase font-medium">Thương hiệu</dt>
-                          <dd className="font-semibold text-text-dark mt-0.5">{form.brand}</dd>
+                          <dt className="label-micro text-[#8C95A3]">Thương hiệu</dt>
+                          <dd className="font-semibold text-[#1C2530] mt-0.5">{form.brand}</dd>
                         </div>
                       )}
-                      <div className="sm:col-span-2 border-t border-cream-200 pt-3">
-                        <dt className="text-xs text-warm-gray-500 uppercase font-medium">Đặc điểm nhận dạng</dt>
-                        <dd className="font-medium text-text-dark mt-0.5">{form.feature}</dd>
+                      <div className="sm:col-span-2 border-t border-[#E0E2E6] pt-3">
+                        <dt className="label-micro text-[#8C95A3]">Đặc điểm nhận dạng</dt>
+                        <dd className="font-medium text-[#1C2530] mt-0.5">{form.feature}</dd>
                       </div>
                       {form.description && (
                         <div className="sm:col-span-2">
-                          <dt className="text-xs text-warm-gray-500 uppercase font-medium">Mô tả hoàn cảnh</dt>
-                          <dd className="text-warm-gray-600 mt-0.5">{form.description}</dd>
+                          <dt className="label-micro text-[#8C95A3]">Mô tả hoàn cảnh</dt>
+                          <dd className="text-[#5B6574] mt-0.5">{form.description}</dd>
                         </div>
                       )}
                     </dl>
                   </div>
 
-                  <label className="flex items-start gap-3 p-4 border border-cream-300 rounded-card bg-cream-50/50 cursor-pointer hover:bg-cream-100 transition-colors">
+                  <label className="flex items-start gap-3 p-4 border border-[#E0E2E6] rounded-xl bg-[#FAF8F2]/60 cursor-pointer hover:bg-[#FAF8F2] transition-colors">
                     <input
                       type="checkbox"
-                      className="mt-1 w-4 h-4 text-burgundy-600 rounded border-cream-300 focus:ring-burgundy-500"
+                      className="mt-1 w-4 h-4 text-[#AD222B] rounded border-[#E0E2E6] focus:ring-[#AD222B]"
                       checked={form.confirmTruth}
                       onChange={e => update('confirmTruth', e.target.checked)}
                     />
                     <div className="flex-1 text-xs">
-                      <span className="font-bold text-text-dark block text-sm">Tôi cam kết thông tin đã khai báo là hoàn toàn trung thực</span>
-                      <span className="text-warm-gray-500">Mọi hành vi khai báo gian dối sẽ bị xử lý theo quy định của Nhà trường DNTU.</span>
+                      <span className="font-semibold text-[#1C2530] block text-sm">Tôi cam kết thông tin đã khai báo là hoàn toàn trung thực</span>
+                      <span className="text-[#5B6574]">Mọi hành vi khai báo gian dối sẽ bị xử lý theo quy định của Nhà trường DNTU.</span>
                     </div>
                   </label>
-                  {errors.confirmTruth && <p className="text-xs text-dntu-danger font-medium">{errors.confirmTruth}</p>}
+                  {errors.confirmTruth && <p className="text-xs text-red-600 font-medium">{errors.confirmTruth}</p>}
                 </div>
               )}
             </div>
 
             {/* Navigation buttons */}
-            <div className="px-6 py-4 bg-cream-100 border-t border-cream-300 flex justify-between items-center">
+            <div className="px-6 sm:px-8 py-4 bg-[#F2EFE9] border-t border-[#E0E2E6] flex justify-between items-center">
               {currentStep > 1 ? (
                 <Button variant="secondary" onClick={handlePrev} size="sm">
                   Quay lại

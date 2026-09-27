@@ -74,55 +74,57 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-cream-50">
+    <div className="min-h-screen flex bg-[#FAF8F2]">
       {/* LEFT COLUMN - Visual Panel with DNTU Campus background */}
       <div
-        className="hidden lg:flex lg:w-1/2 text-white p-12 flex-col justify-between relative overflow-hidden"
+        className="hidden lg:flex lg:w-1/2 text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to bottom right, rgba(92, 13, 17, 0.92), rgba(116, 18, 22, 0.88), rgba(152, 27, 30, 0.85)), url(/DNTU_Web_Asset_Kit/backgrounds/dntu-campus-clean-1280.webp)`,
+          backgroundImage: `linear-gradient(145deg, rgba(20, 26, 31, 0.94) 0%, rgba(138, 26, 34, 0.88) 55%, rgba(173, 34, 43, 0.82) 100%), url(/DNTU_Web_Asset_Kit/asset/campus_colorful_building.jpg)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FAF8F2_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
         
         <div className="relative z-10">
           <div className="mb-12">
             <DNTULogo size="lg" light={true} />
           </div>
           
-          <div className="mt-12 space-y-4">
-            <span className="inline-block px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-cream-100 text-xs font-medium tracking-wide border border-white/10">
+          <div className="mt-14 space-y-6 max-w-lg">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#E4C87F] text-[11px] font-mono font-semibold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E4C87F] animate-ping" />
               Cộng Đồng Sinh Viên DNTU
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-serif font-bold leading-tight text-white drop-shadow-sm">
-              Học tập - Trải nghiệm -<br />
-              <span className="italic text-[#C9A458]">Trưởng thành cùng DNTU</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-serif font-semibold leading-[1.15] text-white tracking-tight">
+              Học tập · Trải nghiệm<br />
+              <span className="italic text-[#E4C87F] font-normal">Trưởng thành cùng DNTU</span>
             </h2>
-            <p className="text-cream-100/90 text-base max-w-md pt-2">
+            <p className="text-white/85 text-sm lg:text-base leading-relaxed border-l-2 border-[#B9882E] pl-4 font-normal">
               Tham gia UniFind DNTU để xây dựng môi trường học tập văn minh, hỗ trợ bạn bè tìm lại tài sản và lan tỏa những thông điệp tích cực.
             </p>
           </div>
         </div>
 
-        <div className="relative z-10 border-t border-white/15 pt-6 text-cream-200/70 text-xs flex justify-between items-center">
-          <p>© 2026 UniFind DNTU. All rights reserved.</p>
-          <p className="font-serif italic text-[#C9A458]">Trường Đại học Công nghệ Đồng Nai</p>
+        <div className="relative z-10 border-t border-white/15 pt-6 text-white/70 text-xs flex justify-between items-center font-mono">
+          <p>© 2026 UniFind DNTU · All rights reserved</p>
+          <p className="font-serif italic text-[#E4C87F]">Trường Đại học Công nghệ Đồng Nai</p>
         </div>
       </div>
 
       {/* RIGHT COLUMN - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 lg:w-1/2">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 lg:p-16">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center sm:text-left">
-            <div className="flex justify-center sm:justify-start mb-4">
+            <div className="flex justify-center sm:justify-start mb-5">
               <DNTULogo size="lg" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">Tạo tài khoản</h1>
-            <p className="text-warm-gray-500 text-sm mt-1">Tham gia cộng đồng UniFind DNTU</p>
+            <span className="label-micro text-[#AD222B]">Đăng ký thành viên</span>
+            <h1 className="page-title text-3xl font-serif text-[#1C2530] mt-1">Tạo tài khoản</h1>
+            <p className="text-[#5B6574] text-sm mt-1.5">Tham gia cộng đồng UniFind DNTU ngay hôm nay</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 surface p-6 sm:p-7">
             <Input 
               label="Họ và tên *" 
               value={form.name} 
@@ -175,18 +177,18 @@ export default function RegisterPage() {
 
             <div className="pt-2">
               <label 
-                className="flex items-start gap-2.5 cursor-pointer text-sm text-warm-gray-600 select-none"
+                className="flex items-start gap-2.5 cursor-pointer text-xs sm:text-sm text-[#5B6574] select-none"
                 onClick={() => setField('agreeTerms', !form.agreeTerms)}
               >
-                <button type="button" className="mt-0.5 shrink-0 text-[#AB1F24] focus:outline-none">
+                <button type="button" className="mt-0.5 shrink-0 text-[#AD222B] focus:outline-none">
                   {form.agreeTerms ? (
-                    <CheckSquare className="w-4 h-4 text-[#AB1F24]" />
+                    <CheckSquare className="w-4 h-4 text-[#AD222B]" />
                   ) : (
-                    <Square className="w-4 h-4 text-warm-gray-400" />
+                    <Square className="w-4 h-4 text-[#8C95A3]" />
                   )}
                 </button>
                 <span>
-                  Tôi đồng ý với <a href="#" onClick={e => { e.stopPropagation(); e.preventDefault(); toast.info('Điều khoản sử dụng của UniFind DNTU'); }} className="text-[#AB1F24] font-medium hover:underline">Điều khoản sử dụng</a> và <a href="#" onClick={e => { e.stopPropagation(); e.preventDefault(); toast.info('Chính sách bảo mật của UniFind DNTU'); }} className="text-[#AB1F24] font-medium hover:underline">Chính sách bảo mật</a>.
+                  Tôi đồng ý với <a href="#" onClick={e => { e.stopPropagation(); e.preventDefault(); toast.info('Điều khoản sử dụng của UniFind DNTU'); }} className="text-[#AD222B] font-medium hover:underline">Điều khoản sử dụng</a> và <a href="#" onClick={e => { e.stopPropagation(); e.preventDefault(); toast.info('Chính sách bảo mật của UniFind DNTU'); }} className="text-[#AD222B] font-medium hover:underline">Chính sách bảo mật</a>.
                 </span>
               </label>
               {errors.agreeTerms && (
@@ -197,15 +199,15 @@ export default function RegisterPage() {
             <Button 
               type="submit" 
               loading={loading} 
-              className="w-full bg-[#AB1F24] hover:bg-[#74131A] text-white py-3 rounded-xl font-medium shadow-sm transition-all mt-2"
+              className="btn-primary w-full py-3 mt-2"
             >
               Tạo tài khoản DNTU
             </Button>
           </form>
 
-          <p className="text-center text-sm text-warm-gray-500 pt-2">
+          <p className="text-center text-sm text-[#5B6574]">
             Đã có tài khoản?{' '}
-            <Link to="/register" onClick={(e) => { e.preventDefault(); navigate('/login'); }} className="text-[#AB1F24] hover:text-[#74131A] font-semibold underline underline-offset-2">
+            <Link to="/login" className="text-[#AD222B] hover:text-[#8A1A22] font-semibold underline underline-offset-4">
               Đăng nhập ngay
             </Link>
           </p>

@@ -15,25 +15,26 @@ export default function Pagination({ current, total, perPage, onPageChange }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-6">
+    <div className="flex items-center justify-center gap-1.5 mt-8">
       <button
         onClick={() => onPageChange(current - 1)}
         disabled={current <= 1}
-        className="p-2 rounded-lg text-warm-gray-500 hover:bg-cream-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-xl text-ink-soft bg-white border border-hairline hover:bg-paper-panel disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+        aria-label="Previous Page"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`dots-${i}`} className="px-2 text-warm-gray-400 text-sm">...</span>
+          <span key={`dots-${i}`} className="px-2 text-ink-muted text-sm font-mono">...</span>
         ) : (
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-colors ${
+            className={`min-w-[38px] h-9 rounded-xl text-sm font-semibold transition-all font-mono tabular-nums shadow-sm ${
               p === current
-                ? 'bg-burgundy-700 text-white'
-                : 'text-warm-gray-500 hover:bg-cream-200'
+                ? 'bg-accent text-white shadow-sm'
+                : 'bg-white text-ink-soft border border-hairline hover:bg-paper-panel hover:text-ink'
             }`}
           >
             {p}
@@ -43,7 +44,8 @@ export default function Pagination({ current, total, perPage, onPageChange }) {
       <button
         onClick={() => onPageChange(current + 1)}
         disabled={current >= totalPages}
-        className="p-2 rounded-lg text-warm-gray-500 hover:bg-cream-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-xl text-ink-soft bg-white border border-hairline hover:bg-paper-panel disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+        aria-label="Next Page"
       >
         <ChevronRight className="w-4 h-4" />
       </button>

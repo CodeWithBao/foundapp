@@ -111,21 +111,22 @@ export default function MyPostsPage() {
   const filtered = items.filter(i => i.type === activeTab);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-burgundy-900">Quản lý bài đăng của tôi</h1>
-          <p className="text-sm text-warm-gray-500 mt-1">Theo dõi tiến độ, chỉnh sửa hoặc đóng các tin báo đồ bạn đã đăng.</p>
+          <span className="label-micro text-[#AD222B]">Hồ sơ cá nhân</span>
+          <h1 className="page-title text-3xl font-serif text-[#1C2530] mt-0.5">Quản lý bài đăng của tôi</h1>
+          <p className="text-sm text-[#5B6574] mt-1">Theo dõi tiến độ, chỉnh sửa hoặc hoàn tất các tin báo đồ bạn đã đăng.</p>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/report-lost">
-            <Button size="sm" className="btn-primary shadow-sm">
-              <Plus className="w-4 h-4 mr-1" /> Báo mất đồ
+            <Button size="sm" className="btn-primary shadow-xs">
+              <Plus className="w-4 h-4 mr-1.5" /> Báo mất đồ
             </Button>
           </Link>
           <Link to="/report-found">
-            <Button size="sm" variant="secondary" className="shadow-sm">
-              <Plus className="w-4 h-4 mr-1" /> Báo nhặt được
+            <Button size="sm" variant="secondary" className="shadow-xs">
+              <Plus className="w-4 h-4 mr-1.5" /> Báo nhặt được
             </Button>
           </Link>
         </div>
@@ -138,58 +139,60 @@ export default function MyPostsPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="card p-5 animate-pulse h-32" />
+            <div key={i} className="surface p-5 animate-pulse h-28" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState
-          title={`Chưa có bài ${activeTab === 'LOST' ? 'báo mất' : 'báo nhặt được'}`}
-          description="Bạn chưa tạo bài đăng nào trong danh mục này. Hãy tạo bài đăng để cộng đồng DNTU UniFind cùng hỗ trợ."
-        />
+        <div className="surface p-8 text-center">
+          <EmptyState
+            title={`Chưa có bài ${activeTab === 'LOST' ? 'báo mất' : 'báo nhặt được'}`}
+            description="Bạn chưa tạo bài đăng nào trong danh mục này. Hãy tạo bài đăng để cộng đồng DNTU UniFind cùng hỗ trợ."
+          />
+        </div>
       ) : (
         <div className="space-y-4">
           {filtered.map(item => {
             const isClosed = ['RETURNED', 'CLOSED'].includes(item.status);
 
             return (
-              <div key={item.id} className="card p-5 hover:shadow-card-hover transition-all duration-200">
+              <div key={item.id} className="surface p-5 hover:shadow-card-hover transition-all duration-200">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4 min-w-0 flex-1">
                     <img
                       src={item.images?.[0] || 'https://placehold.co/120x120/png?text=Item'}
                       alt={item.title}
-                      className="w-20 h-20 rounded-card object-cover border border-cream-300 shrink-0 bg-white shadow-xs"
+                      className="w-18 h-18 sm:w-20 sm:h-20 rounded-xl object-cover border border-[#E0E2E6] shrink-0 bg-[#FAF8F2] shadow-xs"
                       onError={e => { e.target.src = 'https://placehold.co/120x120/png?text=Item'; }}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <StatusBadge status={item.status} />
-                        <span className="text-xs text-warm-gray-400 font-medium">
-                          • Ngày đăng: {formatDate(item.createdAt || item.date)}
+                        <span className="text-[11px] font-mono text-[#8C95A3]">
+                          • {formatDate(item.createdAt || item.date)}
                         </span>
-                        <span className="text-xs text-warm-gray-500 bg-cream-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                          <Eye className="w-3 h-3 text-warm-gray-600" /> {item.views || 0} lượt xem
+                        <span className="text-[11px] font-mono text-[#5B6574] bg-[#FAF8F2] border border-[#E0E2E6] px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Eye className="w-3 h-3 text-[#8C95A3]" /> {item.views || 0}
                         </span>
                       </div>
                       
-                      <Link to={`/items/${item.id}`} className="font-bold text-text-dark hover:text-burgundy-700 text-base truncate block transition-colors">
+                      <Link to={`/items/${item.id}`} className="font-semibold text-[#1C2530] hover:text-[#AD222B] text-base truncate block transition-colors">
                         {item.title}
                       </Link>
 
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-warm-gray-500">
-                        <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5 text-burgundy-600" />{item.category}</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-burgundy-600" />{item.location}</span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-[#5B6574]">
+                        <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5 text-[#AD222B]" />{item.category}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-[#AD222B]" />{item.location}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Actions: Chỉnh sửa, Đóng bài, Xóa, Xem chi tiết */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-cream-200">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-[#E0E2E6]">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleOpenEdit(item)}
-                      className="text-warm-gray-600 hover:text-burgundy-700"
+                      className="text-[#5B6574] hover:text-[#AD222B]"
                     >
                       <Edit3 className="w-4 h-4 mr-1" /> Sửa
                     </Button>
@@ -199,7 +202,7 @@ export default function MyPostsPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setCloseItem(item)}
-                        className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 whitespace-nowrap"
+                        className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 whitespace-nowrap text-xs font-medium"
                       >
                         <CheckCircle2 className="w-4 h-4 mr-1.5" />
                         {item.type === 'LOST' ? 'Đã tìm thấy' : 'Đã trả lại'}
@@ -207,7 +210,7 @@ export default function MyPostsPage() {
                     )}
 
                     <Link to={`/items/${item.id}`}>
-                      <Button size="sm" variant="ghost" className="text-warm-gray-600 hover:text-burgundy-700">
+                      <Button size="sm" variant="ghost" className="text-[#5B6574] hover:text-[#AD222B]">
                         <Eye className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -215,7 +218,7 @@ export default function MyPostsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-dntu-danger hover:bg-red-50"
+                      className="text-red-600 hover:bg-red-50"
                       onClick={() => setDeleteId(item.id)}
                     >
                       <Trash2 className="w-4 h-4" />

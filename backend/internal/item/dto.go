@@ -13,6 +13,7 @@ type CreateItemDTO struct {
 	Color                  string          `json:"color"`
 	Brand                  string          `json:"brand"`
 	DistinctFeatures       string          `json:"distinct_features"`
+	ImageFingerprint       string          `json:"image_fingerprint"`
 	CurrentStorageLocation string          `json:"current_storage_location"`
 	CustodyStatus          string          `json:"custody_status"`
 	Images                 []string        `json:"images"`
@@ -28,6 +29,7 @@ type UpdateItemDTO struct {
 	Color                  string            `json:"color"`
 	Brand                  string            `json:"brand"`
 	DistinctFeatures       string            `json:"distinct_features"`
+	ImageFingerprint       string            `json:"image_fingerprint"`
 	CurrentStorageLocation string            `json:"current_storage_location"`
 	CustodyStatus          string            `json:"custody_status"`
 	Status                 models.ItemStatus `json:"status"`
@@ -39,6 +41,8 @@ type ItemFilterDTO struct {
 	Type       string `form:"type"`
 	CategoryID uint   `form:"category_id"`
 	LocationID uint   `form:"location_id"`
+	Category   string `form:"category"`
+	Location   string `form:"location"`
 	Search     string `form:"search"`
 	UserID     uint   `form:"user_id"`
 	Page       int    `form:"page"`

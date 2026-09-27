@@ -1,0 +1,130 @@
+[
+  {
+    "id": "idle",
+    "label": "Đứng chờ",
+    "file": "mascot/animated/idle.webp",
+    "poster": "mascot/static/idle.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "welcome",
+    "label": "Chào người dùng",
+    "file": "mascot/animated/welcome.webp",
+    "poster": "mascot/static/welcome.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "thinking",
+    "label": "Đang suy nghĩ",
+    "file": "mascot/animated/thinking.webp",
+    "poster": "mascot/static/thinking.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "typing",
+    "label": "Đang trả lời",
+    "file": "mascot/animated/typing.webp",
+    "poster": "mascot/static/typing.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "searching",
+    "label": "Cầm kính lúp tìm đồ",
+    "file": "mascot/animated/searching.webp",
+    "poster": "mascot/static/searching.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "found",
+    "label": "Tìm thấy đồ",
+    "file": "mascot/animated/found.webp",
+    "poster": "mascot/static/found.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "not_found",
+    "label": "Không tìm thấy",
+    "file": "mascot/animated/not_found.webp",
+    "poster": "mascot/static/not_found.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "success",
+    "label": "Thao tác thành công",
+    "file": "mascot/animated/success.webp",
+    "poster": "mascot/static/success.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "warning",
+    "label": "Cảnh báo",
+    "file": "mascot/animated/warning.webp",
+    "poster": "mascot/static/warning.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "error",
+    "label": "Xảy ra lỗi",
+    "file": "mascot/animated/error.webp",
+    "poster": "mascot/static/error.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "sleeping",
+    "label": "Ngủ khi không hoạt động",
+    "file": "mascot/animated/sleeping.webp",
+    "poster": "mascot/static/sleeping.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "login",
+    "label": "Đăng nhập",
+    "file": "mascot/animated/login.webp",
+    "poster": "mascot/static/login.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "register",
+    "label": "Đăng ký",
+    "file": "mascot/animated/register.webp",
+    "poster": "mascot/static/register.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "user",
+    "label": "Chế độ sinh viên",
+    "file": "mascot/animated/user.webp",
+    "poster": "mascot/static/user.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "staff",
+    "label": "Chế độ nhân viên",
+    "file": "mascot/animated/staff.webp",
+    "poster": "mascot/static/staff.png",
+    "fps": 20,
+    "loop": true
+  },
+  {
+    "id": "admin",
+    "label": "Chế độ quản trị",
+    "file": "mascot/animated/admin.webp",
+    "poster": "mascot/static/admin.png",
+    "fps": 20,
+    "loop": true
+  }
+]

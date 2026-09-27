@@ -1,0 +1,39 @@
+{
+  "guest": {
+    "label": "Guest",
+    "permissions": [
+      "search.basic",
+      "auth.login",
+      "auth.register"
+    ]
+  },
+  "user": {
+    "label": "User",
+    "permissions": [
+      "search.full",
+      "report.lost",
+      "report.found",
+      "case.read.own",
+      "case.claim"
+    ]
+  },
+  "staff": {
+    "label": "Staff",
+    "permissions": [
+      "case.review",
+      "case.approve",
+      "handover.confirm",
+      "case.read.all"
+    ]
+  },
+  "admin": {
+    "label": "Admin",
+    "permissions": [
+      "account.manage",
+      "category.manage",
+      "report.view",
+      "history.view",
+      "case.manage"
+    ]
+  }
+}
