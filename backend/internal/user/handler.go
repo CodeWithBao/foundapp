@@ -48,11 +48,14 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Profile updated successfully", updatedUser)
 }
 
-func (h *UserHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *UserHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, requireStaffOrAdmin gin.HandlerFunc) {
 	usersGroup := r.Group("/users")
-	usersGroup.Use(authMiddleware)
 	{
-		usersGroup.GET("", h.GetAllUsers)
-		usersGroup.PUT("/profile", h.UpdateProfile)
+		if requireStaffOrAdmin != nil {
+			usersGroup.GET("", authMiddleware, requireStaffOrAdmin, h.GetAllUsers)
+		} else {
+			usersGroup.GET("", authMiddleware, h.GetAllUsers)
+		}
+		usersGroup.PUT("/profile", authMiddleware, h.UpdateProfile)
 	}
 }

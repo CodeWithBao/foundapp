@@ -41,6 +41,24 @@ func AuthRequired() gin.HandlerFunc {
 	}
 }
 
+// OptionalAuth parses JWT if present, but does not abort if absent or invalid.
+func OptionalAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				if claims, err := jwt.ValidateToken(parts[1]); err == nil {
+					c.Set("user_id", claims.UserID)
+					c.Set("email", claims.Email)
+					c.Set("role", claims.Role)
+				}
+			}
+		}
+		c.Next()
+	}
+}
+
 func RequireRole(roles ...models.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRoleVal, exists := c.Get("role")

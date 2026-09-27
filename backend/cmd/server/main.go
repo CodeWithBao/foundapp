@@ -110,9 +110,13 @@ func main() {
 	requireStaffOrAdmin := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
 	requireAdmin := middleware.RequireRole(models.RoleAdmin)
 
-	authHandler.RegisterRoutes(apiV1, authMiddleware)
-	userHandler.RegisterRoutes(apiV1, authMiddleware)
-	itemHandler.RegisterRoutes(apiV1, authMiddleware)
+	// Rate limiters for security against brute-force & spam
+	authRateLimit := middleware.RateLimitMiddleware(10, 10)
+	createItemRateLimit := middleware.RateLimitMiddleware(20, 20)
+
+	authHandler.RegisterRoutes(apiV1, authMiddleware, authRateLimit)
+	userHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
+	itemHandler.RegisterRoutes(apiV1, authMiddleware, createItemRateLimit, middleware.OptionalAuth())
 	claimHandler.RegisterRoutes(apiV1, authMiddleware, requireStaff)
 	matchingHandler.RegisterRoutes(apiV1, authMiddleware)
 	notifHandler.RegisterRoutes(apiV1, authMiddleware)

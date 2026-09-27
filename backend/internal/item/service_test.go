@@ -63,8 +63,8 @@ func (m *mockItemRepo) FindOppositeTypeItems(itemType models.ItemType) ([]models
 	return []models.Item{}, nil
 }
 
-func (m *mockItemRepo) SaveMatch(match *models.Match) error {
-	return nil
+func (m *mockItemRepo) SaveMatch(match *models.Match) (bool, error) {
+	return true, nil
 }
 
 func TestItemService_CreateItem_Lost(t *testing.T) {
