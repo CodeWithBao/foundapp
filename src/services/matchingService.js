@@ -1,34 +1,14 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
 import apiClient, { withFallback } from './apiClient';
+// 1. Import thuật toán đối soát mới từ file matchingEngine.js của bạn
+import { calculateMatchScore as calculateNewMatchScore } from './matchingEngine.js';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
+// 2. Sử dụng thuật toán mới từ matchingEngine.js
 function calculateMatchScore(lostItem, foundItem) {
-  let score = 0;
-  // Category match +40
-  if (lostItem.category === foundItem.category) score += 40;
-  // Location match +25
-  if (lostItem.location === foundItem.location) score += 25;
-  // Date proximity +20 (within 7 days)
-  const lostDate = new Date(lostItem.date);
-  const foundDate = new Date(foundItem.date);
-  const daysDiff = Math.abs((lostDate - foundDate) / (1000 * 60 * 60 * 24));
-  if (daysDiff <= 1) score += 20;
-  else if (daysDiff <= 3) score += 15;
-  else if (daysDiff <= 7) score += 10;
-  else if (daysDiff <= 14) score += 5;
-  // Title/keyword similarity +15
-  const lostWords = lostItem.title.toLowerCase().split(/\s+/);
-  const foundWords = foundItem.title.toLowerCase().split(/\s+/);
-  const commonWords = lostWords.filter(w => w.length > 2 && foundWords.some(fw => fw.includes(w) || w.includes(fw)));
-  if (commonWords.length > 0) score += Math.min(15, commonWords.length * 5);
-  // Color match bonus
-  if (lostItem.color && foundItem.color && lostItem.color.toLowerCase() === foundItem.color.toLowerCase()) score += 5;
-  // Brand match bonus
-  if (lostItem.brand && foundItem.brand && lostItem.brand.toLowerCase() === foundItem.brand.toLowerCase()) score += 5;
-  
-  return Math.min(100, score);
+  return calculateNewMatchScore(lostItem, foundItem);
 }
 
 const matchingService = {
@@ -48,7 +28,7 @@ const matchingService = {
         userLostItems.forEach(lost => {
           foundItems.forEach(found => {
             const score = calculateMatchScore(lost, found);
-            if (score >= 60) {
+            if (score >= 40) {
               matches.push({ lostItem: lost, foundItem: found, score });
             }
           });
@@ -77,7 +57,7 @@ const matchingService = {
         
         return candidates
           .map(c => ({ item: c, score: calculateMatchScore(item.type === 'LOST' ? item : c, item.type === 'FOUND' ? item : c) }))
-          .filter(m => m.score >= 40)
+          .filter(m => m.score >= 30)
           .sort((a, b) => b.score - a.score);
       }
     );
