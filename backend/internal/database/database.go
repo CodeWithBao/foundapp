@@ -92,5 +92,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.AuditLog{},
 		&models.Match{},
 		&models.Report{},
+		&models.ChatConversation{},
+		&models.ChatMessage{},
 	)
 }

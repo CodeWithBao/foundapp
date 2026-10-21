@@ -23,6 +23,7 @@ import { STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
 import scrollRestorationService from '../../services/scrollRestorationService';
 import { toast } from 'sonner';
+import { getCampusLocationUrl, getCanonicalLocation } from '../../data/locations';
 
 export default function ItemDetailPage() {
   const { id } = useParams();
@@ -96,10 +97,19 @@ export default function ItemDetailPage() {
 
   const getReporterInfo = () => {
     if (!item) return null;
+    if (item.user?.id) {
+      return {
+        ...item.user,
+        id: item.user.id,
+        name: item.user.name || item.contactName || 'Người dùng DNTU',
+        avatar: item.user.avatar_url || item.user.avatar || '',
+        role: item.user.role || 'Sinh viên DNTU',
+      };
+    }
     const users = storageService.get(STORAGE_KEYS.USERS) || [];
     const found = users.find(u => u.id === item.userId);
     return found || {
-      id: item.userId || 'author_default',
+      id: item.userId || item.user_id,
       name: item.contactName || 'Trần Minh Khoa',
       role: 'Sinh viên DNTU',
       faculty: 'Khoa Công nghệ Thông tin',
@@ -270,6 +280,13 @@ export default function ItemDetailPage() {
   const locationText = typeof item.location === 'object' && item.location !== null
     ? item.location.name || ''
     : item.location || item.locationName || 'Khuôn viên DNTU';
+  const campusLocation = getCanonicalLocation({
+    ...(typeof item.location === 'object' && item.location !== null ? item.location : {}),
+    id: item.location_id || item.locationId,
+    name: locationText,
+  });
+  const campusUrl = getCampusLocationUrl(campusLocation || locationText);
+  const campusPhoto = campusLocation?.image_url || '/campus/places/aerial.webp';
 
   return (
     <div className="bg-[#F8F6F3] min-h-screen pb-20 font-sans">
@@ -457,7 +474,10 @@ export default function ItemDetailPage() {
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[11px]">Địa điểm {isFound ? 'nhặt được' : 'thất lạc'}</span>
-                  <strong className="text-gray-800 font-bold block">{locationText}</strong>
+                  <Link to={campusUrl} className="text-gray-800 hover:text-[#741216] font-bold inline-flex items-center gap-1 group">
+                    <span>{campusLocation?.name || locationText}</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </Link>
                   <span className="text-[11px] text-gray-500">Trường ĐH Công nghệ Đồng Nai</span>
                 </div>
               </div>
@@ -688,7 +708,7 @@ export default function ItemDetailPage() {
                 <MapPin className="w-4 h-4 text-[#741216]" />
                 <h3 className="font-bold text-gray-900 text-base">Vị trí {isFound ? 'nhặt được' : 'thất lạc'}</h3>
               </div>
-              <Link to="/map" className="text-xs font-bold text-[#741216] hover:underline flex items-center gap-1">
+              <Link to={campusUrl} className="text-xs font-bold text-[#741216] hover:underline flex items-center gap-1">
                 <span>Xem trên bản đồ</span>
                 <ExternalLink className="w-3 h-3" />
               </Link>
@@ -701,7 +721,10 @@ export default function ItemDetailPage() {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <strong className="text-sm text-gray-900 block">{locationText}</strong>
+                   <Link to={campusUrl} className="text-sm font-bold text-gray-900 hover:text-[#741216] inline-flex items-center gap-1">
+                     {campusLocation?.name || locationText}
+                     <ExternalLink className="w-3 h-3" />
+                   </Link>
                   <span className="text-xs text-gray-500">DNTU - Trảng Bom, TP. Biên Hòa, Đồng Nai</span>
                 </div>
               </div>
@@ -709,8 +732,8 @@ export default function ItemDetailPage() {
               {/* Campus Photo */}
               <div className="sm:col-span-4 h-24 rounded-xl overflow-hidden border border-gray-200 shadow-2xs">
                 <img
-                  src="/DNTU_Web_Asset_Kit/asset/26_classroom_building_a.jpg"
-                  alt="DNTU Campus"
+                   src={campusPhoto}
+                   alt={campusLocation?.name || 'DNTU Campus'}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -882,8 +905,9 @@ export default function ItemDetailPage() {
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
         item={item}
+        currentUser={user}
         recipientUser={{
-          id: reporter.id || item.userId || 'author_default',
+          id: reporter.id || item.userId || item.user_id,
           name: reporter.name || 'Người dùng DNTU',
           avatar: reporter.avatar || '',
           role: reporter.role || (isOfficeKept ? 'Cán bộ Lost & Found DNTU' : 'Sinh viên DNTU')

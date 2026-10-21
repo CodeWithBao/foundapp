@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MapPin, Clock, Eye, Heart, ArrowUpRight } from 'lucide-react';
 import CategoryIcon from './CategoryIcon';
 import { formatDate } from '../../utils';
+import { getCampusLocationUrl } from '../../data/locations';
 
 export default function ItemCard({ item, onClick }) {
   const [imgError, setImgError] = useState(false);
@@ -17,6 +18,11 @@ export default function ItemCard({ item, onClick }) {
     : (typeof item.category === 'string' ? item.category : '');
 
   const isFound = item.type === 'FOUND' || item.status === 'FOUND';
+  const campusUrl = getCampusLocationUrl({
+    ...(typeof item.location === 'object' && item.location !== null ? item.location : {}),
+    id: item.location_id || item.locationId,
+    name: locationText,
+  });
 
   const handleLike = (e) => {
     e.stopPropagation();
@@ -90,10 +96,18 @@ export default function ItemCard({ item, onClick }) {
             <span>{formatDate(item.date || item.createdAt)}</span>
           </div>
           {locationText && (
-            <div className="flex items-center gap-1.5 text-ink-slate truncate">
+            <a
+              href={campusUrl}
+              onClick={e => {
+                e.stopPropagation();
+              }}
+              onKeyDown={e => e.stopPropagation()}
+              className="flex items-center gap-1.5 text-ink-slate hover:text-[#981B1E] truncate"
+              aria-label={`Xem ${locationText} trên bản đồ campus`}
+            >
               <MapPin className="w-3.5 h-3.5 shrink-0 text-[#981B1E]" />
               <span className="truncate">{locationText}</span>
-            </div>
+            </a>
           )}
         </div>
 

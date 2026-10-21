@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
 import apiClient, { withFallback } from './apiClient';
+import { mergeCanonicalLocations } from '../data/locations';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
@@ -123,7 +124,7 @@ const adminService = {
   },
 
   async getLocations() {
-    return withFallback(
+    const locations = await withFallback(
       async () => {
         const res = await apiClient.get('/locations');
         return Array.isArray(res) ? res : res.locations || [];
@@ -133,6 +134,7 @@ const adminService = {
         return storageService.get(STORAGE_KEYS.LOCATIONS) || [];
       }
     );
+    return mergeCanonicalLocations(locations);
   },
 
   async addLocation(data) {

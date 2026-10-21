@@ -1,0 +1,48 @@
+UNIFIND DNTU - SAFE DEVELOPMENT WORKFLOW
+=======================================
+
+ENVIRONMENT MATRIX
+
+Development:
+- Frontend: Vite on http://localhost:5173 and a temporary Serveo HTTPS URL.
+- Backend: Go on http://localhost:8080.
+- Database: backend/unifind-dev.db (local SQLite only).
+- Git: any non-production branch such as develop, feature/*, fix/*, or chore/*.
+- Google OAuth: intentionally disabled on temporary tunnel origins. Use email/password login.
+
+Production:
+- Frontend/API proxy: https://unifind-dntu.pages.dev
+- Backend: Render.
+- Database: Supabase PostgreSQL.
+- Git: main only.
+
+COMMANDS
+
+Start public development:
+  npm run dev:public
+
+Check development and production health:
+  npm run dev:status
+
+Run tests/build/security checks without deploying:
+  npm run verify
+
+Stop development only:
+  npm run dev:stop
+
+RELEASE GATE
+
+1. Never develop directly on main.
+2. Never push directly to main. The Git hook blocks this operation.
+3. Push the feature/fix/chore branch and create a Pull Request.
+4. Merge into main only after explicit owner approval.
+5. If backend and frontend both change, deploy a backward-compatible backend first.
+6. Verify production health and User/Staff/Admin smoke tests after release.
+7. Roll back Cloudflare or Render independently if needed.
+
+IMPORTANT
+
+- The Serveo URL is temporary and can change after restart.
+- Development records never belong in Supabase production.
+- These scripts do not run Wrangler, deploy Cloudflare Pages, push Git, or deploy Render.
+- Stopping development does not affect Cloudflare Pages, Render, or Supabase.

@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, MapPin, FileText, CheckSquare, ShieldCheck, UserCheck, Send } from 'lucide-react';
 import ImageUploadCamera from '../../components/common/ImageUploadCamera';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
+import adminService from '../../services/adminService';
+import { mockLocations } from '../../data/locations';
 import { STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
 import Button from '../../components/common/Button';
@@ -24,7 +26,14 @@ export default function ReportFoundPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const categories = storageService.get(STORAGE_KEYS.CATEGORIES) || [];
-  const locations = storageService.get(STORAGE_KEYS.LOCATIONS) || [];
+  const [locations, setLocations] = useState(mockLocations);
+  useEffect(() => {
+    let live = true;
+    adminService.getLocations().then(rows => {
+      if (live) setLocations(rows);
+    }).catch(err => toast.error(err.message));
+    return () => { live = false; };
+  }, []);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState({

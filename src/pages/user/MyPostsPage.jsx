@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Trash2, Eye, MapPin, Calendar, Tag, CheckCircle2, Edit3, Save } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
+import adminService from '../../services/adminService';
 import { StatusBadge } from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -14,6 +15,7 @@ import Tabs from '../../components/common/Tabs';
 import PageHeader from '../../components/common/PageHeader';
 import { STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
+import { mockLocations } from '../../data/locations';
 import { formatDate } from '../../utils';
 import { toast } from 'sonner';
 
@@ -29,11 +31,19 @@ export default function MyPostsPage() {
   const [activeTab, setActiveTab] = useState('LOST');
 
   const categories = storageService.get(STORAGE_KEYS.CATEGORIES) || [];
-  const locations = storageService.get(STORAGE_KEYS.LOCATIONS) || [];
+  const [locations, setLocations] = useState(mockLocations);
 
   useEffect(() => {
     if (user?.id) loadItems();
   }, [user?.id]);
+
+  useEffect(() => {
+    let live = true;
+    adminService.getLocations().then(rows => {
+      if (live) setLocations(rows);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, []);
 
   const loadItems = async () => {
     setLoading(true);

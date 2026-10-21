@@ -416,7 +416,7 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Link
-                    to="/search"
+                    to="/campus/"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#981B1E] hover:bg-[#741216] text-white text-xs font-bold transition-colors shadow-md"
                   >
                     <span>Xem bản đồ</span>

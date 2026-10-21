@@ -17,6 +17,29 @@ if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    {import.meta.env.DEV && (
+      <div
+        role="status"
+        aria-label="Môi trường phát triển"
+        style={{
+          position: 'fixed',
+          right: '12px',
+          bottom: '12px',
+          zIndex: 99999,
+          padding: '6px 10px',
+          borderRadius: '999px',
+          background: '#7f1d1d',
+          color: '#fff',
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.04em',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+          pointerEvents: 'none',
+        }}
+      >
+        DEV · DỮ LIỆU SQLITE LOCAL
+      </div>
+    )}
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>

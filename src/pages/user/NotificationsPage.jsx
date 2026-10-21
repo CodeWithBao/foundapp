@@ -222,6 +222,11 @@ export default function NotificationsPage() {
             badge = 'Bàn giao';
             badgeType = 'community';
             type = 'thanks';
+          } else if (n.type?.includes('chat_message')) {
+            badge = 'Xem tin nhắn';
+            badgeType = 'message';
+            isImportant = true;
+            type = 'message';
           } else {
             badge = 'Hệ thống';
             badgeType = 'system';
@@ -240,7 +245,9 @@ export default function NotificationsPage() {
             timeText: 'Gần đây',
             read: n.read,
             relatedId: n.relatedId,
-            link: n.relatedId ? `/items/${n.relatedId}` : null,
+            link: n.type?.includes('chat_message')
+              ? '/messages'
+              : (n.relatedId ? `/items/${n.relatedId}` : null),
           };
         });
 

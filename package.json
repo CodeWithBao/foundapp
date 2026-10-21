@@ -5,8 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:public": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-dev.ps1",
+    "dev:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1",
+    "dev:status": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/check-dev.ps1",
     "build": "vite build",
     "lint": "oxlint",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify-dev.ps1",
     "preview": "vite preview"
   },
   "dependencies": {

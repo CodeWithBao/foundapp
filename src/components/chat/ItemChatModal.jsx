@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import Avatar from '../common/Avatar';
 import CategoryIcon from '../common/CategoryIcon';
 import chatService from '../../services/chatService';
+import apiClient from '../../services/apiClient';
 import { formatDate } from '../../utils';
 
 const QUICK_CHIPS = [
@@ -21,6 +22,7 @@ export default function ItemChatModal({
   onClose, 
   item, 
   currentUser, 
+  recipientUser,
   targetUser,
   onOpenClaim = null 
 }) {
@@ -46,8 +48,8 @@ export default function ItemChatModal({
   const isFound = item?.type === 'FOUND' || item?.status === 'FOUND';
 
   // Fallback target user if not explicitly provided
-  const recipient = targetUser || {
-    id: item?.userId || 'U005',
+  const recipient = recipientUser || targetUser || {
+    id: item?.userId || item?.user_id,
     name: item?.contactName || 'Người giữ đồ DNTU',
     role: isFound ? 'Người nhặt được' : 'Người đăng bài',
     avatar: item?.contactAvatar || null
@@ -68,7 +70,7 @@ export default function ItemChatModal({
 
   // Load or initialize conversation
   useEffect(() => {
-    if (!isOpen || !itemId || !currentUser) return;
+    if (!isOpen || !itemId || !currentUser || !recipient?.id) return;
 
     let isMounted = true;
     const loadChat = async () => {
@@ -82,16 +84,17 @@ export default function ItemChatModal({
         if (isMounted) {
           setConversation(conv);
           setMessages(conv.messages || []);
-          const blocked = chatService.isBlocked(currentUser.id, recipient.id);
-          const blockedByMe = chatService.isBlockedByMe(currentUser.id, recipient.id);
-          setIsBlocked(blocked);
-          setIsBlockedByMe(blockedByMe);
+          setIsBlocked(Boolean(conv.blocked));
+          setIsBlockedByMe(Boolean(conv.blockedByMe));
 
           // Mark unread messages as read
           await chatService.markAsRead(conv.id, currentUser.id);
         }
       } catch (err) {
-        console.error('Error loading chat:', err);
+        if (isMounted) {
+          toast.error(err.message || 'Không thể mở cuộc trò chuyện.');
+          onClose();
+        }
       }
     };
 
@@ -100,7 +103,7 @@ export default function ItemChatModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, itemId, currentUser, recipient.id]);
+  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -114,6 +117,10 @@ export default function ItemChatModal({
   const handleSend = async (e) => {
     e?.preventDefault();
     if (!inputText.trim() && !selectedImage) return;
+    if (!currentUser?.id || !recipient?.id) {
+      toast.error('Không xác định được người gửi hoặc người nhận. Vui lòng tải lại trang.');
+      return;
+    }
     if (isReturned) {
       toast.info('Vật phẩm này đã được bàn giao, cuộc trò chuyện ở chế độ chỉ đọc.');
       return;
@@ -125,7 +132,8 @@ export default function ItemChatModal({
 
     setIsSending(true);
     try {
-      const { message, conversation: updatedConv } = await chatService.sendMessage({
+      const { message } = await chatService.sendMessage({
+        conversationId: conversation?.id,
         itemId,
         sender: currentUser,
         recipientId: recipient.id,
@@ -135,7 +143,7 @@ export default function ItemChatModal({
       });
 
       setMessages(prev => [...prev, message]);
-      setConversation(updatedConv);
+      setConversation(prev => prev ? { ...prev, updatedAt: message.createdAt } : prev);
       setInputText('');
       setSelectedImage(null);
     } catch (err) {
@@ -162,18 +170,19 @@ export default function ItemChatModal({
     e.target.value = '';
   };
 
-  const handleToggleBlock = () => {
+  const handleToggleBlock = async () => {
     setShowMenu(false);
-    if (isBlockedByMe) {
-      chatService.unblockUser(currentUser.id, recipient.id);
-      setIsBlockedByMe(false);
-      setIsBlocked(false);
-      toast.success(`Đã bỏ chặn ${recipient.name}.`);
-    } else {
-      chatService.blockUser(currentUser.id, recipient.id);
-      setIsBlockedByMe(true);
-      setIsBlocked(true);
-      toast.success(`Đã chặn ${recipient.name}. Bạn sẽ không nhận tin nhắn từ người này.`);
+    if (!conversation?.id) return;
+    try {
+      const nextBlocked = !isBlockedByMe;
+      await chatService.setBlocked(conversation.id, nextBlocked);
+      setIsBlockedByMe(nextBlocked);
+      setIsBlocked(nextBlocked);
+      toast.success(nextBlocked
+        ? `Đã chặn ${recipient.name}. Bạn sẽ không nhận tin nhắn từ người này.`
+        : `Đã bỏ chặn ${recipient.name}.`);
+    } catch (err) {
+      toast.error(err.message || 'Không thể cập nhật trạng thái chặn.');
     }
   };
 
@@ -186,11 +195,8 @@ export default function ItemChatModal({
 
     setSubmittingReport(true);
     try {
-      chatService.reportChat({
-        reporterId: currentUser.id,
-        reportedUserId: recipient.id,
-        itemId,
-        conversationId: conversation?.id,
+      await apiClient.post('/reports', {
+        post_id: Number(itemId),
         reason: reportReason,
         description: reportDesc.trim(),
       });
@@ -209,10 +215,12 @@ export default function ItemChatModal({
     : (item.locationName || (typeof item.location === 'string' ? item.location : 'Khuôn viên DNTU'));
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
-      role="dialog"
-      aria-modal="true"
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Trò chuyện với ${recipient.name}`}
+        onClick={onClose}
     >
       <div 
         className="w-full max-w-2xl h-[92vh] max-h-[780px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn"
@@ -342,7 +350,7 @@ export default function ItemChatModal({
         <div className="px-4 py-2 bg-amber-50/80 border-b border-amber-200/70 text-amber-900 text-[11px] flex items-start gap-2 shrink-0">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.2" />
           <div className="leading-tight">
-            <span><strong>Bảo mật thông tin:</strong> Hệ thống tự động ẩn email và số điện thoại cá nhân. Tuyệt đối không cung cấp mật khẩu, mã OTP, chuyển tiền chuộc hoặc hẹn gặp tại nơi vắng vẻ.</span>
+            <span><strong>Bảo mật thông tin:</strong> Không chia sẻ mật khẩu, mã OTP, thông tin ngân hàng; không chuyển tiền chuộc hoặc hẹn gặp tại nơi vắng vẻ.</span>
           </div>
         </div>
 
@@ -548,12 +556,12 @@ export default function ItemChatModal({
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Nhập tin nhắn trao đổi về đồ vật..."
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741216]/20 focus:border-[#741216] transition"
-                disabled={isSending}
+                disabled={isSending || !currentUser?.id || !recipient?.id}
               />
 
               <button
                 type="submit"
-                disabled={isSending || (!inputText.trim() && !selectedImage)}
+                disabled={isSending || !currentUser?.id || !recipient?.id || (!inputText.trim() && !selectedImage)}
                 className="px-4 py-2.5 rounded-xl bg-[#741216] text-white hover:bg-[#8b161b] disabled:opacity-40 disabled:hover:bg-[#741216] transition flex items-center justify-center shadow-xs"
                 aria-label="Gửi tin nhắn"
               >

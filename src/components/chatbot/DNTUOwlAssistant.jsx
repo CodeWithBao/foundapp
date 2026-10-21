@@ -14,12 +14,18 @@ import {
   Sparkles,
   Paperclip,
   CheckCircle2,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  QrCode,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
 import itemService from '../../services/itemService';
 import ticketService from '../../services/ticketService';
+import chatbotService from '../../services/chatbotService';
 
 const POLL_INTERVAL = 30000;
 const SLEEP_AFTER = 60000;
@@ -92,17 +98,103 @@ export default function DNTUOwlAssistant() {
     }
   });
 
+  // TÍNH NĂNG MỚI: Bật/tắt âm thanh, nhận diện giọng nói, đính kèm ảnh và QR modal
+  const [soundMuted, setSoundMuted] = useState(() => {
+    try {
+      return localStorage.getItem('dntu_owl_sound_muted') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isListening, setIsListening] = useState(false);
+  const [attachedImage, setAttachedImage] = useState(null);
+  const [qrModalItem, setQrModalItem] = useState(null);
+
   const drag = useRef(null);
   const inactivityTimer = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const playSound = (name) => {
+    if (soundMuted) return;
     try {
       const audio = new Audio(`/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/sounds/${name}.ogg`);
       audio.volume = 0.45;
       audio.play().catch(() => {});
     } catch (_) {}
+  };
+
+  const toggleSound = () => {
+    setSoundMuted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dntu_owl_sound_muted', String(next));
+      } catch (_) {}
+      return next;
+    });
+  };
+
+  // NHẬN DIỆN GIỌNG NÓI QUA WEB SPEECH API
+  const toggleListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Trình duyệt chưa hỗ trợ Web Speech API. Vui lòng sử dụng Google Chrome hoặc Microsoft Edge.');
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'vi-VN';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+      recognition.onstart = () => {
+        setIsListening(true);
+        playSound('open');
+      };
+      recognition.onresult = (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputMessage((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Speech recognition error:', err);
+      setIsListening(false);
+    }
+  };
+
+  // ĐÍNH KÈM ẢNH ĐỒ VẬT
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Vui lòng chọn ảnh dung lượng dưới 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setAttachedImage({
+        name: file.name,
+        url: event.target.result,
+      });
+      playSound('pop');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const resetSleepTimer = useCallback(() => {
@@ -368,13 +460,15 @@ export default function DNTUOwlAssistant() {
     }, 800);
   };
 
-  // Gửi tin nhắn tự do
+  // Gửi tin nhắn tự do (hỗ trợ kèm ảnh và voice input)
   const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() && !attachedImage) return;
 
-    const text = inputMessage.trim();
+    const text = inputMessage.trim() || (attachedImage ? 'Tôi gửi hình ảnh này nhờ Cú DNTU hỗ trợ kiểm tra đồ thất lạc' : '');
+    const currentAttachedImage = attachedImage;
     setInputMessage('');
+    setAttachedImage(null);
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
     setMessages((prev) => [
@@ -383,6 +477,7 @@ export default function DNTUOwlAssistant() {
         id: `usr-${Date.now()}`,
         sender: 'user',
         text,
+        image: currentAttachedImage?.url,
         timestamp: timeStr,
       },
     ]);
@@ -396,7 +491,7 @@ export default function DNTUOwlAssistant() {
       ticketService.addMessage(activeTicket.id, {
         sender: 'user',
         senderName: user?.name || 'Sinh viên',
-        text,
+        text: currentAttachedImage ? `${text} [Đính kèm ảnh: ${currentAttachedImage.name}]` : text,
       });
 
       setIsTyping(true);
@@ -409,116 +504,55 @@ export default function DNTUOwlAssistant() {
     setMascotState('thinking');
     setIsTyping(true);
 
-    const lower = text.toLowerCase();
-
-    setTimeout(async () => {
+    try {
+      const response = await chatbotService.sendMessage(text, messages);
       setIsTyping(false);
 
-      if (lower.includes('mất') || lower.includes('rơi') || lower.includes('quên')) {
-        setMascotState('searching');
-        playSound('message-in');
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: 'Bạn đừng quá lo lắng! Hãy cho Cú biết chi tiết đặc điểm món đồ, địa điểm trong trường (nhà A, B, thư viện...) và thời gian rơi. Hoặc bạn có thể đăng tin báo mất ngay để cả trường cùng hỗ trợ tìm lại nhé!',
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            actionButtons: [
-              { label: 'Tạo tin báo mất đồ', path: '/report-lost' },
-              { label: 'Chọn danh mục đồ', tab: 'categories' },
-            ],
-          },
-        ]);
-      } else if (lower.includes('nhặt') || lower.includes('lượm') || lower.includes('thấy đồ')) {
-        setMascotState('success');
-        playSound('success');
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: 'Tuyệt vời! Tinh thần trung thực của sinh viên DNTU rất đáng trân trọng. Bạn có thể chụp ảnh món đồ và tạo tin báo nhặt được để người đánh mất sớm nhận lại nhé!',
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            actionButtons: [{ label: 'Đăng tin nhặt được đồ', path: '/report-found' }],
-          },
-        ]);
-      } else if (lower.includes('danh mục') || lower.includes('loại đồ')) {
-        setMascotState('welcome');
-        setActiveTab('categories');
-        playSound('message-in');
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: 'Dưới đây là 13 danh mục đồ vật thất lạc tại DNTU. Bạn chọn danh mục tương ứng để tra cứu nhé:',
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
-      } else if (lower.includes('nhân viên') || lower.includes('hỗ trợ') || lower.includes('khiếu nại') || lower.includes('xác minh')) {
-        setMascotState('staff');
-        setActiveTab('support');
-        playSound('message-in');
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: 'Mình đã mở danh sách các chủ đề hỗ trợ trực tiếp. Bạn chọn một mục để kết nối đúng bộ phận nhé:',
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
-      } else {
-        // Tra cứu thông thường trong database
-        try {
-          const results = await itemService.getItems({ search: text, limit: 3 });
-          if (results.length > 0) {
-            setMascotState('found');
-            playSound('success');
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `bot-${Date.now()}`,
-                sender: 'bot',
-                text: `Cú DNTU tìm thấy ${results.length} món đồ có liên quan đến "${text}":`,
-                timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                items: results.slice(0, 3),
-              },
-            ]);
-          } else {
-            setMascotState('welcome');
-            playSound('message-in');
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `bot-${Date.now()}`,
-                sender: 'bot',
-                text: `Cú DNTU đã ghi nhận thông tin "${text}". Hiện chưa có món đồ nào trùng khớp hoàn toàn. Bạn có thể mở rộng từ khóa tìm kiếm hoặc chọn danh mục để tra cứu thêm nhé!`,
-                timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                actionButtons: [
-                  { label: 'Chọn danh mục đồ', tab: 'categories' },
-                  { label: 'Xem trang tìm kiếm', path: `/search?search=${encodeURIComponent(text)}` },
-                ],
-              },
-            ]);
-          }
-        } catch (_) {
-          setMascotState('welcome');
-          playSound('message-in');
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `bot-${Date.now()}`,
-              sender: 'bot',
-              text: `Cú đã ghi nhận câu hỏi của bạn. Nếu cần tìm đồ, bạn có thể tra cứu theo danh mục bên dưới nhé!`,
-              timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              actionButtons: [{ label: 'Mở danh mục', tab: 'categories' }],
-            },
-          ]);
-        }
+      if (response.tab) {
+        setActiveTab(response.tab);
       }
-    }, 900);
+
+      const nextMascot = response.isGuardrail
+        ? 'welcome'
+        : response.items && response.items.length > 0
+          ? 'found'
+          : response.state || 'welcome';
+      setMascotState(nextMascot);
+
+      if (response.isGuardrail) {
+        playSound('message-in');
+      } else if (response.items && response.items.length > 0) {
+        playSound('success');
+      } else {
+        playSound('message-in');
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `bot-${Date.now()}`,
+          sender: 'bot',
+          text: response.reply,
+          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          items: response.items,
+          actionButtons: response.actionButtons,
+        },
+      ]);
+    } catch (_) {
+      setIsTyping(false);
+      setMascotState('welcome');
+      playSound('message-in');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `bot-${Date.now()}`,
+          sender: 'bot',
+          text: 'Cú đã ghi nhận câu hỏi của bạn. Nếu cần tìm đồ, bạn có thể tra cứu theo danh mục bên dưới nhé!',
+          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          actionButtons: [{ label: 'Mở danh mục', tab: 'categories' }],
+        },
+      ]);
+    }
   };
 
   const handleResetConversation = () => {
@@ -530,11 +564,12 @@ export default function DNTUOwlAssistant() {
 
   const isSearching = ['/report-lost', '/report-found', '/search'].includes(location.pathname);
   const stateIcon = matches.length ? 'found' : sleeping ? 'sleeping' : isSearching ? 'searching' : mascotState;
-  const style = position ? { left: position.left, top: position.top, right: 'auto', bottom: 'auto' } : undefined;
-  const panelStyle = position && position.left < 360 ? { left: 0, right: 'auto' } : undefined;
+  const isCampusMap = location.pathname === '/campus' || location.pathname.startsWith('/campus/');
+  const style = !isCampusMap && position ? { left: position.left, top: position.top, right: 'auto', bottom: 'auto' } : undefined;
+  const panelStyle = !isCampusMap && position && position.left < 360 ? { left: 0, right: 'auto' } : undefined;
 
   return (
-    <aside className={`dntu-owl-widget dntu-owl-${stateIcon}`} style={style} aria-live="polite">
+    <aside className={`dntu-owl-widget dntu-owl-${stateIcon} ${isCampusMap ? 'dntu-owl-widget--campus' : ''}`} style={style} aria-live="polite">
       {open && (
         <section className="dntu-owl-panel animate-scaleIn flex flex-col" style={panelStyle}>
           {/* HEADER */}
@@ -570,6 +605,16 @@ export default function DNTUOwlAssistant() {
                 aria-label="13 Danh mục đồ vật"
               >
                 <LayoutGrid size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleSound}
+                className="p-1.5 rounded-lg text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                title={soundMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+                aria-label={soundMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+              >
+                {soundMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
               </button>
 
               <button
@@ -785,6 +830,15 @@ export default function DNTUOwlAssistant() {
                             <Headphones size={11} /> Nhân viên Hỗ trợ DNTU
                           </div>
                         )}
+                        {msg.image && (
+                          <div className="mb-2 rounded-lg overflow-hidden border border-black/10 max-w-[200px]">
+                            <img
+                              src={msg.image}
+                              alt="Ảnh đính kèm"
+                              className="w-full h-auto object-cover max-h-36 rounded"
+                            />
+                          </div>
+                        )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                         <div
                           className={`text-[9px] mt-1 text-right font-medium ${
@@ -900,9 +954,22 @@ export default function DNTUOwlAssistant() {
                               <p className="text-[10px] text-stone-500 truncate mt-0.5">
                                 📍 {item.location || 'Khuôn viên DNTU'}
                               </p>
-                              <div className="flex items-center gap-1 text-[10px] text-[#981B1E] font-semibold mt-1">
-                                <span>Xem chi tiết</span>
-                                <ExternalLink size={10} />
+                              <div className="flex items-center justify-between gap-1 mt-1">
+                                <div className="flex items-center gap-1 text-[10px] text-[#981B1E] font-semibold">
+                                  <span>Xem chi tiết</span>
+                                  <ExternalLink size={10} />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQrModalItem(item);
+                                  }}
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 hover:bg-[#981B1E]/10 hover:text-[#981B1E] flex items-center gap-0.5 transition-colors"
+                                  title="Mã QR xác minh nhận lại đồ"
+                                >
+                                  <QrCode size={10} /> QR
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -954,6 +1021,30 @@ export default function DNTUOwlAssistant() {
             onSubmit={handleSendMessage}
             className="p-2.5 bg-[#FAF7F4] border-t border-[#EDE6DF] shrink-0"
           >
+            {/* THUMBNAIL ẢNH ĐÍNH KÈM NẾU CÓ */}
+            {attachedImage && (
+              <div className="mb-2 p-1.5 bg-white border border-stone-200 rounded-lg flex items-center justify-between gap-2 shadow-2xs animate-fadeIn">
+                <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src={attachedImage.url}
+                    alt="Preview"
+                    className="w-8 h-8 rounded object-cover border border-stone-200 shrink-0"
+                  />
+                  <span className="text-[11px] text-stone-600 truncate font-medium">
+                    {attachedImage.name}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  className="p-1 text-stone-400 hover:text-stone-700 rounded transition-colors"
+                  aria-label="Xóa ảnh đính kèm"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl px-2 py-1.5 focus-within:border-[#981B1E] focus-within:ring-2 focus-within:ring-[#981B1E]/10 transition-all shadow-2xs">
               <button
                 type="button"
@@ -965,18 +1056,55 @@ export default function DNTUOwlAssistant() {
                 <LayoutGrid size={17} />
               </button>
 
+              {/* NÚT ĐÍNH KÈM ẢNH TỪ ASSET KIT */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-1 rounded-lg transition-colors ${
+                  attachedImage
+                    ? 'text-[#981B1E] bg-[#981B1E]/10'
+                    : 'text-stone-500 hover:text-[#981B1E] hover:bg-stone-100'
+                }`}
+                title="Đính kèm ảnh đồ vật"
+                aria-label="Đính kèm ảnh"
+              >
+                <Paperclip size={16} />
+              </button>
+
               <input
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Nhập tên đồ vật cần tìm hoặc câu hỏi..."
+                placeholder={isListening ? "Đang lắng nghe giọng nói của bạn..." : "Nhập tên đồ vật cần tìm hoặc câu hỏi..."}
                 className="flex-1 bg-transparent text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none"
               />
 
+              {/* NÚT GHI ÂM GIỌNG NÓI TỪ ASSET KIT */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`p-1.5 rounded-lg transition-all ${
+                  isListening
+                    ? 'text-rose-600 bg-rose-50 animate-pulse ring-1 ring-rose-400'
+                    : 'text-stone-500 hover:text-[#981B1E] hover:bg-stone-100'
+                }`}
+                title={isListening ? 'Đang nghe... Bấm để dừng' : 'Nói để nhập văn bản (Web Speech API)'}
+                aria-label="Nhận diện giọng nói"
+              >
+                {isListening ? <MicOff size={15} /> : <Mic size={15} />}
+              </button>
+
               <button
                 type="submit"
-                disabled={!inputMessage.trim() || isTyping}
+                disabled={(!inputMessage.trim() && !attachedImage) || isTyping}
                 className="w-8 h-8 rounded-lg bg-[#981B1E] hover:bg-[#7d1416] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-all shrink-0 shadow-xs"
                 aria-label="Gửi tin nhắn"
               >
@@ -1040,6 +1168,62 @@ export default function DNTUOwlAssistant() {
           draggable="false"
         />
       </button>
+
+      {/* DIALOG XÁC MINH QR TỪ ASSET KIT */}
+      {qrModalItem && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 space-y-4 text-center relative animate-scaleUp">
+            <button
+              type="button"
+              onClick={() => setQrModalItem(null)}
+              className="absolute top-3 right-3 p-1 rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+              aria-label="Đóng"
+            >
+              <X size={18} />
+            </button>
+            <div className="w-14 h-14 mx-auto rounded-full bg-[#981B1E]/10 flex items-center justify-center text-[#981B1E]">
+              <QrCode size={30} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-stone-900">Xác minh nhận lại đồ</h3>
+              <p className="text-xs text-stone-500 mt-1">
+                Xuất trình mã này cho nhân viên quản lý tại phòng Hành chính DNTU
+              </p>
+            </div>
+            <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-1">
+              <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Mã hồ sơ xác thực</div>
+              <div className="text-2xl font-black text-[#981B1E] tracking-widest font-mono">
+                {qrModalItem.code || `LF-${String(qrModalItem.id).padStart(4, '0')}`}
+              </div>
+              <div className="text-xs font-semibold text-stone-700 truncate">{qrModalItem.title}</div>
+            </div>
+            <div className="text-[11px] text-stone-400">
+              Vui lòng mang theo Thẻ sinh viên hoặc CCCD để nhân viên đối soát thông tin.
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setQrModalItem(null)}
+                className="flex-1 py-2 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-all"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const itemId = qrModalItem.id;
+                  setQrModalItem(null);
+                  setOpen(false);
+                  navigate(`/items/${itemId}`);
+                }}
+                className="flex-1 py-2 text-xs font-bold text-white bg-[#981B1E] hover:bg-[#7d1416] rounded-xl transition-all shadow-xs"
+              >
+                Xem hồ sơ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

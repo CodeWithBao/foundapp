@@ -14,6 +14,7 @@ import RegisterPage from './pages/public/RegisterPage';
 import SearchPage from './pages/public/SearchPage';
 import ItemDetailPage from './pages/public/ItemDetailPage';
 import GuidePage from './pages/public/GuidePage';
+import CampusMapPage from './pages/public/CampusMapPage';
 
 // User Pages
 import ReportLostPage from './pages/user/ReportLostPage';
@@ -24,6 +25,7 @@ import MyClaimsPage from './pages/user/MyClaimsPage';
 import MatchesPage from './pages/user/MatchesPage';
 import NotificationsPage from './pages/user/NotificationsPage';
 import StudentCardPage from './pages/user/StudentCardPage';
+import MessagesPage from './pages/user/MessagesPage';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -57,6 +59,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/items/:id" element={<ItemDetailPage />} />
+            <Route path="/campus/*" element={<CampusMapPage />} />
             <Route path="/guide" element={<GuidePage />} />
 
             {/* Protected User Routes inside UserLayout */}
@@ -67,6 +70,7 @@ export default function App() {
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/student-card" element={<ProtectedRoute><StudentCardPage /></ProtectedRoute>} />
           </Route>
 

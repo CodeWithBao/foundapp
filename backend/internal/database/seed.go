@@ -87,26 +87,183 @@ func seedCategories(db *gorm.DB) {
 
 func seedLocations(db *gorm.DB) {
 	locations := []models.Location{
-		{Name: "Nhà A", Code: "NHA_A"},
-		{Name: "Nhà B", Code: "NHA_B"},
-		{Name: "Nhà C", Code: "NHA_C"},
-		{Name: "Giảng đường A", Code: "GD_A"},
-		{Name: "Giảng đường B", Code: "GD_B"},
-		{Name: "Giảng đường C", Code: "GD_C"},
-		{Name: "Thư viện", Code: "THU_VIEN"},
-		{Name: "Căng tin", Code: "CANG_TIN"},
-		{Name: "Sân thể thao", Code: "SAN_THE_THAO"},
-		{Name: "Bãi xe", Code: "BAI_XE"},
-		{Name: "Phòng Lab", Code: "PHONG_LAB"},
-		{Name: "Ký túc xá", Code: "KY_TUC_XA"},
-		{Name: "Hội trường", Code: "HOI_TRUONG"},
-		{Name: "Phòng tự học", Code: "PHONG_TU_HOC"},
+		{
+			Name:        "Nhà A (Khu hành chính)",
+			Code:        "TOA_A",
+			Building:    "A",
+			MapKey:      "A",
+			Description: "Tòa nhà điều hành trung tâm, phòng ban hiệu bộ, phòng đào tạo và tiếp sinh viên.",
+			ImageURL:    "/campus/places/a-main-entrance.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/a-main-entrance.webp","caption":"Lối vào chính Tòa A","is_cover":true},{"id":"2","url":"/campus/places/a-main-front.webp","caption":"Mặt tiền Tòa A","is_cover":false},{"id":"3","url":"/campus/places/a-overhead.webp","caption":"Toàn cảnh Tòa A","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Nhà B (Giảng đường & Lab)",
+			Code:        "TOA_B",
+			Building:    "B",
+			MapKey:      "B",
+			Description: "Giảng đường đa năng, các phòng máy tính, phòng thí nghiệm chuyên ngành kỹ thuật.",
+			ImageURL:    "/campus/places/a-library-b-courts.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/a-library-b-courts.webp","caption":"Khu vực Tòa B và sân thể thao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Thư viện trung tâm (Tòa C)",
+			Code:        "THU_VIEN",
+			Building:    "C",
+			MapKey:      "C",
+			Description: "Thư viện số 4 tầng, không gian tự học hiện đại, kho tài liệu học liệu và phòng hội thảo.",
+			ImageURL:    "/campus/places/library-front.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/library-front.webp","caption":"Mặt trước Thư viện Trung tâm","is_cover":true},{"id":"2","url":"/campus/places/a-library-paths-stage.webp","caption":"Lối đi kết nối Tòa A - Thư viện","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Ký túc xá DNTU (Tòa D)",
+			Code:        "KY_TUC_XA",
+			Building:    "D",
+			MapKey:      "D",
+			Description: "Ký túc xá sinh viên nội trú đầy đủ tiện nghi, an ninh 24/7 và khuôn viên yên tĩnh.",
+			ImageURL:    "/campus/tour/dorm.webp",
+			Photos:      `[{"id":"1","url":"/campus/tour/dorm.webp","caption":"Khuôn viên Ký túc xá DNTU","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Khu thể thao phức hợp E",
+			Code:        "KHU_THE_THAO_E",
+			Building:    "E",
+			MapKey:      "E",
+			Description: "Nhà thi đấu thể thao đa năng, sân tập bóng rổ, cầu lông và các câu lạc bộ thể chất.",
+			ImageURL:    "/campus/places/e-sports.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/e-sports.webp","caption":"Khu tập luyện thể thao E","is_cover":true},{"id":"2","url":"/campus/places/e-f-g-aerial.webp","caption":"Cụm công trình thể thao E-F-G","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Tòa nhà giảng đường F",
+			Code:        "TOA_F",
+			Building:    "F",
+			MapKey:      "F",
+			Description: "Hệ thống giảng đường hiện đại, phòng sinh hoạt khoa và studio thực hành.",
+			ImageURL:    "/campus/places/fg-overhead.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/fg-overhead.webp","caption":"Tòa F nhìn từ góc cao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Tòa nhà công nghệ G",
+			Code:        "TOA_G",
+			Building:    "G",
+			MapKey:      "G",
+			Description: "Khu thực hành công nghệ ô tô, cơ khí tự động hóa và trung tâm nghiên cứu ứng dụng.",
+			ImageURL:    "/campus/places/fg-overhead.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/fg-overhead.webp","caption":"Khu liên hợp Tòa F và Tòa G","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Viện Nghiên cứu & Tuyển sinh (IRAS)",
+			Code:        "IRAS_R",
+			Building:    "R",
+			MapKey:      "R",
+			Description: "Trung tâm nghiên cứu ứng dụng, viện đào tạo quốc tế và trung tâm tư vấn tuyển sinh.",
+			ImageURL:    "/campus/places/iras-admissions-position.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/iras-admissions-position.webp","caption":"Trung tâm tư vấn tuyển sinh IRAS","is_cover":true},{"id":"2","url":"/campus/places/research-front.webp","caption":"Viện Nghiên cứu ứng dụng DNTU","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Sân khấu & Quảng trường sự kiện",
+			Code:        "HOI_TRUONG",
+			Building:    "EVENT",
+			MapKey:      "EVENT",
+			Description: "Không gian ngoài trời tổ chức lễ khai giảng, ngày hội văn hóa, ca nhạc và sự kiện lớn.",
+			ImageURL:    "/campus/places/event-stage.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/event-stage.webp","caption":"Khu vực sân khấu trung tâm sự kiện","is_cover":true},{"id":"2","url":"/campus/places/event-canopy.webp","caption":"Mái che và khán đài sự kiện","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Bãi đỗ xe ô tô & Khách",
+			Code:        "BAI_XE",
+			Building:    "PARKING",
+			MapKey:      "PARKING",
+			Description: "Bãi xe ô tô rộng rãi, có bóng mát cây xanh, camera giám sát và trạm bảo vệ.",
+			ImageURL:    "/campus/places/car-park-a.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/car-park-a.webp","caption":"Bãi đỗ ô tô cạnh tòa A","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Sân thể thao Pickleball & Tennis",
+			Code:        "SAN_THE_THAO",
+			Building:    "SPORT",
+			MapKey:      "SPORT",
+			Description: "Cụm sân thể thao ngoài trời hiện đại tiêu chuẩn thi đấu, sân pickleball, tennis và bóng chuyền.",
+			ImageURL:    "/campus/places/b-sports.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/b-sports.webp","caption":"Toàn cảnh cụm sân thể thao Pickleball","is_cover":true},{"id":"2","url":"/campus/places/aerial.webp","caption":"Góc nhìn toàn cảnh thể thao từ trên cao","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Công viên sáng tạo sinh thái",
+			Code:        "CONG_VIEN_SANG_TAO",
+			Building:    "PARK",
+			MapKey:      "PARK",
+			Description: "Không gian xanh thư giãn, ghế đá ven hồ, vườn cây sinh thái và chòi nghỉ cho sinh viên.",
+			ImageURL:    "/campus/places/park.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/park.webp","caption":"Công viên cây xanh mát mẻ","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Cổng chính DNTU",
+			Code:        "CONG_CHINH",
+			Building:    "GATE",
+			MapKey:      "GATE",
+			Description: "Cổng chính trường Đại học Công nghệ Đồng Nai, có bốt an ninh và kiểm soát thẻ xe.",
+			ImageURL:    "/campus/places/main-gate.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/main-gate.webp","caption":"Cổng chính DNTU mặt tiền đường Nguyễn Khuyến","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Cổng phụ khu thể thao",
+			Code:        "CONG_PHU",
+			Building:    "GATE2",
+			MapKey:      "GATE2",
+			Description: "Cổng phụ thuận tiện di chuyển sang cụm sân thể thao, ký túc xá và bãi xe sau trường.",
+			ImageURL:    "/campus/places/side-gate.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/side-gate.webp","caption":"Cổng phụ thông ra khu thể thao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Hồ bơi campus DNTU",
+			Code:        "HO_BOI",
+			Building:    "POOL",
+			MapKey:      "POOL",
+			Description: "Hồ bơi sinh viên đạt chuẩn huấn luyện kỹ năng bơi lội, hoạt động thể thao nước.",
+			ImageURL:    "/campus/places/flycam-labeled.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/flycam-labeled.webp","caption":"Vị trí hồ bơi trong khuôn viên DNTU","is_cover":true}]`,
+			IsActive:    true,
+		},
 	}
 
 	for _, l := range locations {
 		var existing models.Location
-		if err := db.Where("name = ? OR code = ?", l.Name, l.Code).First(&existing).Error; err != nil {
+		if err := db.Where("code = ? OR name = ?", l.Code, l.Name).First(&existing).Error; err != nil {
 			db.Create(&l)
+		} else {
+			// Chỉ bổ sung metadata còn thiếu để không ghi đè nội dung quản trị viên đã cập nhật.
+			updates := map[string]interface{}{}
+			if existing.MapKey == "" && l.MapKey != "" {
+				updates["map_key"] = l.MapKey
+			}
+			if existing.Building == "" && l.Building != "" {
+				updates["building"] = l.Building
+			}
+			if existing.ImageURL == "" && l.ImageURL != "" {
+				updates["image_url"] = l.ImageURL
+			}
+			if (existing.Photos == "" || existing.Photos == "[]") && l.Photos != "" && l.Photos != "[]" {
+				updates["photos"] = l.Photos
+			}
+			if existing.Description == "" && l.Description != "" {
+				updates["description"] = l.Description
+			}
+			if len(updates) > 0 {
+				db.Model(&existing).Updates(updates)
+			}
 		}
 	}
 	log.Println("[Seed] Locations checked and seeded.")

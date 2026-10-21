@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, Search, User, Shield, FileText, CheckSquare, LogOut, CreditCard, Phone, Mail, Building2, ChevronDown } from 'lucide-react';
+import { Bell, Menu, X, Search, User, Shield, FileText, CheckSquare, LogOut, CreditCard, Phone, Mail, Building2, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DNTULogo from '../common/DNTULogo';
 import Avatar from '../common/Avatar';
@@ -85,20 +85,20 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="page-container h-[4.5rem] flex items-center justify-between gap-2 lg:gap-4">
+      <div className="page-container h-[4.5rem] flex items-center justify-between gap-2 2xl:gap-4 min-w-0">
         {/* LEFT: Logo */}
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <DNTULogo size="md" />
         </Link>
 
         {/* CENTER: Desktop Nav Links */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-2 shrink-0">
+        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-2 min-w-0">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `px-2.5 xl:px-3.5 py-2 text-[13px] xl:text-[13.5px] font-semibold whitespace-nowrap transition-all duration-200 rounded-lg ${
+                `px-2 2xl:px-3.5 py-2 text-[12px] 2xl:text-[13.5px] font-semibold whitespace-nowrap transition-all duration-200 rounded-lg ${
                   isActive
                     ? 'text-accent bg-accent-tint ring-1 ring-accent-border/80 font-bold'
                     : 'text-ink-slate hover:text-accent hover:bg-paper-panel'
@@ -111,11 +111,11 @@ export default function Navbar() {
         </nav>
 
         {/* RIGHT: Search + User / Auth actions */}
-        <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 shrink-0">
+        <div className="hidden xl:flex items-center gap-2 2xl:gap-3 shrink-0">
           {/* Interactive Search Input with Filter Dropdown */}
           <form
             onSubmit={handleNavSearch}
-            className="hidden xl:flex items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
+            className="hidden 2xl:flex items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
           >
             <div className="relative flex items-center shrink-0">
               <select
@@ -143,7 +143,7 @@ export default function Navbar() {
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Tìm đồ thất lạc..."
-                className="bg-transparent text-xs text-ink placeholder:text-ink-muted/80 focus:outline-none w-28 xl:w-44 focus:w-36 xl:focus:w-56 transition-all duration-200 px-1"
+                className="bg-transparent text-xs text-ink placeholder:text-ink-muted/80 focus:outline-none w-40 focus:w-48 transition-all duration-200 px-1"
               />
               {navSearch && (
                 <button
@@ -166,9 +166,26 @@ export default function Navbar() {
             </button>
           </form>
 
+          <Link
+            to="/search"
+            className="2xl:hidden inline-flex w-9 h-9 items-center justify-center rounded-full border border-[#E4DDD5] bg-[#F5F2EB] text-ink-slate hover:text-accent hover:border-accent transition-colors"
+            aria-label="Mở trang tìm kiếm"
+            title="Tìm kiếm vật phẩm"
+          >
+            <Search className="w-4 h-4" />
+          </Link>
+
           {user ? (
             <>
               {/* Notification Bell */}
+              <Link
+                to="/messages"
+                className="relative p-2.5 text-ink-slate hover:text-accent hover:bg-paper-panel rounded-full transition-all"
+                aria-label="Tin nhắn"
+                title="Tin nhắn"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </Link>
               <Link
                 to="/notifications"
                 className="relative p-2.5 text-ink-slate hover:text-accent hover:bg-paper-panel rounded-full transition-all"
@@ -185,7 +202,7 @@ export default function Navbar() {
                   className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full border border-hairline bg-white hover:bg-paper-panel transition-all shadow-sm"
                 >
                   <Avatar name={user.fullName || user.name} src={user.avatar} size="sm" />
-                  <span className="text-[13.5px] font-semibold text-ink max-w-[120px] truncate">
+                   <span className="hidden 2xl:block text-[13.5px] font-semibold text-ink max-w-[120px] truncate">
                     {user.fullName || user.name}
                   </span>
                 </button>
@@ -197,6 +214,14 @@ export default function Navbar() {
                       <p className="text-sm font-bold text-ink truncate">{user.fullName || user.name}</p>
                     </div>
 
+                    <Link
+                      to="/messages"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-slate hover:text-accent hover:bg-paper-panel transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4 text-ink-muted" />
+                      Tin nhắn
+                    </Link>
                     <Link
                       to="/profile"
                       onClick={() => setUserDropdownOpen(false)}
@@ -270,8 +295,8 @@ export default function Navbar() {
         {/* Mobile menu hamburger toggle */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="lg:hidden p-2 rounded-xl text-ink-slate hover:bg-paper-panel transition-colors"
-          aria-label="Toggle Menu"
+          className="xl:hidden p-2 rounded-xl text-ink-slate hover:bg-paper-panel transition-colors"
+          aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -279,7 +304,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-hairline px-4 pt-3 pb-5 space-y-2 animate-fadeIn shadow-lg">
+        <div className="xl:hidden bg-white border-b border-hairline px-4 pt-3 pb-5 space-y-2 animate-fadeIn shadow-lg max-h-[calc(100vh-7rem)] overflow-y-auto">
           {/* Mobile Search Bar */}
           <form
             onSubmit={(e) => {
@@ -338,6 +363,13 @@ export default function Navbar() {
               >
                 <span>Thông báo hệ thống</span>
                 <span className="w-2 h-2 rounded-full bg-accent" />
+              </Link>
+              <Link
+                to="/messages"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3.5 py-2 rounded-lg text-sm font-medium text-ink-slate hover:bg-paper-panel"
+              >
+                Tin nhắn
               </Link>
               <Link
                 to="/profile"

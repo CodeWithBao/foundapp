@@ -5,8 +5,8 @@ import {
   RotateCcw, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import itemService from '../../services/itemService';
-import { STORAGE_KEYS } from '../../constants';
-import storageService from '../../services/storageService';
+import adminService from '../../services/adminService';
+import { mockLocations, resolveLocationMapKey } from '../../data/locations';
 import scrollRestorationService from '../../services/scrollRestorationService';
 import ItemCard from '../../components/common/ItemCard';
 import CategoryIcon from '../../components/common/CategoryIcon';
@@ -66,17 +66,16 @@ export default function SearchPage() {
 
   const debouncedSearch = useDebounce(filters.search, 300);
 
-  const locations = useMemo(() => {
-    return storageService.get(STORAGE_KEYS.LOCATIONS) || [
-      { name: 'Khu giảng đường A' },
-      { name: 'Khu giảng đường B' },
-      { name: 'Thư viện DNTU' },
-      { name: 'Căng tin sinh viên' },
-      { name: 'Nhà thi đấu' },
-      { name: 'Bãi xe sinh viên' },
-      { name: 'Khu tự học' },
-      { name: 'Khu ký túc xá' }
-    ];
+  const [locations, setLocations] = useState(mockLocations);
+
+  useEffect(() => {
+    let live = true;
+    adminService.getLocations()
+      .then(rows => {
+        if (live) setLocations(rows);
+      })
+      .catch(() => {});
+    return () => { live = false; };
   }, []);
 
   const fetchItems = useCallback(async () => {
@@ -219,7 +218,8 @@ export default function SearchPage() {
       // Location filter
       if (filters.location !== 'all') {
         const itemLoc = typeof item.location === 'object' ? item.location?.name : (item.locationName || item.location || '');
-        if (!itemLoc.toLowerCase().includes(filters.location.toLowerCase())) {
+        const sameMapLocation = resolveLocationMapKey(itemLoc) && resolveLocationMapKey(itemLoc) === resolveLocationMapKey(filters.location);
+        if (!sameMapLocation && !itemLoc.toLowerCase().includes(filters.location.toLowerCase())) {
           return false;
         }
       }

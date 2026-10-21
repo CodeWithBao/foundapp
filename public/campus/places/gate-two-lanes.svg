@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Cổng chính DNTU: lối vào bên trái, lối ra bên phải</title>
+  <desc id="desc">Mô phỏng dựa trên ảnh cổng: hai mảng tường ốp đá sáng, chốt bảo vệ đỏ nâu bên trái, cổng mở rộng, tòa A mái ngói và vòm đỏ ở phía trong. Nhìn từ ngoài đường, bên trái là lối vào và bên phải là lối ra.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#cce8ef"/><stop offset="1" stop-color="#f7f4e7"/></linearGradient>
+    <linearGradient id="stone" x2="0" y2="1"><stop stop-color="#eee6d8"/><stop offset="1" stop-color="#cabea9"/></linearGradient>
+    <pattern id="masonry" width="44" height="16" patternUnits="userSpaceOnUse"><path d="M0 0H44M0 8H44M22 0V8M0 8V16M44 8V16" fill="none" stroke="#a9a097" stroke-width=".75" opacity=".55"/></pattern>
+    <linearGradient id="paving" x2="0" y2="1"><stop stop-color="#ccc9bc"/><stop offset="1" stop-color="#9ca5a4"/></linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <path d="M0 132 Q58 71 115 121 Q151 61 202 121H0M444 129Q501 44 555 125Q603 61 640 134Z" fill="#5c925d"/>
+  <path d="M0 156 Q70 83 126 148 M449 153 Q553 63 640 148" fill="none" stroke="#327454" stroke-width="20" opacity=".5"/>
+  <path d="M192 157H456L640 360H0Z" fill="url(#paving)"/>
+  <path d="M229 172L35 360M421 172L605 360" stroke="#e6e0d2" stroke-width="2" opacity=".75"/>
+  <path d="M326 179L320 338" stroke="#f1f0e8" stroke-width="3" stroke-dasharray="18 15" opacity=".9"/>
+  <path d="M161 80L199 48H451L483 80Z" fill="#ab5c42" stroke="#7d3f34" stroke-width="3"/>
+  <path d="M257 79L321 40L380 79Z" fill="#c4784d" stroke="#814638" stroke-width="3"/>
+  <path d="M302 74L321 55L343 74Z" fill="#44535a"/>
+  <rect x="175" y="80" width="298" height="86" fill="#aa4344"/>
+  <rect x="175" y="80" width="298" height="31" fill="#efe4ce"/>
+  <path d="M175 112H473" stroke="#ecd0b1" stroke-width="4"/>
+  <g fill="#526c73" stroke="#f9efdc" stroke-width="2"><rect x="194" y="88" width="25" height="16"/><rect x="238" y="88" width="25" height="16"/><rect x="282" y="88" width="25" height="16"/><rect x="326" y="88" width="25" height="16"/><rect x="370" y="88" width="25" height="16"/><rect x="414" y="88" width="25" height="16"/></g>
+  <g fill="#6c3332" stroke="#efd8bb" stroke-width="4"><path d="M187 165V134Q198 116 209 134V165Z"/><path d="M232 165V134Q243 116 254 134V165Z"/><path d="M277 165V134Q288 116 299 134V165Z"/><path d="M322 165V134Q333 116 344 134V165Z"/><path d="M367 165V134Q378 116 389 134V165Z"/><path d="M412 165V134Q423 116 434 134V165Z"/></g>
+  <path d="M305 168v-35m17 35v-38m17 38v-34" stroke="#c7c7bb" stroke-width="2"/><path d="M305 134l11 5-11 5m17-14l12 5-12 5m17-6l12 5-12 5" fill="#d82430"/>
+  <rect x="271" y="167" width="104" height="18" rx="2" fill="#c7a889" stroke="#987a64"/>
+  <text x="323" y="179" text-anchor="middle" font-size="8.5" font-weight="700" fill="#754d32">ĐẠI HỌC CÔNG NGHỆ ĐỒNG NAI</text>
+  <path d="M10 128H165V224H10Z" fill="url(#stone)" stroke="#a78f78" stroke-width="2"/>
+  <path d="M10 128H165V224H10Z" fill="url(#masonry)"/>
+  <path d="M165 128l15-11v98l-15 9Z" fill="#9b6451"/>
+  <path d="M479 128H630V224H479Z" fill="url(#stone)" stroke="#a78f78" stroke-width="2"/>
+  <path d="M479 128H630V224H479Z" fill="url(#masonry)"/>
+  <path d="M479 128l-15-10v97l15 9Z" fill="#9b6451"/>
+  <path d="M27 141q-8 8 0 16q8-6 0-16m1 9q9 5 0 14m-4 2h10" fill="none" stroke="#9f772e" stroke-width="2"/>
+  <text x="102" y="155" fill="#84672d" text-anchor="middle" font-size="8.4" font-weight="800">TRƯỜNG ĐẠI HỌC</text>
+  <text x="102" y="166" fill="#84672d" text-anchor="middle" font-size="8.1" font-weight="800">CÔNG NGHỆ ĐỒNG NAI</text>
+  <text x="554" y="155" fill="#9f772e" text-anchor="middle" font-size="12" font-weight="800">HIỀN TÀI LÀ...</text>
+  <text x="554" y="169" fill="#866b3f" text-anchor="middle" font-size="7.4" font-weight="700">VIRTUOUS AND TALENTED</text>
+  <path d="M0 226H165v18H0m479-18h161v18H479" fill="#527e4e"/><path d="M18 231Q50 213 78 231Q108 214 146 230M495 231Q520 214 548 230Q583 214 622 230" fill="none" stroke="#8ab36d" stroke-width="13"/>
+  <path d="M166 155l21-23h74l14 23Z" fill="#99493d" stroke="#60372f" stroke-width="2"/>
+  <path d="M174 155h90v69h-90Z" fill="#813d36" stroke="#54372f" stroke-width="2"/>
+  <rect x="184" y="161" width="67" height="36" fill="#bbd3d3" stroke="#e9e1d4" stroke-width="3"/><path d="M217 161v36" stroke="#f1f1e8" stroke-width="3"/>
+  <rect x="174" y="205" width="90" height="19" fill="#703b37"/><text x="218" y="217" text-anchor="middle" font-size="9" font-weight="800" fill="#f1e6d9">CHỐT BẢO VỆ</text>
+  <path d="M469 197v44m13-43v43m-13-43h13m-13 12h13m-13 12h13" stroke="#657273" stroke-width="2"/>
+  <path d="M211 284l39-81 38 81h-24l-14-35-15 35Z" fill="#158b60" stroke="#f1faf1" stroke-width="3"/>
+  <path d="M358 229h24l15 36 14-36h24l-38 82Z" fill="#c3443e" stroke="#fff5ef" stroke-width="3"/>
+  <rect x="174" y="310" width="153" height="34" rx="9" fill="#e9faf0" stroke="#83b69b"/><text x="250" y="333" text-anchor="middle" font-size="17" font-weight="850" fill="#146f4c">LỐI VÀO ↑</text>
+  <rect x="332" y="310" width="153" height="34" rx="9" fill="#fff1ed" stroke="#d3a19a"/><text x="409" y="333" text-anchor="middle" font-size="17" font-weight="850" fill="#ac3932">LỐI RA ↓</text>
+</svg>

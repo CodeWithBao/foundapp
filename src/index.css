@@ -419,6 +419,24 @@
   user-select: none;
   touch-action: none;
 }
+.dntu-owl-widget--campus {
+  right: 20px;
+  bottom: 96px;
+  width: 96px;
+  height: 96px;
+}
+.dntu-owl-widget--campus .dntu-owl-mascot {
+  width: 96px;
+  height: 96px;
+}
+.dntu-owl-widget--campus .dntu-owl-panel {
+  bottom: 102px;
+}
+.campus-map-page:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+}
 .dntu-owl-mascot {
   width: 132px;
   height: 132px;
@@ -520,6 +538,9 @@
   .dntu-owl-widget { right: 12px; bottom: 82px; width: 104px; height: 104px; }
   .dntu-owl-mascot { width: 104px; height: 104px; }
   .dntu-owl-panel { bottom: 112px; width: min(360px, calc(100vw - 20px)); }
+  .dntu-owl-widget--campus { right: 8px; bottom: 184px; width: 64px; height: 64px; }
+  .dntu-owl-widget--campus .dntu-owl-mascot { width: 64px; height: 64px; }
+  .dntu-owl-widget--campus .dntu-owl-panel { right: -2px; bottom: 72px; }
   .unifind-hero { min-height: 610px; }
   .unifind-hero form { flex-direction: column; overflow: visible; background: transparent; border: 0; box-shadow: none; }
   .unifind-hero form input { border-radius: 16px; min-height: 58px; background: white; }
