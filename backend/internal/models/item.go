@@ -34,6 +34,7 @@ type Item struct {
 	Color                  string         `gorm:"type:varchar(50)" json:"color"`
 	Brand                  string         `gorm:"type:varchar(100)" json:"brand"`
 	DistinctFeatures       string         `gorm:"type:text" json:"distinct_features"`
+	ImageFingerprint       string         `gorm:"type:varchar(128);index" json:"image_fingerprint"`
 	CurrentStorageLocation string         `gorm:"type:varchar(255)" json:"current_storage_location"`
 	CustodyStatus          string         `gorm:"type:varchar(50)" json:"custody_status"`
 	Status                 ItemStatus     `gorm:"type:varchar(30);default:'LOST'" json:"status"`

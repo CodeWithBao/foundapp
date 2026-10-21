@@ -128,12 +128,18 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Password changed successfully", nil)
 }
 
-func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, authRateLimit gin.HandlerFunc) {
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/login", h.Login)
-		authGroup.POST("/register", h.Register)
-		authGroup.POST("/google", h.GoogleLogin)
+		if authRateLimit != nil {
+			authGroup.POST("/login", authRateLimit, h.Login)
+			authGroup.POST("/register", authRateLimit, h.Register)
+			authGroup.POST("/google", authRateLimit, h.GoogleLogin)
+		} else {
+			authGroup.POST("/login", h.Login)
+			authGroup.POST("/register", h.Register)
+			authGroup.POST("/google", h.GoogleLogin)
+		}
 		authGroup.GET("/me", authMiddleware, h.GetMe)
 		authGroup.POST("/change-password", authMiddleware, h.ChangePassword)
 	}

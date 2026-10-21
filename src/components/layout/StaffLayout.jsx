@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardCheck, Package, History, X,
-  LogOut, ChevronDown, UserRound, Bell, ShieldCheck, CheckCheck, Home
+  LogOut, ChevronDown, UserRound, Bell, ShieldCheck, CheckCheck, Home, Headphones
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
+import ticketService from '../../services/ticketService';
 import { formatRelative } from '../../utils';
 import { toast } from 'sonner';
 
@@ -31,10 +32,23 @@ const menuItems = [
     label: 'Lịch sử bàn giao',
     icon: History,
   },
+  {
+    to: '/staff/tickets',
+    label: 'Ticket Hỗ trợ',
+    icon: Headphones,
+  },
 ];
 
 function SidebarContent({ onClose, user, handleLogout }) {
   const location = useLocation();
+  const [unreadTicketCount, setUnreadTicketCount] = useState(() => ticketService.getUnreadCountForStaff());
+
+  useEffect(() => {
+    const unsubscribe = ticketService.subscribe(() => {
+      setUnreadTicketCount(ticketService.getUnreadCountForStaff());
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="flex flex-col h-full relative overflow-hidden">
@@ -85,7 +99,12 @@ function SidebarContent({ onClose, user, handleLogout }) {
               }`}
             >
               <Icon className="w-[20px] h-[20px] shrink-0" />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.to === '/staff/tickets' && unreadTicketCount > 0 && (
+                <span className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-2xs">
+                  {unreadTicketCount}
+                </span>
+              )}
             </NavLink>
           );
         })}

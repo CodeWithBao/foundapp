@@ -1,0 +1,16 @@
+{
+  "name": "Trợ lý Cú DNTU - Lost & Found",
+  "short_name": "Cú DNTU",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F3F8FD",
+  "theme_color": "#0B5CAD",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "icons/ui/avatar-owl.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+}

@@ -52,4 +52,6 @@ export const STORAGE_KEYS = {
   AUDIT_LOGS: 'unifind_audit_logs',
   CURRENT_USER: 'unifind_current_user',
   INITIALIZED: 'unifind_initialized',
+  CHATS: 'unifind_chats',
+  CHAT_BLOCKED: 'unifind_chat_blocked',
 };

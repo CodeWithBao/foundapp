@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bản đồ campus 3D · UniFind DNTU</title>
+  <meta name="description" content="Khám phá các tòa nhà và khu vực trong campus DNTU qua bản đồ 3D minh họa." />
+  <style>
+    :root{font-family:Arial,"Segoe UI",sans-serif;color:#183047;background:#e9f2f3;font-size:16px}*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #fbbc27;outline-offset:3px}.shell{height:100dvh;min-height:650px;display:grid;grid-template-columns:345px minmax(0,1fr);grid-template-rows:70px minmax(0,1fr)}header{grid-column:1/-1;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-bottom:1px solid #dbe5e8;z-index:3}.brand{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:800;letter-spacing:-.04em}.brandmark{background:#e32131;color:#fff;border-radius:12px;width:39px;height:39px;display:grid;place-items:center;letter-spacing:-.04em;font-size:15px}.brand span:last-child{color:#e32131}.header-note{font-size:14px;color:#647687}.sidebar{background:#fff;border-right:1px solid #dbe5e8;overflow:auto;padding:28px 20px 22px}.eyebrow{font-size:12px;letter-spacing:.15em;text-transform:uppercase;font-weight:800;color:#d02737;margin-bottom:8px}.sidebar h1{font-size:27px;line-height:1.12;letter-spacing:-.04em;margin:0 0 13px}.sub{font-size:14px;color:#627385;line-height:1.5;margin:0 0 22px}.search{width:100%;border:1px solid #d9e3e7;border-radius:12px;background:#f7fafb;padding:12px 14px;color:#223749}.search::placeholder{color:#8b9aa7}.segment{display:flex;gap:7px;margin:15px 0 20px;flex-wrap:wrap}.segment button{border:1px solid #dee8eb;background:#fff;color:#526879;border-radius:999px;padding:8px 11px;font-size:13px;font-weight:700}.segment button.active{color:#fff;border-color:#263e52;background:#263e52}.list-heading{font-size:13px;font-weight:800;letter-spacing:.05em;color:#677a86;margin:0 0 10px;text-transform:uppercase}.place-list{display:flex;flex-direction:column;gap:8px}.place{border:1px solid #e0e9ec;border-radius:14px;background:#fff;text-align:left;width:100%;padding:12px;display:flex;align-items:center;gap:12px;color:#263c4b;min-height:66px}.place:hover,.place.active{border-color:#e42136;background:#fff7f7;box-shadow:0 2px 10px #e3213111}.badge{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:11px;background:#fbe7e9;color:#bf2030;font-size:19px;font-weight:900}.badge.green{background:#e3f1df;color:#24714d}.badge.blue{background:#e3eff8;color:#35739d}.place strong,.place small{display:block}.place strong{font-size:15px}.place small{color:#6d7e8b;font-size:12px;line-height:1.35;margin-top:3px}.place .arrow{margin-left:auto;color:#a2b0b7;font-size:20px}.source-note{font-size:12px;line-height:1.5;color:#728490;border-top:1px solid #e5edef;padding-top:17px;margin:22px 0 0}.source-note a{color:#aa2535}.workspace{position:relative;overflow:hidden;background:radial-gradient(circle at 60% 18%,#f8fbf8 0,#e6f3e9 53%,#d4e9df 100%)}.map-top{position:absolute;z-index:2;left:25px;right:25px;top:22px;display:flex;justify-content:space-between;gap:12px;pointer-events:none}.map-top>*{pointer-events:auto}.map-title{background:#ffffffef;border:1px solid #ffffffa8;box-shadow:0 9px 30px #2b635223;border-radius:15px;padding:12px 17px}.map-title strong{display:block;font-size:16px}.map-title small{display:block;margin-top:4px;color:#698075;font-size:12px}.map-actions{display:flex;gap:7px}.map-actions button,.zoom button{border:1px solid #dce7e3;background:#fff;color:#294c45;border-radius:11px;min-width:38px;height:38px;font-weight:750;box-shadow:0 5px 16px #36554716}.map-actions button{padding:0 12px;font-size:13px}.map-actions button.active{background:#e32131;border-color:#e32131;color:#fff}.map-wrap{position:absolute;inset:0;touch-action:none;cursor:grab}.map-wrap:active{cursor:grabbing}.map-inner{width:100%;height:100%;transform-origin:50% 50%;transition:transform .16s ease}svg{display:block;width:100%;height:100%;min-width:760px}.grid{fill:url(#dots)}.road{fill:#65747b}.roadstripe{stroke:#dce5de;stroke-width:3;stroke-dasharray:18 14;opacity:.9}.land{fill:#bfdcb8;stroke:#a1caa6;stroke-width:3}.path{fill:none;stroke:#f7eed5;stroke-width:17;stroke-linecap:round;stroke-linejoin:round}.building{cursor:pointer}.building:hover .roof,.building.selected .roof{stroke:#f5bb34;stroke-width:5}.building.selected .front{filter:brightness(1.08)}.shadow{fill:#456e5b;opacity:.17}.side{fill:#8199a7}.front{fill:#aac3d2}.roof{fill:#ddebf1;stroke:#a2bac5;stroke-width:2}.red .roof{fill:#efced3;stroke:#d37a85}.red .front{fill:#d4aab2}.red .side{fill:#b98691}.cream .roof{fill:#f3e4cb;stroke:#c7b089}.cream .front{fill:#dccbaa}.cream .side{fill:#bba27c}.teal .roof{fill:#c8e4dc;stroke:#77ac9e}.teal .front{fill:#9bc6ba}.teal .side{fill:#6f9f94}.win{fill:#f8fdff;opacity:.85}.roofline{fill:none;stroke:#fff;stroke-width:2;opacity:.75}.marker text{font-size:16px;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none}.marker circle{fill:#e32131;stroke:#fff;stroke-width:4;filter:drop-shadow(0 4px 5px #462c2d55)}.marker{cursor:pointer}.marker:hover circle,.marker.selected circle{fill:#a91528;stroke:#f7c357;stroke-width:5}.ground-label{font-size:17px;font-weight:800;fill:#487362;letter-spacing:.04em;text-anchor:middle}.minor-label{font-size:12px;font-weight:800;fill:#76847e;letter-spacing:.08em;text-anchor:middle}.detail{position:absolute;bottom:24px;left:25px;width:min(380px,calc(100% - 50px));background:#fff;border-radius:18px;padding:20px 20px 18px;box-shadow:0 15px 45px #21524536;z-index:2;border:1px solid #e4ebec}.detail .topline{display:flex;justify-content:space-between;align-items:start;gap:12px}.detail .tag{display:inline-block;padding:5px 8px;border-radius:6px;background:#fde9ec;color:#c12737;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}.detail h2{font-size:21px;margin:10px 0 7px;line-height:1.2}.detail p{font-size:14px;line-height:1.45;color:#5f7380;margin:0}.detail .uncertain{font-size:12px;color:#a36c10;margin-top:10px}.close{border:0;background:#eef3f4;color:#445e66;border-radius:8px;width:29px;height:29px;font-size:19px;line-height:1}.zoom{position:absolute;right:25px;bottom:25px;display:flex;flex-direction:column;gap:6px;z-index:2}.zoom button{font-size:22px}.caption{position:absolute;right:25px;bottom:115px;z-index:2;background:#ffffffdc;border-radius:9px;padding:8px 10px;color:#667c79;font-size:12px}.source-image{position:absolute;inset:83px 22px 20px;z-index:1;display:none;align-items:center;justify-content:center;overflow:auto}.source-image.open{display:flex}.source-image img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 12px 40px #38534933}.source-image span{position:absolute;bottom:10px;right:10px;background:#fff;border-radius:7px;padding:5px 8px;font-size:12px}.empty{padding:15px;font-size:14px;color:#71818c;background:#f7fafb;border-radius:10px}@media(max-width:850px){.shell{height:auto;min-height:100dvh;display:flex;flex-direction:column}header{height:62px;padding:0 16px;flex:none}.header-note{display:none}.sidebar{order:2;max-height:none;border-right:0;border-top:1px solid #dbe5e8;padding:20px 16px}.sidebar h1{font-size:23px}.workspace{order:1;position:relative;height: min(70vh,630px);min-height:470px}.map-top{left:12px;right:12px;top:12px}.map-title{padding:8px 10px}.map-title strong{font-size:13px}.map-title small{font-size:11px}.map-actions button{padding:0 8px;font-size:12px}.detail{bottom:12px;left:12px;width:min(330px,calc(100% - 65px));padding:14px}.detail h2{font-size:18px}.zoom{right:12px;bottom:12px}.caption{display:none}.source-image{inset:66px 10px 10px}}@media(max-width:480px){.map-top{align-items:flex-start}.map-title small{display:none}.map-actions button{height:32px}.map-title{padding:8px}.zoom button{width:34px;height:34px;min-width:34px}.detail{width:calc(100% - 66px)}}
+  .map-items{margin-top:14px;padding-top:12px;border-top:1px solid #e5edef;display:flex;flex-direction:column;gap:6px}.map-items strong{color:#a82030;font-size:13px}.map-items a{font-size:13px;color:#294f71;text-decoration:none}.map-items a:hover{text-decoration:underline}.has-items .roof,.has-items circle{stroke:#e42737!important;stroke-width:5px!important}
+  .brand-logo{display:block;width:205px;max-width:42vw;height:46px;object-fit:contain;object-position:left center}
+</style>
+  <style>
+    .feature-A .front{fill:#af3738}.feature-A .side{fill:#8d4040}.feature-A .roof{fill:#b9673d;stroke:#8d4938}.feature-A .roof-lit{fill:#d48952}
+    .feature-B .front{fill:#f4dfb1}.feature-B .side{fill:#c7a77d}.feature-B .roof{fill:#b77346;stroke:#995b3c}.feature-B .roof-lit{fill:#cc8b59}
+    .feature-C .front{fill:#8fc5d8}.feature-C .side{fill:#529ab6}.feature-C .roof{fill:#f9feff;stroke:#99bbc6}
+    .feature-F .front{fill:#68b8bd}.feature-F .side{fill:#419ba6}.feature-F .roof{fill:#b6d6d9;stroke:#719fa6}
+    .feature-G .front{fill:#b62d42}.feature-G .side{fill:#8e293c}.feature-G .roof{fill:#aec1ca;stroke:#678d9c}
+    .feature-D .front{fill:#e9d3a8}.feature-D .side{fill:#b49272}.feature-D .roof{fill:#b9673f;stroke:#89452e}.feature-D .roof-lit{fill:#d18650}
+    .feature-R .front{fill:#293b48}.feature-R .side{fill:#273340}.feature-R .roof{fill:#b65b66;stroke:#754855}
+    .path{stroke:#aa6147;stroke-width:14;opacity:.84}
+    .ground-label,.minor-label{paint-order:stroke;stroke:#f8fcf8;stroke-width:3}
+    .building.selected .roof,.building:hover .roof{stroke:#ffc843;stroke-width:4}
+    .feature-E.selected .e-roof,.feature-E:hover .e-roof{stroke:#ffc843;stroke-width:5}
+    .fountain{cursor:pointer}
+    .fountain:hover .fountain-rim,.fountain.selected .fountain-rim{stroke:#e32131;stroke-width:6}
+    .detail-photo{width:100%;height:205px;object-fit:contain;object-position:center;background:#e9f1f4;border-radius:12px;margin:12px 0 13px;display:block}
+    .detail .photo-caption{font-size:12px;color:#617987;margin-top:10px}
+    .detail .photo-caption a{color:#b52836}
+    .tour-asset{display:flex;align-items:center;gap:10px;margin-top:13px;color:#b52836;font-size:12px;text-decoration:none;font-weight:700}
+    .tour-asset img{height:64px;width:64px;object-fit:cover;object-position:top;border-radius:7px}
+    .route-box{border:1px solid #d9e8e6;border-radius:14px;background:#f1f8f6;padding:13px;margin:-3px 0 22px}
+    .route-title{font-size:14px;font-weight:800;color:#24594f;margin:0 0 10px}
+    .route-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .route-steps button{display:flex;align-items:center;gap:7px;border:1px solid #d2e2dd;background:#fff;border-radius:8px;padding:7px;text-align:left;color:#315b53;font-size:13px;font-weight:700}
+    .route-steps button:hover{border-color:#e32131}
+    .route-steps b{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:#dcf0ec;color:#195448;font-size:12px}
+    .gate-entry circle{fill:#168762}.gate-exit circle{fill:#2776a3}
+    .gate-diagram{width:100%;height:auto;display:block;border-radius:12px;border:1px solid #d9e1e2;margin:12px 0;background:#f2f6f4}
+    .gate-diagram-caption{font-size:12px;color:#57747a;line-height:1.45;margin:-4px 0 12px}
+    .zone-hit{cursor:pointer}
+    .zone-hit.selected{stroke:#e32131;stroke-width:4}
+    .detail:has(.detail-photo){max-height:min(650px,calc(100% - 118px));overflow:auto}
+    .flycam-switch{position:absolute;top:8px;right:8px;z-index:1;display:flex;flex-wrap:wrap;max-width:calc(100% - 16px);gap:5px;background:#fff;border-radius:9px;padding:5px;box-shadow:0 5px 20px #173b3233}
+    .flycam-switch button{border:0;border-radius:6px;background:#eef3f1;color:#294d48;padding:7px 9px;font-size:12px;font-weight:700}
+    .flycam-switch button.active{background:#e32131;color:#fff}
+    @media(max-width:850px){.detail-photo{height:122px}.detail:has(.detail-photo){max-height:calc(100% - 68px)}.map-top{flex-wrap:wrap}}
+  .map-items{margin-top:14px;padding-top:12px;border-top:1px solid #e5edef;display:flex;flex-direction:column;gap:6px}.map-items strong{color:#a82030;font-size:13px}.map-items a{font-size:13px;color:#294f71;text-decoration:none}.map-items a:hover{text-decoration:underline}.has-items .roof,.has-items circle{stroke:#e42737!important;stroke-width:5px!important}
+  body.is-embedded{overflow:hidden;background:#e9f2f3}
+  body.is-embedded .shell{display:block!important;height:100vh!important;min-height:0!important;grid-template-columns:1fr!important;grid-template-rows:1fr!important}
+  body.is-embedded header,body.is-embedded aside.sidebar,body.is-embedded .map-top,body.is-embedded .detail{display:none!important}
+  body.is-embedded .workspace{width:100%!important;height:100vh!important;position:relative!important}
+  body.is-embedded .caption{left:12px;bottom:12px}
+  body.is-embedded .zoom{right:12px;bottom:12px}
+</style>
+</head>
+<body>
+<div class="shell">
+ <header><a class="brand" href="/" aria-label="Về trang chủ UniFind DNTU"><img class="brand-logo" src="/DNTU_Web_Asset_Kit/branding/unifind-dntu-logo-burgundy.svg" alt="UniFind DNTU"></a><div class="header-note">Bản đồ khuôn viên · Đại học Công nghệ Đồng Nai</div></header>
+ <aside class="sidebar"><div class="eyebrow">Khám phá DNTU</div><h1>Tìm địa điểm trong trường</h1><p class="sub">Chọn một địa điểm để xem hình ảnh thật và mặt tiền mô phỏng trên bản đồ.</p><input id="search" class="search" type="search" aria-label="Tìm tòa nhà hoặc địa điểm" placeholder="Tìm tòa nhà, thư viện, sân thể thao…"/><div id="filters" class="segment" role="group" aria-label="Lọc địa điểm"><button data-filter="all" class="active">Tất cả</button><button data-filter="study">Học tập</button><button data-filter="life">Tiện ích</button></div><div class="route-box"><div class="route-title">Từ cổng vào cạnh IRAS</div><div class="route-steps" role="group" aria-label="Các điểm theo lối vào cạnh IRAS"><button data-place="GATE_SPORT"><b>0</b>Cổng vào</button><button data-place="SPORT"><b>1</b>Pickleball</button><button data-place="POOL"><b>2</b>Hồ bơi</button><button data-place="PARK"><b>3</b>Công viên</button><button data-place="G"><b>4</b>Tòa G</button></div></div><div class="list-heading">Địa điểm</div><div id="places" class="place-list"></div><p class="source-note">Mặt tiền tham chiếu <a href="https://dntu.edu.vn/tin-tuc/k22-truoc-khi-vao-hoc-hay-lam-quen-voi-campus-dntu" target="_blank" rel="noopener">ảnh từng tòa do DNTU công bố</a> và <a href="https://360campus.dntu.edu.vn/" target="_blank" rel="noopener">tour 360° DNTU</a>. Bố cục A–G, sân pickleball, công viên, khu thể thao E và ký túc xá D dựa trên ảnh flycam bạn cung cấp; ảnh tại từng vị trí. Hình khối và khoảng cách trên bản đồ 3D chỉ là mô phỏng, không dùng để dẫn đường. Nét vàng là tường rào; nét đỏ là đường đi theo ảnh bạn cung cấp.</p></aside>
+ <main class="workspace"><div class="map-top"><div class="map-title"><strong>Bản đồ campus DNTU 3D</strong><small>Kéo để di chuyển · cuộn để phóng to</small></div></div><div id="mapWrap" class="map-wrap"><div id="mapInner" class="map-inner"><svg id="map" viewBox="0 0 1380 900" role="img" aria-label="Sơ đồ minh họa 3D campus DNTU với tòa A đến G, công viên và các khu thể thao"><defs><pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#9ec5ae" opacity=".45"/></pattern><filter id="blur"><feGaussianBlur stdDeviation="6"/></filter></defs><rect width="1380" height="900" class="grid"/><g id="ground"></g><g id="structures"></g><g id="labels"></g></svg></div></div><div id="detail" class="detail" hidden></div><div class="caption">Hình khối mô phỏng theo ảnh · vị trí tương đối từ flycam</div><div class="zoom"><button id="zoomIn" aria-label="Phóng to">+</button><button id="zoomOut" aria-label="Thu nhỏ">−</button><button id="reset" aria-label="Đặt lại bản đồ" title="Đặt lại">⌂</button></div></main>
+</div>
+<script>
+const places=[
+ {id:'A',name:'Tòa A',type:'study',desc:'Tòa A lùi vào trong so với cổng chính và đường Nguyễn Khuyến. Giữa cổng và nhà có sân lát để đi, khuôn viên phía trước sảnh và cột cờ. Ba cánh nhà mái ngói đỏ tạo thành hình chữ U với sân trong có cây xanh; phía dưới là thư viện bên trái và tòa B bên phải. Bên cạnh A là dãy đỗ ô tô có mái che.',x:600,y:275,w:350,d:150,h:61,color:'red',verified:true},
+ {id:'B',name:'Tòa B',type:'study',desc:'Tòa B là khối dài mái ngói đỏ bao quanh sân trong, nằm song song với thư viện ngay dưới tòa A. Dải sân cầu lông, bóng chuyền và bóng rổ áp sát cạnh phải B; sân bóng chuyền được bổ sung theo vị trí bạn chỉ ra.',x:765,y:454,w:180,d:180,h:68,color:'cream',verified:true},
+ {id:'C',name:'Tòa C · Thư viện',type:'study',desc:'Thư viện là khối mái sáng dài nằm dưới cánh trái tòa A, song song bên trái B; đường đi đỏ chạy ngang giữa A và thư viện. Mặt trước có kính xanh, cột xanh lam và mái cong trắng; cạnh thư viện là bãi cỏ sự kiện.',x:605,y:454,w:145,d:180,h:44,color:'teal',verified:true},
+ {id:'F',name:'Tòa F',type:'study',desc:'Tòa 5 tầng với mặt dựng kính xanh, thân nhà dài và khung đỏ ở lối vào, nằm cạnh tòa G. Khu trung tâm tổ chức sự kiện ở phía trước F; có phòng thực hành Công nghệ thông tin, Kế toán, in 3D, VR.',x:380,y:740,w:135,d:135,h:76,color:'',verified:true},
+ {id:'G',name:'Tòa G',type:'study',desc:'Tòa 6 tầng có mặt tiền đỏ, các tầng đua ra và đường viền xanh đậm. Công viên sáng tạo với vòm và đài phun nước nằm phía trước tòa G.',x:68,y:760,w:250,d:78,h:80,color:'red',verified:true},
+ {id:'D',name:'Tòa D · Ký túc xá',type:'life',desc:'Ký túc xá là khối nhà dài với mái ngói và các dãy ban công, chạy dọc cạnh khu liên hợp thể thao E như góc flycam mới bạn gửi.',x:935,y:710,w:135,d:145,h:61,color:'cream',verified:true,relative:true},
+ {id:'E',name:'Khu liên hợp thể thao E · 3 tầng',type:'life',desc:'Khu E là công trình ba tầng sát ký túc xá D: tầng 1 và tầng 2 dùng làm nhà để xe, tầng trên cùng là mặt sân thể thao hiện có. Trên tầng 3 là sân bóng đá sọc xanh cùng dãy sân bóng chuyền và bóng rổ như ảnh flycam bạn gửi.',x:750,y:785,verified:true,relative:true,icon:'⚽'},
+ {id:'R',name:'Viện IRAS · Phòng tuyển sinh',type:'life',desc:'Bạn xác nhận đây là phòng tuyển sinh IRAS, nằm ngay phía trước sân pickleball, sát mép đường ở đầu dải thể thao. Mặt tiền thấp có dải lam đỏ, mảng tường tối và cửa kính tròn; vị trí hình khối là tương đối theo ảnh bạn đánh dấu.',x:115,y:145,w:160,d:28,h:20,verified:true,relative:true},
+ {id:'EVENT',name:'Sân tổ chức sự kiện',type:'life',desc:'Sảnh thảm cỏ dài bằng thư viện C, chạy sát cạnh trái thư viện. Bãi đỗ ô tô nằm đối diện qua đường đi đỏ. Trên thảm cỏ có bàn ghế và dù để ngồi làm việc; mái vòm trắng và sân khấu ở cuối dải cỏ, trước tòa F.',x:504,y:546,verified:true,icon:'◡'},
+ {id:'PARKING',name:'Khu để xe ô tô',type:'life',desc:'Dãy chỗ đỗ ô tô có mái che vải trắng chạy dọc cạnh trái tòa A. Qua đường đi đỏ là sân tổ chức sự kiện: sảnh thảm cỏ dài sát thư viện với bàn ghế ngồi làm việc, phía cuối có mái vòm và sân khấu.',x:535,y:338,verified:true,relative:true,icon:'▤'},
+ {id:'SPORT',name:'Sân pickleball',type:'life',desc:'Sân pickleball nằm ở đầu dải thể thao, sát đường và tường rào phía trên; phòng tuyển sinh IRAS nằm ngay phía trước sân theo ảnh bạn đánh dấu.',x:160,y:220,verified:true,icon:'▣'},
+ {id:'POOL',name:'Hồ bơi',type:'life',desc:'Hồ bơi là dải dài, hẹp chạy dọc mép khuôn viên dưới sân pickleball; tiếp đến là công viên sáng tạo.',x:160,y:340,verified:true,icon:'≈'},
+ {id:'PARK',name:'Công viên sáng tạo',type:'life',desc:'Công viên nằm sau hồ bơi và phía trước tòa G. Quảng trường tròn có đài phun nước được bao quanh bởi nhiều cây xanh, với vòm nghỉ ở rìa công viên.',x:175,y:522,verified:true,icon:'✿'},
+ {id:'GATE',name:'Cổng trường chính · trước tòa A',type:'life',desc:'Cổng mở rộng giữa hai tường ốp đá màu sáng có chữ vàng. Chốt bảo vệ màu đỏ nâu, mái thấp và cửa kính ở phía trái; qua cổng là sân rộng, bảng tên và mặt tiền đỏ có hàng vòm của tòa A. Nhìn từ ngoài đường vào A: làn trái là lối vào, làn phải là lối ra.',x:775,y:95,verified:true,icon:'⌂'},
+ {id:'GATE_IN',name:'Cổng chính · Lối vào',type:'life',desc:'Làn bên trái khi đứng ngoài đường nhìn vào tòa A, sát chốt bảo vệ màu đỏ nâu. Đi qua lối mở giữa hai tường ốp đá để vào sân trước tòa A.',x:745,y:110,verified:true,icon:'↓'},
+ {id:'GATE_OUT',name:'Cổng chính · Lối ra',type:'life',desc:'Làn bên phải khi đứng ngoài đường nhìn vào tòa A, cạnh tường ốp đá phía phải và cổng chắn kim loại. Đi từ sân trước tòa A ra đường Nguyễn Khuyến.',x:805,y:110,verified:true,icon:'↑'},
+ {id:'GATE_SPORT',name:'Cổng vào cạnh khu thể thao',type:'life',desc:'Lối vào trên mép đường phía trên, cạnh viện IRAS và đầu dải sân pickleball như ảnh bạn vừa chỉ. Từ đây đi dọc sân pickleball, hồ bơi rồi đến công viên sáng tạo.',x:310,y:145,verified:true,icon:'↓'},
+ {id:'GATE2',name:'Cổng phụ phía dưới',type:'life',desc:'Cổng phụ ở đoạn tường vàng phía dưới, giữa tòa F và khu thể thao E, đúng vị trí ảnh bạn vừa chỉ. Từ đây có đường đi màu đỏ vào khuôn viên.',x:620,y:849,verified:true,icon:'⌂'}
+];
+const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';let mapData={};let selected=null,filter='all',query='',scale=1,offsetX=0,offsetY=0,drag=null;
+function el(tag,attrs={},parent){let n=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(parent)parent.appendChild(n);return n}
+function pt(x,y,z=0){return [110+x+y*.20,60+y*.82-z]};function points(a){return a.map(([x,y])=>`${x},${y}`).join(' ')}
+const ground=$('ground'),str=$('structures'),labels=$('labels');
+const lawn=el('polygon',{points:points([[108,145],[1230,145],[1323,792],[207,792]]),class:'land'},ground);
+el('path',{d:'M 0 150 L 1380 150 M 0 808 L 1380 808',class:'road',stroke:'#65747b','stroke-width':'45'},ground);
+el('path',{d:'M 0 151 L 1380 151 M 0 808 L 1380 808',class:'roadstripe'},ground);
+el('text',{x:'650',y:'129',class:'minor-label'},ground).textContent='ĐƯỜNG NGUYỄN KHUYẾN';
+const waypoints=[[[310,173],[310,438]],[[310,220],[450,220]],[[82,438],[310,438],[596,438],[950,438],[1095,438]],[[596,438],[596,685]],[[310,685],[645,685]],[[620,685],[620,880]],[[450,190],[950,190],[950,438]],[[450,190],[450,220]]];
+const pathD=waypoints.map(segment=>segment.map(([x,y],i)=>`${i?'L':'M'} ${pt(x,y).join(' ')}`).join(' ')).join(' ');
+el('path',{d:pathD,class:'path'},ground);
+const wallPoints=[[[55,173],[275,173]],[[345,173],[710,173]],[[840,173],[1130,173],[1130,605],[1080,880],[660,880]],[[580,880],[55,880],[55,173]]];
+const wallD=wallPoints.map(segment=>segment.map(([x,y],i)=>`${i?'L':'M'} ${pt(x,y).join(' ')}`).join(' ')).join(' ');
+el('path',{d:wallD,fill:'none',stroke:'#b89140','stroke-width':9,'stroke-linejoin':'round'},ground);
+el('path',{d:wallD,fill:'none',stroke:'#f6df7f','stroke-width':3,'stroke-linejoin':'round'},ground);
+for(const gx of [275,345,710,840]){const [px,py]=pt(gx,173);el('rect',{x:px-6,y:py-19,width:12,height:23,rx:1,fill:'#cfaa75',stroke:'#9a764a','stroke-width':2},ground)}
+for(const gx of [580,660]){const [px,py]=pt(gx,880);el('rect',{x:px-6,y:py-17,width:12,height:22,rx:1,fill:'#cfaa75',stroke:'#9a764a','stroke-width':2},ground)}
+zoneHit('GATE',710,145,130,55);
+function rect(x,y,w,d,fill,stroke='#8fc19a'){const a=pt(x,y),b=pt(x+w,y),c=pt(x+w,y+d),e=pt(x,y+d);el('polygon',{points:points([a,b,c,e]),fill,stroke,'stroke-width':2},ground)}
+// Paved walking forecourt between the main gate and the recessed front of A.
+rect(692,184,167,89,'#d9d2c4','#efe8d9');
+for(const yy of [199,216,233,255]){const [a,b]=pt(708,yy),[c,d]=pt(843,yy);el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#f5eee4','stroke-width':2},ground)}
+for(const xx of [730,775,820]){const [a,b]=pt(xx,186),[c,d]=pt(xx,271);el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#e8dfd3','stroke-width':1.3},ground)}
+rect(82,185,164,65,'#81af85','#dce9d8');
+rect(94,193,140,49,'#317da9','#ecf6f3');
+const [sportL,sportT]=pt(102,217),[sportR,sportB]=pt(226,217);
+el('line',{x1:sportL,y1:sportT,x2:sportR,y2:sportB,stroke:'#fff','stroke-width':2},ground);
+for(let i=0;i<2;i++){const [lx,ly]=pt(99,199+i*37),[rx,ry]=pt(229,199+i*37);el('line',{x1:lx,y1:ly,x2:rx,y2:ry,stroke:'#d5ebf2','stroke-width':1.5},ground)}
+rect(96,257,145,170,'#d3e6dc');rect(103,265,131,154,'#5bafc5','#e6f9f8');
+for(let i=1;i<5;i++){const [x1,y1]=pt(107,265+i*31),[x2,y2]=pt(230,265+i*31);el('line',{x1,y1,x2,y2,stroke:'#dbf8f8','stroke-width':1.5},ground)}
+function zoneHit(id,x,y,w,d){let a=pt(x,y),b=pt(x+w,y),c=pt(x+w,y+d),e=pt(x,y+d);const hit=el('polygon',{points:points([a,b,c,e]),fill:'transparent',class:'zone-hit','data-id':id,role:'button',tabindex:'0','aria-label':places.find(p=>p.id===id).name},ground);hit.addEventListener('click',()=>select(id));hit.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(id)}})}
+zoneHit('SPORT',82,185,164,65);zoneHit('POOL',96,257,145,170);
+rect(480,255,110,140,'#a4acaa','#e2d7be');
+for(let i=0;i<4;i++){
+ const y=270+i*32,[a,b]=pt(488,y),[c,d]=pt(578,y);
+ el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#f6f2db','stroke-width':2},ground);
+ const car=[[500,y+5],[528,y+5],[528,y+20],[500,y+20]].map(([cx,cy])=>pt(cx,cy));
+ el('polygon',{points:points(car),fill:['#f3f1e9','#354451','#b34637','#53697a','#ede9dd'][i],stroke:'#58676a','stroke-width':1.5},ground);
+}
+for(const shift of [0,52]){
+ const sail=[[485,270+shift],[578,278+shift],[565,325+shift],[500,318+shift]].map(([cx,cy])=>pt(cx,cy,13));
+ el('polygon',{points:points(sail),fill:'#f9faf6',opacity:'.78',stroke:'#cfdbd7','stroke-width':2},ground);
+}
+zoneHit('PARKING',480,255,110,140);
+rect(420,454,168,180,'#73b46f','#d9e4d4');
+for(const [x,y] of [[440,495],[530,490],[447,543],[537,547]]){
+ const [sx,sy]=pt(x,y);el('line',{x1:sx-11,y1:sy,x2:sx+11,y2:sy,stroke:'#815843','stroke-width':4},ground);
+ el('line',{x1:sx-7,y1:sy+1,x2:sx-7,y2:sy+8,stroke:'#764d3b','stroke-width':2},ground);
+ el('line',{x1:sx+7,y1:sy+1,x2:sx+7,y2:sy+8,stroke:'#764d3b','stroke-width':2},ground)
+}
+for(const [x,y] of [[453,510],[526,525]]){
+ const [sx,sy]=pt(x,y);el('ellipse',{cx:sx,cy:sy,rx:13,ry:7,fill:'#d9b995',stroke:'#896c50','stroke-width':2},ground);
+ el('line',{x1:sx,y1:sy+3,x2:sx,y2:sy+12,stroke:'#815d42','stroke-width':2},ground);
+ el('path',{d:`M ${sx-18} ${sy-16} Q ${sx} ${sy-36} ${sx+18} ${sy-16}`,fill:'#fff9e9',stroke:'#b5bbb2','stroke-width':2},ground);
+}
+const [eventX,eventY]=pt(504,600);
+const event=el('g',{class:'gazebo','data-id':'EVENT',role:'button',tabindex:'0','aria-label':'Sân tổ chức sự kiện'},ground);
+el('ellipse',{cx:eventX,cy:eventY+7,rx:77,ry:26,fill:'#f7f5e9',stroke:'#b6b9a8','stroke-width':3},event);
+el('path',{d:`M ${eventX-77} ${eventY+5} Q ${eventX} ${eventY-44} ${eventX+77} ${eventY+5}`,fill:'none',stroke:'#fffdf5','stroke-width':9},event);
+for(const dx of [-67,67])el('line',{x1:eventX+dx,y1:eventY+8,x2:eventX+dx,y2:eventY+31,stroke:'#acb9a9','stroke-width':3},event);
+el('rect',{x:eventX-28,y:eventY+3,width:56,height:14,fill:'#a6403c'},event);
+event.addEventListener('click',()=>select('EVENT'));
+event.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select('EVENT')}});
+zoneHit('EVENT',420,454,168,180);
+rect(65,458,250,175,'#83b878','#d4e7c9');
+const [plazaX,plazaY]=pt(184,538);
+el('ellipse',{cx:plazaX,cy:plazaY,rx:82,ry:40,fill:'#d6d7cc',stroke:'#b1b9ae','stroke-width':2},ground);
+for(const [x,y] of [[73,472],[77,511],[78,565],[82,611],[119,469],[160,470],[216,474],[284,480],[297,515],[298,567],[291,614],[247,620],[202,621],[150,622],[100,589],[242,460]]){
+ const [sx,sy]=pt(x,y);el('circle',{cx:sx+3,cy:sy+4,r:16,fill:'#3b7451',opacity:'.25'},ground);el('circle',{cx:sx,cy:sy,r:15,fill:'#438b5c'},ground);el('circle',{cx:sx-5,cy:sy-6,r:10,fill:'#76b87a'},ground)
+}
+const [fountainX,fountainY]=pt(184,538),fountain=el('g',{class:'fountain','data-id':'PARK',role:'button',tabindex:'0','aria-label':'Công viên sáng tạo và đài phun nước'},ground);
+el('ellipse',{cx:fountainX,cy:fountainY+3,rx:60,ry:25,fill:'#adb7b2',opacity:'.38'},fountain);
+el('ellipse',{cx:fountainX,cy:fountainY,rx:57,ry:22,fill:'#e9eee9',class:'fountain-rim',stroke:'#899e9d','stroke-width':3},fountain);
+el('ellipse',{cx:fountainX,cy:fountainY-1,rx:48,ry:16,fill:'#6aafbd'},fountain);
+el('ellipse',{cx:fountainX-12,cy:fountainY-6,rx:24,ry:6,fill:'#d4f7f3',opacity:'.35'},fountain);
+for(const [dx,dy,jet] of [[-32,0,18],[-16,-5,25],[0,-8,31],[17,-5,24],[32,0,18]]){
+  const sx=fountainX+dx,sy=fountainY+dy;
+  el('path',{d:`M ${sx} ${sy} Q ${sx+4} ${sy-jet*.62} ${sx+8} ${sy-jet}`,fill:'none',stroke:'#e3ffff','stroke-width':3,'stroke-linecap':'round',opacity:'.88'},fountain);
+  el('circle',{cx:sx+8,cy:sy-jet,r:2.4,fill:'#fff'},fountain);
+}
+fountain.addEventListener('click',()=>select('PARK'));
+fountain.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select('PARK')}});
+const [gazeboX,gazeboY]=pt(287,584),gazebo=el('g',{class:'gazebo','data-id':'PARK'},ground);
+for(const dx of [-21,21])el('line',{x1:gazeboX+dx,y1:gazeboY-6,x2:gazeboX+dx,y2:gazeboY+23,stroke:'#303e3b','stroke-width':4},gazebo);
+el('polygon',{points:points([[gazeboX-34,gazeboY-9],[gazeboX,gazeboY-31],[gazeboX+34,gazeboY-9],[gazeboX+26,gazeboY-4],[gazeboX-26,gazeboY-4]]),fill:'#b96642',stroke:'#854a36','stroke-width':2},gazebo);
+gazebo.addEventListener('click',()=>select('PARK'));
+rect(975,450,95,186,'#abaaa3','#e7e5d9');
+for(const [name,y,color] of [['badminton',456,'#39769b'],['volleyball',516,'#498497'],['basketball',576,'#366d93']]){
+ rect(981,y,83,54,color,'#f5f2db');
+ const [a,b]=pt(1022,y+2),[c,d]=pt(1022,y+52);
+ el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#fff','stroke-width':1.6},ground);
+ const [cx,cy]=pt(1022,y+27);
+ if(name==='badminton'||name==='volleyball')el('line',{x1:cx-41,y1:cy,x2:cx+41,y2:cy,stroke:'#e8f2eb','stroke-width':1.4,...(name==='badminton'?{'stroke-dasharray':'3 2'}:{})},ground);
+ if(name==='volleyball')el('ellipse',{cx,cy,rx:10,ry:6,fill:'none',stroke:'#e7f4ef','stroke-width':1.3},ground);
+ if(name==='basketball')for(const dx of [-26,26])el('ellipse',{cx:cx+dx,cy,rx:8,ry:5,fill:'none',stroke:'#e7f4ef','stroke-width':1.3},ground);
+}
+const eX=645,eY=714,eW=255,eD=145,eHeight=50;
+const eCorners=[[eX,eY],[eX+eW,eY],[eX+eW,eY+eD],[eX,eY+eD]],eTop=eCorners.map(([x,y])=>pt(x,y,eHeight)),eBase=eCorners.map(([x,y])=>pt(x,y));
+const eDeck=el('g',{class:'building feature-E','data-id':'E',role:'button',tabindex:'0','aria-label':'Khu thể thao E: hai tầng dưới để xe, tầng trên là sân'},str);
+el('polygon',{points:points(eBase.map(([x,y])=>[x+8,y+9])),fill:'#365449',opacity:'.21'},eDeck);
+el('polygon',{points:points([eTop[1],eTop[2],eBase[2],eBase[1]]),fill:'#89958e',stroke:'#586e69','stroke-width':2},eDeck);
+el('polygon',{points:points([eTop[3],eTop[2],eBase[2],eBase[3]]),fill:'#c8c5b8',stroke:'#65736c','stroke-width':2},eDeck);
+const eFrontY=eTop[3][1],eFrontLeft=eTop[3][0],eFrontRight=eTop[2][0];
+el('line',{x1:eFrontLeft,y1:eFrontY+25,x2:eFrontRight,y2:eFrontY+25,stroke:'#eee8d9','stroke-width':4},eDeck);
+for(const row of [0,1]){
+ for(let bay=0;bay<7;bay++){
+  el('rect',{x:eFrontLeft+12+bay*34,y:eFrontY+4+row*25,width:25,height:16,rx:2,fill:'#536669',stroke:'#eee8d9','stroke-width':2},eDeck);
+  if(bay%2===0)el('path',{d:`M ${eFrontLeft+17+bay*34} ${eFrontY+17+row*25} h 14 l 2 -5 h -16 Z`,fill:'#b6c4be'},eDeck);
+ }
+}
+for(const yy of [eY+16,eY+49,eY+82,eY+115]){
+ const [sx,sy]=pt(eX+eW,yy,eHeight),[bx,by]=pt(eX+eW,yy);
+ el('line',{x1:sx,y1:sy+5,x2:bx,y2:by-5,stroke:'#ecede2','stroke-width':3},eDeck);
+}
+el('polygon',{points:points(eTop),fill:'#a9554d',stroke:'#e9e4d1','stroke-width':3},eDeck);
+function eRect(x,y,w,d,fill,stroke='#e9f0dd'){el('polygon',{points:points([[x,y],[x+w,y],[x+w,y+d],[x,y+d]].map(([a,b])=>pt(a,b,eHeight+1))),fill,stroke,'stroke-width':2},eDeck)}
+eRect(eX+8,eY+8,145,eD-16,'#58a455');
+for(let k=1;k<7;k++){const [a,b]=pt(eX+9+k*20,eY+9,eHeight+2),[c,d]=pt(eX+9+k*20,eY+eD-9,eHeight+2);el('line',{x1:a,y1:b,x2:c,y2:d,stroke:k%2?'#87bd73':'#4e9850','stroke-width':13,opacity:'.56'},eDeck)}
+const [fieldX,fieldY]=pt(725,eY+eD/2,eHeight+2);
+el('ellipse',{cx:fieldX,cy:fieldY,rx:22,ry:12,fill:'none',stroke:'#eef8e7','stroke-width':2},eDeck);
+const [midX,midY]=pt(725,eY+8,eHeight+2),[midBottomX,midBottomY]=pt(725,eY+eD-8,eHeight+2);
+el('line',{x1:midX,y1:midY,x2:midBottomX,y2:midBottomY,stroke:'#eef8e7','stroke-width':2},eDeck);
+for(let k=0;k<3;k++){const x=807,y=eY+8+k*44;eRect(x,y,84,40,k===2?'#ab7e6c':'#739e77');const [a,b]=pt(x+42,y,eHeight+2),[c,d]=pt(x+42,y+40,eHeight+2);el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#eaf3e7','stroke-width':2},eDeck);if(k===2){const [cx,cy]=pt(x+42,y+20,eHeight+2);el('ellipse',{cx,cy,rx:12,ry:7,fill:'none',stroke:'#f5eee2','stroke-width':1.5},eDeck)}}
+el('polygon',{points:points(eTop),class:'e-roof',fill:'none',stroke:'#f5eee4','stroke-width':4},eDeck);
+for(const [x,y] of [...eCorners,[eX,eY+eD/2],[eX+eW,eY+eD/2]]){const [px,py]=pt(x,y,eHeight);el('line',{x1:px,y1:py,x2:px,y2:py-13,stroke:'#d7e5dc','stroke-width':2},eDeck)}
+eDeck.addEventListener('click',()=>select('E'));eDeck.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select('E')}});
+function building(p){
+ const {x,y,w,d,h}=p, top=[pt(x,y,h),pt(x+w,y,h),pt(x+w,y+d,h),pt(x,y+d,h)],base=[pt(x,y),pt(x+w,y),pt(x+w,y+d),pt(x,y+d)];
+ const g=el('g',{class:`building feature-${p.id} ${p.color||''}`,'data-id':p.id,tabindex:'0',role:'button','aria-label':p.name},str);
+ const face=(a,b,c,d,klass)=>el('polygon',{points:points([a,b,c,d]),class:klass},g);
+ const line=(x1,y1,x2,y2,color,width=2)=>el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width},g);
+ face(...base.map(([px,py])=>[px+8,py+11]),'shadow');
+ face(top[1],top[2],base[2],base[1],'side');
+ if(p.id==='A'){
+   face(top[3],pt(x+68,y+d,h),pt(x+68,y+d),base[3],'front');
+   face(pt(x+w-68,y+d,h),top[2],base[2],pt(x+w-68,y+d),'front');
+ }else face(top[3],top[2],base[2],base[3],'front');
+ if(p.id==='A'||p.id==='B'||p.id==='D'){
+   const ridge0=[(top[0][0]+top[3][0])/2,(top[0][1]+top[3][1])/2-22];
+   const ridge1=[(top[1][0]+top[2][0])/2,(top[1][1]+top[2][1])/2-22];
+   face(top[0],top[1],ridge1,ridge0,'roof');face(ridge0,ridge1,top[2],top[3],'roof roof-lit');
+   for(let k=1;k<6;k++){let t=k/6;line(ridge0[0]+(ridge1[0]-ridge0[0])*t,ridge0[1]+(ridge1[1]-ridge0[1])*t,top[3][0]+(top[2][0]-top[3][0])*t,top[3][1]+(top[2][1]-top[3][1])*t,'#f3c389',1.3)}
+ }else{face(top[0],top[1],top[2],top[3],'roof')}
+ if(p.id==='A'||p.id==='B'){
+   const mx=p.id==='A'?68:47,my=p.id==='A'?29:30;
+   const court=[[x+mx,y+my],[x+w-mx,y+my],[x+w-mx,y+d-(p.id==='A'?1:my)],[x+mx,y+d-(p.id==='A'?1:my)]].map(([cx,cy])=>pt(cx,cy,h-2));
+   if(p.id==='B')face(...court,'roof');
+   el('polygon',{points:points(court),fill:p.id==='A'?'#c9c8b8':'#8ea789',stroke:'#8d5540','stroke-width':p.id==='A'?3:5},g);
+   if(p.id==='A'){
+     const il=pt(x+mx,y+my,h),ir=pt(x+w-mx,y+my,h),bl=pt(x+mx,y+my),br=pt(x+w-mx,y+my);
+     el('polygon',{points:points([il,ir,br,bl]),fill:'#b24642',stroke:'#87443d','stroke-width':2},g);
+     el('polygon',{points:points([il,ir,[br[0],br[1]-h*.55],[bl[0],bl[1]-h*.55]]),fill:'#eee0c6'},g);
+     for(let i=0;i<5;i++){
+       const t=(i+.5)/5,cx=il[0]+(ir[0]-il[0])*t,cy=il[1]+(ir[1]-il[1])*t;
+       el('rect',{x:cx-8,y:cy+8,width:16,height:10,fill:'#495f67',stroke:'#f1e6cd','stroke-width':1.5},g);
+       el('path',{d:`M ${cx-11} ${cy+h-5} L ${cx-11} ${cy+h*.67} Q ${cx} ${cy+h*.38} ${cx+11} ${cy+h*.67} L ${cx+11} ${cy+h-5}`,fill:'none',stroke:'#f2d0ad','stroke-width':4},g);
+     }
+     const walk=[[x+141,y+my+11],[x+209,y+my+11],[x+209,y+d-6],[x+141,y+d-6]].map(([wx,wy])=>pt(wx,wy,h-3));
+     el('polygon',{points:points(walk),fill:'#ddd4c5',opacity:'.93',stroke:'#f1e8d8','stroke-width':2},g);
+     for(const fx of [x+130,x+220]){
+       const [px,py]=pt(fx,y+my+70,h-3);
+       el('line',{x1:px,y1:py,x2:px,y2:py-68,stroke:'#fff8e9','stroke-width':3.2},g);
+       el('path',{d:`M ${px} ${py-68} l 20 6 -20 6 Z`,fill:'#d52e35',stroke:'#fff0e4','stroke-width':.7},g);
+       el('ellipse',{cx:px,cy:py+2,rx:4,ry:2.5,fill:'#aa9c86'},g);
+     }
+   }
+   const trees=p.id==='A'?[[x+112,y+64],[x+235,y+63],[x+267,y+105],[x+126,y+113]]:[[x+78,y+65],[x+150,y+78]];
+   for(const [cx,cy] of trees){
+     const [tx,ty]=pt(cx,cy,h-4);
+     el('circle',{cx:tx,cy:ty,r:p.id==='A'?18:10,fill:'#5e9e61'},g);
+     el('circle',{cx:tx-5,cy:ty-5,r:p.id==='A'?12:7,fill:'#80b66e'},g);
+   }
+ }
+ const left=top[3],right=top[2],frontW=right[0]-left[0],frontSlope=right[1]-left[1];
+ if(p.id==='A'||p.id==='B'){
+   const cols=p.id==='A'?7:6;
+   if(p.id==='A'){
+     const bandY=h*.46;
+     for(const [start,end] of [[0,68/w],[1-68/w,1]]){
+       const l=[left[0]+frontW*start,left[1]+frontSlope*start],r=[left[0]+frontW*end,left[1]+frontSlope*end];
+       el('polygon',{points:points([l,r,[r[0],r[1]+bandY],[l[0],l[1]+bandY]]),fill:'#efe5cd',stroke:'#d7bea7','stroke-width':2},g);
+     }
+     for(let i=0;i<8;i++){
+       const t=(i+.5)/8;if(t>68/w&&t<1-68/w)continue;
+       const cx=left[0]+frontW*t,cy=left[1]+frontSlope*t;
+       el('rect',{x:cx-12,y:cy+8,width:24,height:15,fill:'#495d66',stroke:'#fff2db','stroke-width':2},g);
+       line(cx,cy+8,cx,cy+23,'#a2b8ba',1);
+     }
+     const [apexX,apexY]=pt(x+w*.5,y+57,h);
+     el('polygon',{points:points([[apexX-37,apexY],[apexX,apexY-29],[apexX+37,apexY]]),fill:'#bd704b',stroke:'#8e4c3b','stroke-width':3},g);
+     el('polygon',{points:points([[apexX-18,apexY-5],[apexX,apexY-20],[apexX+18,apexY-5]]),fill:'#3f4d55',stroke:'#e8c9a2','stroke-width':2},g);
+   }
+   for(let i=0;i<cols;i++){
+     if(p.id==='A'&&i>0&&i<cols-1)continue;
+     const t=(i+.5)/cols,cx=left[0]+frontW*t,cy=left[1]+frontSlope*t;
+     let ry=p.id==='A'?h*.66:22;
+     el('path',{d:`M ${cx-12} ${cy+ry+13} L ${cx-12} ${cy+ry} Q ${cx} ${cy+ry-19} ${cx+12} ${cy+ry} L ${cx+12} ${cy+ry+13}`,fill:'none',stroke:p.id==='A'?'#f6d8b6':'#b75039','stroke-width':p.id==='A'?5:4},g);
+     if(p.id==='B')el('rect',{x:cx-8,y:cy+5,width:16,height:8,rx:1,fill:'#f3fbf2'},g);
+   }
+   if(p.id==='B')line(left[0],left[1]+h*.58,right[0],right[1]+h*.58,'#d28653',3);
+ }
+ if(p.id==='D'){
+   for(let floor=1;floor<5;floor++)line(left[0],left[1]+h*floor/5,right[0],right[1]+h*floor/5,'#a94742',3);
+   for(let i=1;i<7;i++){let t=i/7;line(left[0]+frontW*t,left[1]+frontSlope*t+4,left[0]+frontW*t,left[1]+frontSlope*t+h-4,'#f6e2c1',2)}
+ }
+ if(p.id==='R'){
+   for(let i=0;i<4;i++)line(left[0],left[1]+3+i*3,right[0],right[1]+3+i*3,'#c56a70',2);
+   const cx=left[0]+frontW*.50,cy=left[1]+frontSlope*.50+h*.52;
+   el('circle',{cx,cy,r:12,fill:'#182937',stroke:'#c8d1d5','stroke-width':4},g);
+   for(let i=1;i<10;i++){let t=i/10;line(left[0]+frontW*t,left[1]+frontSlope*t+h*.58,left[0]+frontW*t,left[1]+frontSlope*t+h,'#a9bac4',1.5)}
+ }
+ if(p.id==='C'){
+   for(let i=0;i<8;i++){let t=(i+.5)/8,cx=left[0]+frontW*t,cy=left[1]+frontSlope*t;el('rect',{x:cx-5,y:cy+12,width:10,height:h-19,fill:'#1c7899',stroke:'#e8ffff','stroke-width':1},g)}
+   el('path',{d:`M ${top[3][0]-4} ${top[3][1]+3} Q ${left[0]+frontW*.5} ${left[1]-26} ${top[2][0]+4} ${top[2][1]+3}`,fill:'none',stroke:'#f8ffff','stroke-width':10},g);
+   for(let i=1;i<7;i++){let t=i/7;line(left[0]+frontW*t,left[1]+frontSlope*t+4,left[0]+frontW*t,left[1]+frontSlope*t+h-5,'#f3ffff',2)}
+ }
+ if(p.id==='F'){
+   const floors=5;
+   for(let i=1;i<floors;i++)line(left[0],left[1]+h*i/floors,right[0],right[1]+h*i/floors,'#e3f5f7',1.5);
+   for(let i=1;i<9;i++){let t=i/9;line(left[0]+frontW*t,left[1]+frontSlope*t,left[0]+frontW*t,left[1]+frontSlope*t+h,'#d2f2f3',1.5)}
+   const mid=left[0]+frontW*.50,my=left[1]+frontSlope*.50;
+   el('path',{d:`M ${mid-25} ${my+h} L ${mid-25} ${my+4} L ${mid+25} ${my+4} L ${mid+25} ${my+h}`,fill:'none',stroke:'#d93045','stroke-width':12},g);
+   el('rect',{x:mid-16,y:my+h-21,width:32,height:20,fill:'#384d59'},g);
+ }
+ if(p.id==='G'){
+   el('polygon',{points:points([pt(x+22,y+12,h+1),pt(x+w-22,y+12,h+1),pt(x+w-22,y+d-12,h+1),pt(x+22,y+d-12,h+1)]),fill:'#cedde0',stroke:'#8daeb6','stroke-width':2},g);
+   for(let i=1;i<17;i++){let t=i/17;line(left[0]+frontW*t,left[1]+frontSlope*t,left[0]+frontW*t,left[1]+frontSlope*t+h,'#e54c5b',2)}
+   for(let i=1;i<4;i++){let yy=h*i/4;line(left[0]-6,left[1]+yy,right[0]+6,right[1]+yy,'#233a48',6)}
+   el('rect',{x:left[0]+frontW*.39,y:left[1]+h-18,width:frontW*.22,height:18,fill:'#243d49'},g);
+ }
+ const mid=pt(x+w/2,y+d/2,p.id==='A'?h-23:h+(p.id==='R'?0:35)),mark=el('g',{class:'marker','data-id':p.id},labels);
+ el('circle',{cx:mid[0],cy:mid[1],r:22},mark);el('text',{x:mid[0],y:mid[1]+1},mark).textContent=p.id;
+ g.addEventListener('click',()=>select(p.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(p.id)}});mark.addEventListener('click',()=>select(p.id));
+}
+places.filter(p=>p.w).forEach(building);
+function label(x,y,name,size='ground-label'){let [sx,sy]=pt(x,y);el('text',{x:sx,y:sy,class:size},labels).textContent=name}
+// Gateway sits in the opening between the two yellow perimeter-wall ends.
+const [mainGateX,mainGateY]=pt(803,35);
+const gateModel=el('g',{'aria-label':'Mô hình cổng chính với chốt bảo vệ bên trái'},labels);
+for(const [wallX,wallW] of [[824,31],[985,33]]){
+ el('rect',{x:wallX,y:169,width:wallW,height:31,fill:'#e5d9c4',stroke:'#9b826c','stroke-width':2},gateModel);
+ for(let row=0;row<3;row++)el('line',{x1:wallX+3,y1:177+row*8,x2:wallX+wallW-3,y2:177+row*8,stroke:'#baac97','stroke-width':1},gateModel);
+}
+el('rect',{x:861,y:181,width:24,height:28,fill:'#863d38',stroke:'#64312e','stroke-width':2},gateModel);
+el('polygon',{points:'858,181 866,172 886,172 890,181',fill:'#a75643',stroke:'#784237','stroke-width':2},gateModel);
+el('rect',{x:865,y:185,width:15,height:12,fill:'#b9d0d1',stroke:'#ede1d0','stroke-width':2},gateModel);
+el('line',{x1:926,y1:171,x2:926,y2:204,stroke:'#f5f6ec','stroke-width':2,'stroke-dasharray':'7 5'},gateModel);
+const mainGateMarker=el('g',{class:'marker','data-id':'GATE',role:'button',tabindex:'0','aria-label':'Cổng trường chính trước tòa A'},labels);
+el('circle',{cx:mainGateX,cy:mainGateY,r:19},mainGateMarker);el('text',{x:mainGateX,y:mainGateY+1},mainGateMarker).textContent='⌂';
+mainGateMarker.addEventListener('click',()=>select('GATE'));mainGateMarker.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select('GATE')}});
+for(const [id,x,symbol,klass] of [['GATE_IN',901,'↓','gate-entry'],['GATE_OUT',952,'↑','gate-exit']]){
+ const p=places.find(place=>place.id===id),m=el('g',{class:`marker ${klass}`,'data-id':id,role:'button',tabindex:'0','aria-label':p.name},labels);
+ el('circle',{cx:x,cy:169,r:15},m);el('text',{x,y:170},m).textContent=symbol;
+ m.addEventListener('click',()=>select(id));m.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}});
+}
+for(const [id,x,y,symbol] of [['GATE_SPORT',310,144,'↓'],['GATE2',620,846,'⌂']]){
+ const [cx,cy]=pt(x,y),p=places.find(place=>place.id===id),m=el('g',{class:'marker gate-entry','data-id':id,role:'button',tabindex:'0','aria-label':p.name},labels);
+ el('circle',{cx,cy,r:17},m);el('text',{x:cx,y:cy+1},m).textContent=symbol;
+ m.addEventListener('click',()=>select(id));m.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}});
+}
+label(163,248,'PICKLEBALL','minor-label');label(166,410,'HỒ BƠI','minor-label');label(150,609,'CÔNG VIÊN SÁNG TẠO');label(504,473,'SÂN SỰ KIỆN','minor-label');label(534,296,'ĐỖ Ô TÔ','minor-label');label(1023,485,'CẦU LÔNG','minor-label');label(1023,546,'BÓNG CHUYỀN','minor-label');label(1023,590,'BÓNG RỔ','minor-label');label(756,859,'KHU THỂ THAO E','minor-label');label(803,10,'CỔNG CHÍNH','minor-label');label(310,90,'CỔNG VÀO','minor-label');label(555,855,'CỔNG PHỤ','minor-label');
+function list(){let filtered=places.filter(p=>(filter==='all'||p.type===filter)&&(!query||`${p.name} ${p.desc}`.toLocaleLowerCase('vi').includes(query)));$('places').innerHTML=filtered.length?'':'<div class="empty">Không tìm thấy địa điểm phù hợp.</div>';for(const p of filtered){let b=document.createElement('button');b.className=`place ${selected===p.id?'active':''}`;b.type='button';const entries=(mapData[p.id]||[]).flatMap(t=>t.items||[]);const foundC=entries.filter(t=>t.type==='FOUND').length;const lostC=entries.filter(t=>t.type==='LOST').length;const statNote=entries.length>0?`<small style="color:#d02737;font-weight:700">📍 ${foundC} nhặt được · ${lostC} thất lạc</small>`:`<small>${p.relative?'Vị trí tương đối từ ảnh flycam':'Chạm để xem trên bản đồ'}</small>`;b.innerHTML=`<span class="badge ${p.type==='life'?'green':''}">${p.icon||p.id}</span><span><strong>${p.name}</strong>${statNote}</span><span class="arrow">›</span>`;b.onclick=()=>select(p.id);$('places').appendChild(b)}}
+function select(id,skipNotify=false){
+ selected=id;
+ const p=places.find(t=>t.id===id);
+ if(!p)return;
+ list();
+ document.querySelectorAll('.building,.marker,.fountain,.zone-hit,.gazebo').forEach(n=>n.classList.toggle('selected',n.dataset.id===id));
+ if(!skipNotify&&window.parent&&window.parent!==window){
+  window.parent.postMessage({type:'UNIFIND_PLACE_CLICKED',id},window.location.origin);
+ }
+ if(document.body.classList.contains('is-embedded')){
+  if(p.x&&p.w&&window.innerWidth>850){offsetX=Math.max(-170,Math.min(170,(650-(110+p.x+p.y*.2))*0.13));offsetY=0;updateTransform()}
+  return;
+ }
+ const d=$('detail');
+ d.hidden=false;
+ const userPhoto={PARKING:'places/car-park-a.webp',A:'places/a-main-front.webp',PARK:'places/park.webp',GATE:'places/main-gate.webp',GATE_IN:'places/main-gate.webp',GATE_OUT:'places/main-gate.webp',GATE_SPORT:'places/side-gate.webp',SPORT:'places/flycam-labeled.webp',POOL:'places/flycam-labeled.webp',E:'places/e-sports.webp',C:'places/library-front.webp',EVENT:'places/event-front-lawn.webp',R:'places/research-front.webp'}[p.id];
+ const override=(mapData[p.id]||[]).find(t=>t.image_url);
+ const photo=override?.image_url||userPhoto||(/^[A-G]$/.test(p.id)?`buildings/${p.id}${['A','G'].includes(p.id)?'-raw.jpg':'.png'}`:null);
+ const photoSource=['A','G'].includes(p.id)?'https://dntu.edu.vn/khuon-vien-co-so-vat-chat':'https://dntu.edu.vn/tin-tuc/k22-truoc-khi-vao-hoc-hay-lam-quen-voi-campus-dntu';
+ const caption=override?'<div class="photo-caption">Ảnh địa điểm do quản trị viên cập nhật</div>':userPhoto?'<div class="photo-caption">Ảnh do bạn cung cấp · Bản đồ 3D là mô phỏng tỷ lệ và vị trí tương đối</div>':`<div class="photo-caption">Ảnh: <a href="${photoSource}" target="_blank" rel="noopener">DNTU</a> · Hình khối 3D mô phỏng từ ảnh</div>`;
+ const extraPhotos={A:[['places/a-library-paths-stage.webp','Đường đi ngang phía dưới A, thư viện và B'],['places/a-library-b-courts.webp','A phía trên thư viện, B và hai sân thể thao'],['places/a-gate-overhead.webp','Tòa A hình chữ U, cổng chính và bãi đỗ ô tô từ trên cao'],['places/a-main-entrance.webp','Góc rộng từ cổng lớn vào mặt trước tòa A'],['places/a-overhead.webp','Sân trong và mái tòa A nhìn từ trên cao']],B:[['places/a-library-b-courts.webp','Tòa B và dải sân thể thao bên phải từ trên cao'],['places/b-sports.webp','Sân cầu lông và bóng rổ bên phải B']],C:[['places/a-library-paths-stage.webp','Thư viện dưới A, phía sau đường đi đỏ và cạnh sân sự kiện'],['places/a-library-b-courts.webp','Thư viện song song với tòa B và phía dưới A'],['places/event-front-lawn.webp','Sân cỏ sự kiện dọc mặt bên thư viện']],D:[['places/e-f-g-aerial.webp','Ký túc xá D chạy dọc cạnh khu E'],['places/e-sports.webp','Khu E cạnh ký túc xá D'],['places/flycam-3d-orientation.webp','Vị trí D trong ảnh flycam cùng hướng 3D'],['tour/dorm.webp','Ảnh ký túc xá từ tour DNTU']],E:[['places/e-f-g-aerial.webp','Sân bóng đá và dãy sân bóng chuyền/bóng rổ nhìn từ trên cao'],['places/flycam-3d-orientation.webp','Khu E và ký túc xá D từ trên cao']],F:[['places/e-f-g-aerial.webp','Mái xanh tòa F cạnh G và khu thể thao E'],['places/fg-overhead.webp','Tòa F và G nhìn từ trên cao'],['places/event-stage.webp','Mái che và sân khấu trước F']],G:[['places/e-f-g-aerial.webp','Tòa G nhìn từ phía sân bóng đá'],['places/fg-overhead.webp','Tòa G và công viên phía trước']],R:[['places/iras-admissions-position.webp','Vị trí phòng tuyển sinh IRAS phía trước sân pickleball do bạn đánh dấu']],PARKING:[['places/a-library-paths-stage.webp','Bãi đỗ ô tô cạnh A và trục đường xuống thư viện'],['places/a-gate-overhead.webp','Bãi đỗ xe dọc cạnh tòa A nhìn từ trên cao'],['places/car-park-event-view.webp','Từ bãi đỗ nhìn tới bãi cỏ, bàn ghế và mái vòm'],['places/flycam-detail-gate.webp','Khu vực tòa A từ trên cao']],EVENT:[['places/a-library-paths-stage.webp','Vị trí sân khấu cạnh thư viện trên ảnh flycam'],['places/car-park-event-view.webp','Bãi cỏ, bàn ghế và mái vòm nhìn từ lối đỗ xe'],['places/event-stage.webp','Sân khấu dưới mái che vòm'],['places/event-canopy.webp','Toàn cảnh mái che sự kiện']],SPORT:[['places/flycam-labeled.webp','Sân pickleball ở đầu khu thể thao']],POOL:[['places/flycam-labeled.webp','Hồ bơi dọc mép khuôn viên']],PARK:[['places/park-gazebo.webp','Vòm nghỉ mái ngói trong công viên'],['places/fg-overhead.webp','Công viên ở phía trước tòa G']],GATE:[['places/a-main-entrance.webp','Góc nhìn thực tế từ ngoài đường vào cổng chính'],['places/a-gate-overhead.webp','Vị trí cổng chính phía sau cánh ngang tòa A'],['places/a-main-front.webp','Chi tiết vòm cửa và bảng tên trước tòa A'],['places/flycam-detail-gate.webp','Vị trí cổng chính và các lối đi do bạn đánh dấu']],GATE_IN:[['places/a-main-entrance.webp','Lối vào bên trái chốt bảo vệ nhìn từ ngoài đường']],GATE_OUT:[['places/a-main-entrance.webp','Lối ra bên phải nhìn từ ngoài đường']],GATE_SPORT:[['places/iras-admissions-position.webp','Cổng vào ở đầu dải thể thao gần viện IRAS']],GATE2:[['places/aerial.webp','Cổng phụ phía dưới giữa F và khu thể thao E trên flycam']]};
+ const gateDiagram=['GATE','GATE_IN','GATE_OUT'].includes(id)?'<img class="gate-diagram" src="places/gate-two-lanes.svg" alt="Bản vẽ cổng chính DNTU: tường đá sáng hai bên, chốt bảo vệ đỏ nâu bên trái, lối vào bên trái và lối ra bên phải"><div class="gate-diagram-caption">Nhìn từ đường vào tòa A: bên trái là lối vào, bên phải là lối ra. Bản vẽ dựa trên ảnh cổng bạn cung cấp.</div>':'';
+ const extras=(extraPhotos[p.id]||[]).map(([src,title])=>`<a class="tour-asset" href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${title}"><span>Xem ảnh: ${title} ↗</span></a>`).join('');
+ d.innerHTML=`<div class="topline"><span class="tag">${p.relative?'Vị trí tương đối':'Địa điểm DNTU'}</span><button class="close" aria-label="Đóng thông tin">×</button></div><h2>${p.name}</h2>${photo?`<img class="detail-photo" src="${photo}" alt="${userPhoto?'Ảnh khu vực do bạn cung cấp':`Ảnh thực tế ${p.name} do DNTU công bố`}">`:''}<p>${p.desc}</p>${gateDiagram}${photo?caption:''}${extras}${p.relative?'<div class="uncertain">Vị trí dựng theo bố cục ảnh flycam; không dùng làm tọa độ dẫn đường.</div>':''}`;
+ const entries=(mapData[p.id]||[]).flatMap(t=>t.items||[]);
+ const summary=document.createElement('section');summary.className='map-items';
+ const heading=document.createElement('strong');heading.textContent='Tin tại đây · Mất '+entries.filter(t=>t.type==='LOST').length+' · Nhặt được '+entries.filter(t=>t.type==='FOUND').length;
+ summary.appendChild(heading);
+ entries.slice(0,8).forEach(item=>{const a=document.createElement('a');a.href='/items/'+encodeURIComponent(item.id);a.target='_parent';a.textContent=(item.type==='LOST'?'Mất: ':'Nhặt được: ')+item.title;summary.appendChild(a)});
+ if(entries.length>8){const more=document.createElement('small');more.textContent='Và '+(entries.length-8)+' tin khác';summary.appendChild(more)}
+ d.appendChild(summary);
+ d.querySelector('.close').onclick=()=>{d.hidden=true;selected=null;list();document.querySelectorAll('.selected').forEach(n=>n.classList.remove('selected'))};
+ if(p.x&&p.w&&window.innerWidth>850){offsetX=Math.max(-170,Math.min(170,(650-(110+p.x+p.y*.2))*0.13));offsetY=0;updateTransform()}
+}
+function updateTransform(){$('mapInner').style.transform=`translate(${offsetX}px,${offsetY}px) scale(${scale})`}
+document.querySelector('.route-steps').onclick=e=>{const step=e.target.closest('button[data-place]');if(step)select(step.dataset.place)};$('search').oninput=e=>{query=e.target.value.toLocaleLowerCase('vi').trim();list()};$('filters').onclick=e=>{let b=e.target.closest('button[data-filter]');if(!b)return;filter=b.dataset.filter;$('filters').querySelectorAll('button').forEach(t=>t.classList.toggle('active',t===b));list()};$('zoomIn').onclick=()=>{scale=Math.min(2.3,scale+.2);updateTransform()};$('zoomOut').onclick=()=>{scale=Math.max(.72,scale-.2);updateTransform()};$('reset').onclick=()=>{scale=1;offsetX=offsetY=0;updateTransform()};let wrap=$('mapWrap');wrap.addEventListener('pointerdown',e=>{if(e.target.closest('.building,.marker,.zone-hit,.fountain,.gazebo'))return;drag={x:e.clientX,y:e.clientY,ox:offsetX,oy:offsetY};wrap.setPointerCapture(e.pointerId)});wrap.addEventListener('pointermove',e=>{if(!drag)return;offsetX=drag.ox+e.clientX-drag.x;offsetY=drag.oy+e.clientY-drag.y;updateTransform()});wrap.addEventListener('pointerup',()=>drag=null);wrap.addEventListener('pointercancel',()=>drag=null);wrap.addEventListener('wheel',e=>{e.preventDefault();scale=Math.max(.72,Math.min(2.3,scale+(e.deltaY<0?.08:-.08)));updateTransform()},{passive:false});list();
+const urlParams=new URLSearchParams(window.location.search);
+if(urlParams.get('embed')==='true'||window.parent!==window){
+ document.body.classList.add('is-embedded');
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin || event.source!==window.parent)return;
+ if(event.data?.type==='DESELECT_PLACE'||(event.data?.type==='FOCUS_PLACE'&&!event.data.id)){
+  selected=null;
+  const det=$('detail');if(det)det.hidden=true;
+  document.querySelectorAll('.building,.marker,.fountain,.zone-hit,.gazebo,.selected').forEach(n=>n.classList.remove('selected'));
+  return;
+ }
+ if(event.data?.type==='FOCUS_PLACE'){
+  if(event.data.id){select(event.data.id,true)}
+  return;
+ }
+ if(event.data?.type!=='UNIFIND_MAP_DATA')return;
+ const next={};
+ if(event.data.places && typeof event.data.places==='object')for(const [key,rows] of Object.entries(event.data.places)){
+  if(!places.some(p=>p.id===key)||!Array.isArray(rows))continue;
+  next[key]=rows.slice(0,100).map(row=>({
+   image_url:typeof row.image_url==='string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(row.image_url) && row.image_url.length<700000?row.image_url:'',
+   items:Array.isArray(row.items)?row.items.slice(0,500).filter(i=>(Number.isSafeInteger(Number(i.id)) || (typeof i.id==='string' && i.id.length>0)) && ['LOST','FOUND'].includes(i.type)).map(i=>({id:i.id,type:i.type,title:String(i.title||'Vật phẩm').slice(0,120)})):[]
+  }));
+ }
+ mapData=next;if(selected)select(selected,true);
+ document.querySelectorAll('.marker,.building,.zone-hit').forEach(n=>{let count=(mapData[n.dataset.id]||[]).reduce((sum,row)=>sum+row.items.length,0);n.classList.toggle('has-items',count>0);if(count)n.setAttribute('aria-label',(n.getAttribute('aria-label')||'Địa điểm')+' · '+count+' tin')});
+});
+if(window.parent!==window)window.parent.postMessage({type:'UNIFIND_MAP_READY'},window.location.origin);
+</script>
+</body></html>

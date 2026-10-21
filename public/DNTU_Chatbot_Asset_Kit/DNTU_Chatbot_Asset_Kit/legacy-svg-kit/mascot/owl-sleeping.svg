@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Cú DNTU ngủ">
+  <ellipse cx="112" cy="216" rx="67" ry="11" fill="#1e1b4b" opacity=".14"/>
+  <path d="M55 84 45 34l43 27M173 84l10-50-43 27" fill="#818cf8" stroke="#3730a3" stroke-width="6"/>
+  <ellipse cx="112" cy="134" rx="68" ry="81" fill="#818cf8" stroke="#3730a3" stroke-width="6"/>
+  <ellipse cx="112" cy="159" rx="43" ry="49" fill="#eef2ff"/>
+  <circle cx="82" cy="107" r="28" fill="#fff"/><circle cx="142" cy="107" r="28" fill="#fff"/>
+  <path d="M70 108q12 13 24 0M130 108q12 13 24 0" fill="none" stroke="#312e81" stroke-width="6" stroke-linecap="round"/>
+  <path d="m112 121-14 10 14 11 14-11z" fill="#f59e0b"/><circle cx="112" cy="168" r="8" fill="#312e81"/>
+  <text x="177" y="103" font-family="Arial" font-size="20" font-weight="800" fill="#4338ca">Z</text><text x="193" y="79" font-family="Arial" font-size="27" font-weight="800" fill="#4338ca">Z</text><text x="213" y="49" font-family="Arial" font-size="34" font-weight="800" fill="#4338ca">Z</text>
+</svg>
+

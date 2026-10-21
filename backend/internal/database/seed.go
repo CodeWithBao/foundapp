@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"unifind-dntu/internal/models"
 
@@ -13,6 +14,8 @@ func SeedData(db *gorm.DB) {
 	seedUsers(db)
 	seedCategories(db)
 	seedLocations(db)
+	seedItems(db)
+	seedClaims(db)
 }
 
 func seedUsers(db *gorm.DB) {
@@ -29,20 +32,20 @@ func seedUsers(db *gorm.DB) {
 
 	users := []models.User{
 		{
-			Name:         "Demo User",
+			Name:         "Nguyễn Văn An",
 			Email:        "user@dntu.edu.vn",
 			PasswordHash: hashPassword("123456"),
 			Role:         models.RoleUser,
-			StudentID:    "DNTU-U001",
+			StudentID:    "SV20210001",
 		},
 		{
-			Name:         "Demo Staff",
+			Name:         "Trần Minh Tuấn",
 			Email:        "staff@dntu.edu.vn",
 			PasswordHash: hashPassword("123456"),
 			Role:         models.RoleStaff,
 		},
 		{
-			Name:         "Demo Admin",
+			Name:         "Admin UniFind",
 			Email:        "admin@dntu.edu.vn",
 			PasswordHash: hashPassword("123456"),
 			Role:         models.RoleAdmin,
@@ -56,47 +59,557 @@ func seedUsers(db *gorm.DB) {
 }
 
 func seedCategories(db *gorm.DB) {
-	var count int64
-	db.Model(&models.Category{}).Count(&count)
-	if count > 0 {
-		return
-	}
-
 	categories := []models.Category{
-		{Name: "Điện tử", Slug: "dien-tu", Icon: "smartphone"},
-		{Name: "Giấy tờ/Thẻ", Slug: "giay-to-the", Icon: "credit-card"},
-		{Name: "Đồ dùng cá nhân", Slug: "do-dung-ca-nhan", Icon: "briefcase"},
-		{Name: "Phụ kiện", Slug: "phu-kien", Icon: "watch"},
+		{Name: "Điện thoại", Slug: "dien-thoai", Icon: "smartphone"},
+		{Name: "Laptop", Slug: "laptop", Icon: "laptop"},
+		{Name: "Tai nghe", Slug: "tai-nghe", Icon: "headphones"},
+		{Name: "Ví / Bóp", Slug: "vi-bop", Icon: "wallet"},
+		{Name: "Thẻ sinh viên", Slug: "the-sinh-vien", Icon: "credit-card"},
+		{Name: "Chìa khóa", Slug: "chia-khoa", Icon: "key"},
+		{Name: "Balo / Túi xách", Slug: "balo-tui-xach", Icon: "briefcase"},
+		{Name: "Bình nước", Slug: "binh-nuoc", Icon: "bottle"},
+		{Name: "Kính", Slug: "kinh", Icon: "glasses"},
+		{Name: "Sách / Tài liệu", Slug: "sach-tai-lieu", Icon: "book"},
+		{Name: "Đồng hồ", Slug: "dong-ho", Icon: "watch"},
 		{Name: "Quần áo", Slug: "quan-ao", Icon: "shirt"},
+		{Name: "Thiết bị điện tử", Slug: "thiet-bi-dien-tu", Icon: "zap"},
+		{Name: "Khác", Slug: "khac", Icon: "box"},
 	}
 
 	for _, c := range categories {
-		db.Create(&c)
+		var existing models.Category
+		if err := db.Where("name = ? OR slug = ?", c.Name, c.Slug).First(&existing).Error; err != nil {
+			db.Create(&c)
+		}
 	}
-	log.Println("[Seed] Categories seeded successfully.")
+	log.Println("[Seed] Categories checked and seeded.")
 }
 
 func seedLocations(db *gorm.DB) {
+	locations := []models.Location{
+		{
+			Name:        "Nhà A (Khu hành chính)",
+			Code:        "TOA_A",
+			Building:    "A",
+			MapKey:      "A",
+			Description: "Tòa nhà điều hành trung tâm, phòng ban hiệu bộ, phòng đào tạo và tiếp sinh viên.",
+			ImageURL:    "/campus/places/a-main-entrance.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/a-main-entrance.webp","caption":"Lối vào chính Tòa A","is_cover":true},{"id":"2","url":"/campus/places/a-main-front.webp","caption":"Mặt tiền Tòa A","is_cover":false},{"id":"3","url":"/campus/places/a-overhead.webp","caption":"Toàn cảnh Tòa A","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Nhà B (Giảng đường & Lab)",
+			Code:        "TOA_B",
+			Building:    "B",
+			MapKey:      "B",
+			Description: "Giảng đường đa năng, các phòng máy tính, phòng thí nghiệm chuyên ngành kỹ thuật.",
+			ImageURL:    "/campus/places/a-library-b-courts.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/a-library-b-courts.webp","caption":"Khu vực Tòa B và sân thể thao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Thư viện trung tâm (Tòa C)",
+			Code:        "THU_VIEN",
+			Building:    "C",
+			MapKey:      "C",
+			Description: "Thư viện số 4 tầng, không gian tự học hiện đại, kho tài liệu học liệu và phòng hội thảo.",
+			ImageURL:    "/campus/places/library-front.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/library-front.webp","caption":"Mặt trước Thư viện Trung tâm","is_cover":true},{"id":"2","url":"/campus/places/a-library-paths-stage.webp","caption":"Lối đi kết nối Tòa A - Thư viện","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Ký túc xá DNTU (Tòa D)",
+			Code:        "KY_TUC_XA",
+			Building:    "D",
+			MapKey:      "D",
+			Description: "Ký túc xá sinh viên nội trú đầy đủ tiện nghi, an ninh 24/7 và khuôn viên yên tĩnh.",
+			ImageURL:    "/campus/tour/dorm.webp",
+			Photos:      `[{"id":"1","url":"/campus/tour/dorm.webp","caption":"Khuôn viên Ký túc xá DNTU","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Khu thể thao phức hợp E",
+			Code:        "KHU_THE_THAO_E",
+			Building:    "E",
+			MapKey:      "E",
+			Description: "Nhà thi đấu thể thao đa năng, sân tập bóng rổ, cầu lông và các câu lạc bộ thể chất.",
+			ImageURL:    "/campus/places/e-sports.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/e-sports.webp","caption":"Khu tập luyện thể thao E","is_cover":true},{"id":"2","url":"/campus/places/e-f-g-aerial.webp","caption":"Cụm công trình thể thao E-F-G","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Tòa nhà giảng đường F",
+			Code:        "TOA_F",
+			Building:    "F",
+			MapKey:      "F",
+			Description: "Hệ thống giảng đường hiện đại, phòng sinh hoạt khoa và studio thực hành.",
+			ImageURL:    "/campus/places/fg-overhead.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/fg-overhead.webp","caption":"Tòa F nhìn từ góc cao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Tòa nhà công nghệ G",
+			Code:        "TOA_G",
+			Building:    "G",
+			MapKey:      "G",
+			Description: "Khu thực hành công nghệ ô tô, cơ khí tự động hóa và trung tâm nghiên cứu ứng dụng.",
+			ImageURL:    "/campus/places/fg-overhead.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/fg-overhead.webp","caption":"Khu liên hợp Tòa F và Tòa G","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Viện Nghiên cứu & Tuyển sinh (IRAS)",
+			Code:        "IRAS_R",
+			Building:    "R",
+			MapKey:      "R",
+			Description: "Trung tâm nghiên cứu ứng dụng, viện đào tạo quốc tế và trung tâm tư vấn tuyển sinh.",
+			ImageURL:    "/campus/places/iras-admissions-position.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/iras-admissions-position.webp","caption":"Trung tâm tư vấn tuyển sinh IRAS","is_cover":true},{"id":"2","url":"/campus/places/research-front.webp","caption":"Viện Nghiên cứu ứng dụng DNTU","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Sân khấu & Quảng trường sự kiện",
+			Code:        "HOI_TRUONG",
+			Building:    "EVENT",
+			MapKey:      "EVENT",
+			Description: "Không gian ngoài trời tổ chức lễ khai giảng, ngày hội văn hóa, ca nhạc và sự kiện lớn.",
+			ImageURL:    "/campus/places/event-stage.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/event-stage.webp","caption":"Khu vực sân khấu trung tâm sự kiện","is_cover":true},{"id":"2","url":"/campus/places/event-canopy.webp","caption":"Mái che và khán đài sự kiện","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Bãi đỗ xe ô tô & Khách",
+			Code:        "BAI_XE",
+			Building:    "PARKING",
+			MapKey:      "PARKING",
+			Description: "Bãi xe ô tô rộng rãi, có bóng mát cây xanh, camera giám sát và trạm bảo vệ.",
+			ImageURL:    "/campus/places/car-park-a.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/car-park-a.webp","caption":"Bãi đỗ ô tô cạnh tòa A","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Sân thể thao Pickleball & Tennis",
+			Code:        "SAN_THE_THAO",
+			Building:    "SPORT",
+			MapKey:      "SPORT",
+			Description: "Cụm sân thể thao ngoài trời hiện đại tiêu chuẩn thi đấu, sân pickleball, tennis và bóng chuyền.",
+			ImageURL:    "/campus/places/b-sports.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/b-sports.webp","caption":"Toàn cảnh cụm sân thể thao Pickleball","is_cover":true},{"id":"2","url":"/campus/places/aerial.webp","caption":"Góc nhìn toàn cảnh thể thao từ trên cao","is_cover":false}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Công viên sáng tạo sinh thái",
+			Code:        "CONG_VIEN_SANG_TAO",
+			Building:    "PARK",
+			MapKey:      "PARK",
+			Description: "Không gian xanh thư giãn, ghế đá ven hồ, vườn cây sinh thái và chòi nghỉ cho sinh viên.",
+			ImageURL:    "/campus/places/park.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/park.webp","caption":"Công viên cây xanh mát mẻ","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Cổng chính DNTU",
+			Code:        "CONG_CHINH",
+			Building:    "GATE",
+			MapKey:      "GATE",
+			Description: "Cổng chính trường Đại học Công nghệ Đồng Nai, có bốt an ninh và kiểm soát thẻ xe.",
+			ImageURL:    "/campus/places/main-gate.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/main-gate.webp","caption":"Cổng chính DNTU mặt tiền đường Nguyễn Khuyến","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Cổng phụ khu thể thao",
+			Code:        "CONG_PHU",
+			Building:    "GATE2",
+			MapKey:      "GATE2",
+			Description: "Cổng phụ thuận tiện di chuyển sang cụm sân thể thao, ký túc xá và bãi xe sau trường.",
+			ImageURL:    "/campus/places/side-gate.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/side-gate.webp","caption":"Cổng phụ thông ra khu thể thao","is_cover":true}]`,
+			IsActive:    true,
+		},
+		{
+			Name:        "Hồ bơi campus DNTU",
+			Code:        "HO_BOI",
+			Building:    "POOL",
+			MapKey:      "POOL",
+			Description: "Hồ bơi sinh viên đạt chuẩn huấn luyện kỹ năng bơi lội, hoạt động thể thao nước.",
+			ImageURL:    "/campus/places/flycam-labeled.webp",
+			Photos:      `[{"id":"1","url":"/campus/places/flycam-labeled.webp","caption":"Vị trí hồ bơi trong khuôn viên DNTU","is_cover":true}]`,
+			IsActive:    true,
+		},
+	}
+
+	for _, l := range locations {
+		var existing models.Location
+		if err := db.Where("code = ? OR name = ?", l.Code, l.Name).First(&existing).Error; err != nil {
+			db.Create(&l)
+		} else {
+			// Chỉ bổ sung metadata còn thiếu để không ghi đè nội dung quản trị viên đã cập nhật.
+			updates := map[string]interface{}{}
+			if existing.MapKey == "" && l.MapKey != "" {
+				updates["map_key"] = l.MapKey
+			}
+			if existing.Building == "" && l.Building != "" {
+				updates["building"] = l.Building
+			}
+			if existing.ImageURL == "" && l.ImageURL != "" {
+				updates["image_url"] = l.ImageURL
+			}
+			if (existing.Photos == "" || existing.Photos == "[]") && l.Photos != "" && l.Photos != "[]" {
+				updates["photos"] = l.Photos
+			}
+			if existing.Description == "" && l.Description != "" {
+				updates["description"] = l.Description
+			}
+			if len(updates) > 0 {
+				db.Model(&existing).Updates(updates)
+			}
+		}
+	}
+	log.Println("[Seed] Locations checked and seeded.")
+}
+
+type rawSeedItem struct {
+	Title            string
+	Category         string
+	Type             models.ItemType
+	Status           models.ItemStatus
+	Location         string
+	Date             string
+	Description      string
+	Color            string
+	Brand            string
+	DistinctFeatures string
+	Image            string
+	Views            int
+	StorageLocation  string
+	CreatedAt        string
+}
+
+func seedItems(db *gorm.DB) {
 	var count int64
-	db.Model(&models.Location{}).Count(&count)
+	db.Model(&models.Item{}).Count(&count)
 	if count > 0 {
 		return
 	}
 
-	locations := []models.Location{
-		{Name: "Nhà A", Code: "NHA_A"},
-		{Name: "Nhà B", Code: "NHA_B"},
-		{Name: "Nhà C", Code: "NHA_C"},
-		{Name: "Thư viện", Code: "THU_VIEN"},
-		{Name: "Căng tin", Code: "CANG_TIN"},
-		{Name: "Bãi xe", Code: "BAI_XE"},
-		{Name: "Hội trường", Code: "HOI_TRUONG"},
-		{Name: "Sân thể thao", Code: "SAN_THE_THAO"},
-		{Name: "Phòng Lab", Code: "PHONG_LAB"},
+	const (
+		imgPhone1      = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop"
+		imgPhone2      = "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop"
+		imgLaptop1     = "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=300&fit=crop"
+		imgLaptop2     = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop"
+		imgEarphone1   = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop"
+		imgEarphone2   = "https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400&h=300&fit=crop"
+		imgWallet1     = "https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=300&fit=crop"
+		imgWallet2     = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop"
+		imgCard        = "https://images.unsplash.com/photo-1578670812003-60745e2c2ea9?w=400&h=300&fit=crop"
+		imgKeys1       = "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop"
+		imgKeys2       = "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400&h=300&fit=crop"
+		imgBag1        = "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=300&fit=crop"
+		imgBag2        = "https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400&h=300&fit=crop"
+		imgBottle      = "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop"
+		imgGlasses1    = "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=400&h=300&fit=crop"
+		imgGlasses2    = "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=300&fit=crop"
+		imgBook        = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=300&fit=crop"
+		imgWatch1      = "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=300&fit=crop"
+		imgWatch2      = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop"
+		imgClothes     = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&h=300&fit=crop"
+		imgElectronics = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop"
+	)
+
+	rawItems := []rawSeedItem{
+		{
+			Title: "Ví da màu đen", Category: "Ví / Bóp", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Thư viện", Date: "2026-09-12", Description: "Ví da màu đen, bên trong có thẻ sinh viên và một số giấy tờ cá nhân. Ví hiệu Montblanc, có khắc tên chủ sở hữu bên trong.",
+			Color: "Đen", Brand: "Montblanc", DistinctFeatures: "Có khắc tên Nguyễn Văn An bên trong",
+			Image: imgWallet1, Views: 45, StorageLocation: "", CreatedAt: "2026-09-12T08:30:00Z",
+		},
+		{
+			Title: "Tai nghe AirPods Pro", Category: "Tai nghe", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Nhà C", Date: "2026-09-11", Description: "Tai nghe AirPods Pro màu trắng, còn trong hộp sạc. Tìm thấy trên bàn phòng C305.",
+			Color: "Trắng", Brand: "Apple", DistinctFeatures: "Có khắc chữ trên hộp sạc",
+			Image: imgEarphone1, Views: 67, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-11T14:20:00Z",
+		},
+		{
+			Title: "Thẻ sinh viên Nguyễn Minh Anh", Category: "Thẻ sinh viên", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Giảng đường A", Date: "2026-09-10", Description: "Thẻ sinh viên mang tên Nguyễn Minh Anh, mã SV20210156. Mất tại giảng đường A sau buổi học sáng.",
+			Color: "", Brand: "", DistinctFeatures: "Mã SV20210156",
+			Image: imgCard, Views: 32, StorageLocation: "", CreatedAt: "2026-09-10T11:00:00Z",
+		},
+		{
+			Title: "Chìa khóa xe Honda", Category: "Chìa khóa", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Bãi xe", Date: "2026-09-09", Description: "Chìa khóa xe Honda Wave, có móc khóa hình gấu bông nhỏ màu nâu.",
+			Color: "", Brand: "Honda", DistinctFeatures: "Móc khóa hình gấu bông nâu",
+			Image: imgKeys1, Views: 89, StorageLocation: "Bảo vệ bãi xe", CreatedAt: "2026-09-09T16:45:00Z",
+		},
+		{
+			Title: "iPhone 14 Pro Max", Category: "Điện thoại", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Giảng đường B", Date: "2026-09-08", Description: "iPhone 14 Pro Max màu đen, có ốp lưng trong suốt. Mất sau giờ học chiều thứ 6.",
+			Color: "Đen", Brand: "Apple", DistinctFeatures: "Ốp lưng trong suốt, có sticker nhỏ mặt sau",
+			Image: imgPhone1, Views: 120, StorageLocation: "", CreatedAt: "2026-09-08T17:30:00Z",
+		},
+		{
+			Title: "Kính cận gọng đen", Category: "Kính", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Thư viện", Date: "2026-09-08", Description: "Kính cận gọng nhựa đen, tròng kính khá dày. Tìm thấy trên bàn đọc tầng 2 thư viện.",
+			Color: "Đen", Brand: "", DistinctFeatures: "Gọng nhựa, tròng dày",
+			Image: imgGlasses1, Views: 28, StorageLocation: "Phòng bảo vệ", CreatedAt: "2026-09-08T09:15:00Z",
+		},
+		{
+			Title: "Balo Adidas màu xám", Category: "Balo / Túi xách", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Nhà C", Date: "2026-09-07", Description: "Balo Adidas màu xám, bên trong có vở và bút. Để quên tại phòng C201.",
+			Color: "Xám", Brand: "Adidas", DistinctFeatures: "Có dán sticker DNTU trên quai",
+			Image: imgBag1, Views: 55, StorageLocation: "", CreatedAt: "2026-09-07T13:00:00Z",
+		},
+		{
+			Title: "Chìa khóa nhà có móc kim loại", Category: "Chìa khóa", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Căng tin", Date: "2026-09-07", Description: "Bộ chìa khóa nhà gồm 3 chìa, có móc kim loại hình tròn.",
+			Color: "", Brand: "", DistinctFeatures: "Móc kim loại tròn, 3 chìa",
+			Image: imgKeys2, Views: 41, StorageLocation: "Văn phòng Đoàn trường", CreatedAt: "2026-09-07T12:00:00Z",
+		},
+		{
+			Title: "Bình nước Lock&Lock xanh", Category: "Bình nước", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Sân thể thao", Date: "2026-09-06", Description: "Bình nước Lock&Lock 750ml màu xanh dương, có dán tên trên thân bình.",
+			Color: "Xanh dương", Brand: "Lock&Lock", DistinctFeatures: "Có dán tên Phúc trên thân",
+			Image: imgBottle, Views: 18, StorageLocation: "", CreatedAt: "2026-09-06T17:00:00Z",
+		},
+		{
+			Title: "Ví da màu nâu", Category: "Ví / Bóp", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Nhà A", Date: "2026-09-06", Description: "Ví da màu nâu, bên trong có ít tiền mặt và thẻ ATM. Tìm thấy ở hành lang tầng 3.",
+			Color: "Nâu", Brand: "", DistinctFeatures: "Có chữ cái khắc trên ví",
+			Image: imgWallet2, Views: 73, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-06T10:30:00Z",
+		},
+		{
+			Title: "Laptop Dell Inspiron 15", Category: "Laptop", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Phòng tự học", Date: "2026-09-05", Description: "Laptop Dell Inspiron 15 màu bạc, có dán sticker trên nắp. Để quên tại phòng tự học.",
+			Color: "Bạc", Brand: "Dell", DistinctFeatures: "Có dán sticker anime trên nắp",
+			Image: imgLaptop1, Views: 95, StorageLocation: "", CreatedAt: "2026-09-05T20:00:00Z",
+		},
+		{
+			Title: "Đồng hồ Casio G-Shock", Category: "Đồng hồ", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Sân thể thao", Date: "2026-09-05", Description: "Đồng hồ Casio G-Shock màu đen, tìm thấy tại sân bóng rổ.",
+			Color: "Đen", Brand: "Casio", DistinctFeatures: "G-Shock, dây nhựa đen",
+			Image: imgWatch1, Views: 36, StorageLocation: "Bảo vệ sân thể thao", CreatedAt: "2026-09-05T18:00:00Z",
+		},
+		{
+			Title: "Sách Giải tích 1", Category: "Sách / Tài liệu", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Giảng đường A", Date: "2026-09-04", Description: "Sách Giải tích 1 (NXB Đại học Quốc gia), có ghi chú bằng bút chì bên trong.",
+			Color: "", Brand: "", DistinctFeatures: "Nhiều ghi chú bút chì, trang 45 bị gấp góc",
+			Image: imgBook, Views: 12, StorageLocation: "", CreatedAt: "2026-09-04T09:00:00Z",
+		},
+		{
+			Title: "Áo khoác Nike xám", Category: "Quần áo", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Hội trường", Date: "2026-09-04", Description: "Áo khoác Nike màu xám, size L. Để quên trên ghế sau sự kiện.",
+			Color: "Xám", Brand: "Nike", DistinctFeatures: "Size L, có vết mực nhỏ ở tay trái",
+			Image: imgClothes, Views: 22, StorageLocation: "Phòng bảo vệ", CreatedAt: "2026-09-04T21:00:00Z",
+		},
+		{
+			Title: "Samsung Galaxy S23", Category: "Điện thoại", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Căng tin", Date: "2026-09-03", Description: "Samsung Galaxy S23 màu tím, có ốp lưng silicon. Để quên trên bàn ăn.",
+			Color: "Tím", Brand: "Samsung", DistinctFeatures: "Ốp silicon tím nhạt, có pop socket",
+			Image: imgPhone2, Views: 88, StorageLocation: "", CreatedAt: "2026-09-03T12:30:00Z",
+		},
+		{
+			Title: "USB Kingston 32GB", Category: "Thiết bị điện tử", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Phòng Lab", Date: "2026-09-03", Description: "USB Kingston 32GB màu đen, cắm quên ở máy tính Lab.",
+			Color: "Đen", Brand: "Kingston", DistinctFeatures: "Có dán nhãn tên",
+			Image: imgElectronics, Views: 15, StorageLocation: "Phòng Lab", CreatedAt: "2026-09-03T16:00:00Z",
+		},
+		{
+			Title: "Túi xách Zara nâu", Category: "Balo / Túi xách", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Ký túc xá", Date: "2026-09-02", Description: "Túi xách Zara màu nâu, bên trong có ví nhỏ và mỹ phẩm.",
+			Color: "Nâu", Brand: "Zara", DistinctFeatures: "Có khóa kim loại vàng",
+			Image: imgBag2, Views: 44, StorageLocation: "", CreatedAt: "2026-09-02T14:00:00Z",
+		},
+		{
+			Title: "Tai nghe Sony WH-1000XM5", Category: "Tai nghe", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Thư viện", Date: "2026-09-02", Description: "Tai nghe chụp tai Sony WH-1000XM5 màu đen, tìm thấy trong phòng đọc.",
+			Color: "Đen", Brand: "Sony", DistinctFeatures: "Có tên viết tay trên headband",
+			Image: imgEarphone2, Views: 51, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-02T11:00:00Z",
+		},
+		{
+			Title: "Thẻ sinh viên Lê Hoàng Dũng", Category: "Thẻ sinh viên", Type: models.ItemTypeFound, Status: models.ItemStatusReturned,
+			Location: "Nhà B", Date: "2026-09-01", Description: "Thẻ sinh viên mang tên Lê Hoàng Dũng, mã SV20210089.",
+			Color: "", Brand: "", DistinctFeatures: "Mã SV20210089",
+			Image: imgCard, Views: 25, StorageLocation: "Đã bàn giao", CreatedAt: "2026-09-01T08:00:00Z",
+		},
+		{
+			Title: "Bình nước Inox 500ml", Category: "Bình nước", Type: models.ItemTypeFound, Status: models.ItemStatusReturned,
+			Location: "Giảng đường C", Date: "2026-08-30", Description: "Bình nước inox 500ml có nắp xanh lá, tìm thấy dưới bàn.",
+			Color: "Bạc", Brand: "", DistinctFeatures: "Nắp xanh lá, có vết trầy nhỏ",
+			Image: imgBottle, Views: 19, StorageLocation: "Đã bàn giao", CreatedAt: "2026-08-30T15:00:00Z",
+		},
+		{
+			Title: "MacBook Air M2", Category: "Laptop", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Phòng tự học", Date: "2026-09-01", Description: "MacBook Air M2 màu Midnight, để quên tại phòng tự học tầng 3 thư viện.",
+			Color: "Đen", Brand: "Apple", DistinctFeatures: "Có dán sticker Code is Life trên nắp",
+			Image: imgLaptop2, Views: 134, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-01T20:00:00Z",
+		},
+		{
+			Title: "Kính râm Ray-Ban", Category: "Kính", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Căng tin", Date: "2026-09-01", Description: "Kính râm Ray-Ban Wayfarer đen, để quên trên bàn căng tin.",
+			Color: "Đen", Brand: "Ray-Ban", DistinctFeatures: "Wayfarer classic, tròng phân cực",
+			Image: imgGlasses2, Views: 38, StorageLocation: "", CreatedAt: "2026-09-01T12:00:00Z",
+		},
+		{
+			Title: "Ví da đen tìm thấy ở Thư viện", Category: "Ví / Bóp", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Thư viện", Date: "2026-09-12", Description: "Ví da màu đen, tìm thấy tại bàn đọc sách tầng 1 thư viện. Bên trong có thẻ sinh viên và giấy tờ.",
+			Color: "Đen", Brand: "Montblanc", DistinctFeatures: "Có khắc tên bên trong",
+			Image: imgWallet1, Views: 52, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-12T15:00:00Z",
+		},
+		{
+			Title: "Sổ tay Moleskine đen", Category: "Sách / Tài liệu", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Nhà A", Date: "2026-08-28", Description: "Sổ tay Moleskine màu đen, bên trong có nhiều ghi chú quan trọng.",
+			Color: "Đen", Brand: "Moleskine", DistinctFeatures: "Có bookmark đỏ, trang đầu ghi số điện thoại",
+			Image: imgBook, Views: 16, StorageLocation: "", CreatedAt: "2026-08-28T10:00:00Z",
+		},
+		{
+			Title: "Apple Watch Series 8", Category: "Đồng hồ", Type: models.ItemTypeLost, Status: models.ItemStatusReturned,
+			Location: "Sân thể thao", Date: "2026-08-25", Description: "Apple Watch Series 8 dây silicon đen, rơi tại sân bóng đá.",
+			Color: "Đen", Brand: "Apple", DistinctFeatures: "Dây silicon đen, mặt 45mm",
+			Image: imgWatch2, Views: 78, StorageLocation: "Đã trả", CreatedAt: "2026-08-25T18:00:00Z",
+		},
+		{
+			Title: "Cáp sạc USB-C", Category: "Thiết bị điện tử", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Phòng Lab", Date: "2026-09-10", Description: "Cáp sạc USB-C to USB-C dài 1m, màu trắng.",
+			Color: "Trắng", Brand: "", DistinctFeatures: "",
+			Image: imgElectronics, Views: 8, StorageLocation: "Phòng Lab", CreatedAt: "2026-09-10T14:00:00Z",
+		},
+		{
+			Title: "Áo khoác DNTU", Category: "Quần áo", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Bãi xe", Date: "2026-09-09", Description: "Áo khoác đồng phục DNTU màu đỏ đô, size M. Để quên tại bãi xe.",
+			Color: "Đỏ đô", Brand: "DNTU", DistinctFeatures: "Có thêu tên trên ngực trái",
+			Image: imgClothes, Views: 15, StorageLocation: "Bãi xe", CreatedAt: "2026-09-09T07:30:00Z",
+		},
+		{
+			Title: "Balo Herschel xanh đen", Category: "Balo / Túi xách", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Giảng đường B", Date: "2026-09-11", Description: "Balo Herschel màu xanh đen, bên trong có sách và bút.",
+			Color: "Xanh đen", Brand: "Herschel", DistinctFeatures: "Có tag tên bên trong",
+			Image: imgBag1, Views: 42, StorageLocation: "Bộ phận Lost & Found", CreatedAt: "2026-09-11T10:00:00Z",
+		},
+		{
+			Title: "Chìa khóa xe Yamaha", Category: "Chìa khóa", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Nhà B", Date: "2026-09-13", Description: "Chìa khóa xe Yamaha Exciter, có móc khóa nhựa hình mèo.",
+			Color: "", Brand: "Yamaha", DistinctFeatures: "Móc khóa nhựa hình mèo trắng",
+			Image: imgKeys1, Views: 61, StorageLocation: "", CreatedAt: "2026-09-13T08:00:00Z",
+		},
+		{
+			Title: "iPad Air 5", Category: "Thiết bị điện tử", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Hội trường", Date: "2026-09-14", Description: "iPad Air 5 màu Space Gray, có bao da màu xanh. Để quên sau buổi seminar.",
+			Color: "Xám", Brand: "Apple", DistinctFeatures: "Bao da xanh dương, có Apple Pencil",
+			Image: imgElectronics, Views: 93, StorageLocation: "", CreatedAt: "2026-09-14T16:00:00Z",
+		},
+		{
+			Title: "Điện thoại Xiaomi Redmi Note 12", Category: "Điện thoại", Type: models.ItemTypeFound, Status: models.ItemStatusFound,
+			Location: "Ký túc xá", Date: "2026-09-13", Description: "Xiaomi Redmi Note 12 màu xanh, tìm thấy tại khu vực giặt đồ KTX.",
+			Color: "Xanh", Brand: "Xiaomi", DistinctFeatures: "Có ốp lưng xanh đậm, dán kính cường lực",
+			Image: imgPhone2, Views: 33, StorageLocation: "KTX", CreatedAt: "2026-09-13T19:00:00Z",
+		},
+		{
+			Title: "Đồng hồ Daniel Wellington", Category: "Đồng hồ", Type: models.ItemTypeLost, Status: models.ItemStatusLost,
+			Location: "Nhà A", Date: "2026-09-14", Description: "Đồng hồ Daniel Wellington Classic mặt trắng, dây da nâu.",
+			Color: "Nâu", Brand: "Daniel Wellington", DistinctFeatures: "Mặt 36mm, dây da nâu nhạt",
+			Image: imgWatch2, Views: 27, StorageLocation: "", CreatedAt: "2026-09-14T10:00:00Z",
+		},
 	}
 
-	for _, l := range locations {
-		db.Create(&l)
+	var firstUser models.User
+	db.First(&firstUser)
+	userID := firstUser.ID
+	if userID == 0 {
+		userID = 1
 	}
-	log.Println("[Seed] Locations seeded successfully.")
+
+	for _, raw := range rawItems {
+		var cat models.Category
+		db.Where("name = ?", raw.Category).First(&cat)
+		var loc models.Location
+		db.Where("name = ?", raw.Location).First(&loc)
+
+		catID := cat.ID
+		if catID == 0 {
+			var fallbackCat models.Category
+			db.First(&fallbackCat)
+			catID = fallbackCat.ID
+		}
+
+		locID := loc.ID
+		if locID == 0 {
+			var fallbackLoc models.Location
+			db.First(&fallbackLoc)
+			locID = fallbackLoc.ID
+		}
+
+		createdTime, _ := time.Parse(time.RFC3339, raw.CreatedAt)
+		if createdTime.IsZero() {
+			createdTime = time.Now()
+		}
+
+		item := models.Item{
+			Title:                  raw.Title,
+			Type:                   raw.Type,
+			CategoryID:             catID,
+			LocationID:             locID,
+			Date:                   raw.Date,
+			Description:            raw.Description,
+			Color:                  raw.Color,
+			Brand:                  raw.Brand,
+			DistinctFeatures:       raw.DistinctFeatures,
+			CurrentStorageLocation: raw.StorageLocation,
+			Status:                 raw.Status,
+			Views:                  raw.Views,
+			UserID:                 userID,
+			CreatedAt:              createdTime,
+			UpdatedAt:              createdTime,
+			Images: []models.ItemImage{
+				{
+					ImageURL:  raw.Image,
+					IsPrimary: true,
+				},
+			},
+		}
+
+		db.Create(&item)
+	}
+
+	log.Printf("[Seed] %d items seeded successfully.", len(rawItems))
+}
+
+func seedClaims(db *gorm.DB) {
+	var count int64
+	db.Model(&models.Claim{}).Count(&count)
+	if count > 0 {
+		return
+	}
+
+	var items []models.Item
+	db.Limit(5).Find(&items)
+	if len(items) == 0 {
+		return
+	}
+
+	var user models.User
+	db.First(&user)
+
+	claims := []models.Claim{
+		{
+			ItemID:        items[0].ID,
+			ClaimantID:    user.ID,
+			Reason:        "Đây là ví da đen của tôi, tôi bị mất ở Thư viện sáng ngày 12/09.",
+			SecretDetails: "Bên trong có thẻ sinh viên mang tên Nguyễn Văn An.",
+			Status:        models.ClaimStatusApproved,
+			ReviewNote:    "Đã xác minh thẻ sinh viên và tên khắc trên ví.",
+		},
+		{
+			ItemID:        items[1].ID,
+			ClaimantID:    user.ID,
+			Reason:        "Tai nghe AirPods Pro của tôi, mất ở nhà C hôm thứ 5.",
+			SecretDetails: "Hộp sạc có khắc chữ T bằng laser ở mặt dưới.",
+			Status:        models.ClaimStatusPending,
+		},
+	}
+
+	for _, cl := range claims {
+		db.Create(&cl)
+	}
+	log.Println("[Seed] Claims seeded successfully.")
 }

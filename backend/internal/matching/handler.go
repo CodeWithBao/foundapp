@@ -54,6 +54,7 @@ func (h *MatchingHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.
 	matchesGroup := r.Group("/matches")
 	{
 		matchesGroup.GET("/user", authMiddleware, h.GetUserMatches)
-		matchesGroup.GET("/item/:id", h.GetItemMatches)
+		matchesGroup.GET("/item/:id", authMiddleware, h.GetItemMatches)
 	}
 }
+

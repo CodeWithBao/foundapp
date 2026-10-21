@@ -2,6 +2,8 @@ import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
 import { getImageForCategory } from '../data/items';
 import apiClient, { withFallback } from './apiClient';
+import { createImageFingerprint } from '../utils/imageFingerprint';
+import { resolveLocationMapKey } from '../data/locations';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
@@ -28,6 +30,7 @@ export function normalizeItem(item) {
 
   return {
     ...item,
+    userId: item.userId ?? item.user_id ?? item.user?.id,
     location: locationName,
     locationName: locationName,
     category: categoryName,
@@ -35,10 +38,27 @@ export function normalizeItem(item) {
     images: images,
     createdAt: item.createdAt || item.created_at,
     updatedAt: item.updatedAt || item.updated_at,
+    imageFingerprint: item.imageFingerprint || item.image_fingerprint || '',
   };
 }
 
 const itemService = {
+  async getMapItems() {
+    try {
+      const first = await this.getItems({ page: 1, limit: 50 });
+      let list = Array.isArray(first) ? [...first] : [...(first?.items || [])];
+      const totalPages = Number(first?.totalPages || 1);
+      for (let p = 2; p <= Math.min(totalPages, 20); p += 1) {
+        const next = await this.getItems({ page: p, limit: 50 });
+        const nextList = Array.isArray(next) ? next : (next?.items || []);
+        list = list.concat(nextList);
+      }
+      return list;
+    } catch {
+      return (storageService.get(STORAGE_KEYS.ITEMS) || []).map(normalizeItem);
+    }
+  },
+
   async getItems(filters = {}) {
     return withFallback(
       async () => {
@@ -143,11 +163,18 @@ const itemService = {
             categoryId = found?.id ? Number(found.id) : (cats[0]?.id ? Number(cats[0].id) : 1);
           }
           if (!locationId && data.location) {
-            const found = locs.find(l => l.name === data.location || l.id === data.location || String(l.id) === String(data.location));
+            const requestedMapKey = resolveLocationMapKey(data.location);
+            const found = locs.find(l =>
+              l.name === data.location ||
+              l.id === data.location ||
+              String(l.id) === String(data.location) ||
+              (requestedMapKey && resolveLocationMapKey(l) === requestedMapKey)
+            );
             locationId = found?.id ? Number(found.id) : (locs[0]?.id ? Number(locs[0].id) : 1);
           }
         }
 
+        const imageFingerprint = data.imageFingerprint || await createImageFingerprint(data.images?.[0]);
         const apiPayload = {
           title: data.title,
           type: data.type || 'LOST',
@@ -159,6 +186,7 @@ const itemService = {
           color: data.color || '',
           brand: data.brand || '',
           distinct_features: data.distinct_features || data.feature || '',
+          image_fingerprint: imageFingerprint,
           current_storage_location: data.current_storage_location || data.storageLocation || '',
           custody_status: data.custody_status || data.holdingStatus || '',
           images: data.images || []
@@ -175,6 +203,7 @@ const itemService = {
           ...data,
           status: data.type,
           images: data.images?.length ? data.images : [getImageForCategory(data.category)],
+          imageFingerprint: data.imageFingerprint || await createImageFingerprint(data.images?.[0]),
           views: 0,
           createdAt: new Date().toISOString(),
         };
@@ -190,16 +219,30 @@ const itemService = {
   async updateItem(id, data) {
     return withFallback(
       async () => {
+        let locationId = data.location_id !== undefined ? Number(data.location_id) : undefined;
+        if (locationId === undefined && data.location) {
+          const locsRes = await apiClient.get('/locations').catch(() => []);
+          const locs = Array.isArray(locsRes) ? locsRes : locsRes?.locations || [];
+          const requestedMapKey = resolveLocationMapKey(data.location);
+          const found = locs.find(l =>
+            l.name === data.location ||
+            String(l.id) === String(data.location) ||
+            (requestedMapKey && resolveLocationMapKey(l) === requestedMapKey)
+          );
+          if (found?.id) locationId = Number(found.id);
+        }
+        const imageFingerprint = data.imageFingerprint || data.image_fingerprint || (data.images?.[0] ? await createImageFingerprint(data.images[0]) : undefined);
         const apiPayload = {
           ...(data.title !== undefined && { title: data.title }),
           ...(data.category_id !== undefined && { category_id: Number(data.category_id) }),
-          ...(data.location_id !== undefined && { location_id: Number(data.location_id) }),
+          ...(locationId !== undefined && { location_id: locationId }),
           ...(data.date !== undefined && { date: data.date }),
           ...(data.time !== undefined && { time: data.time }),
           ...(data.description !== undefined && { description: data.description }),
           ...(data.color !== undefined && { color: data.color }),
           ...(data.brand !== undefined && { brand: data.brand }),
           ...(data.distinct_features !== undefined ? { distinct_features: data.distinct_features } : (data.feature !== undefined ? { distinct_features: data.feature } : {})),
+          ...(imageFingerprint !== undefined && { image_fingerprint: imageFingerprint }),
           ...(data.current_storage_location !== undefined ? { current_storage_location: data.current_storage_location } : (data.storageLocation !== undefined ? { current_storage_location: data.storageLocation } : {})),
           ...(data.custody_status !== undefined ? { custody_status: data.custody_status } : (data.holdingStatus !== undefined ? { custody_status: data.holdingStatus } : {})),
           ...(data.status !== undefined && { status: data.status }),
@@ -285,3 +328,4 @@ const itemService = {
 };
 
 export default itemService;
+

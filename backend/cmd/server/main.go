@@ -7,6 +7,8 @@ import (
 	"unifind-dntu/internal/admin"
 	"unifind-dntu/internal/auth"
 	"unifind-dntu/internal/category"
+	"unifind-dntu/internal/chat"
+	"unifind-dntu/internal/chatbot"
 	"unifind-dntu/internal/claim"
 	"unifind-dntu/internal/database"
 	"unifind-dntu/internal/item"
@@ -86,6 +88,13 @@ func main() {
 	reportService := report.NewReportService(reportRepo)
 	reportHandler := report.NewReportHandler(reportService)
 
+	chatbotService := chatbot.NewChatbotService()
+	chatbotHandler := chatbot.NewChatbotHandler(chatbotService)
+
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo)
+	chatHandler := chat.NewHandler(chatService)
+
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 
@@ -110,9 +119,14 @@ func main() {
 	requireStaffOrAdmin := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
 	requireAdmin := middleware.RequireRole(models.RoleAdmin)
 
-	authHandler.RegisterRoutes(apiV1, authMiddleware)
-	userHandler.RegisterRoutes(apiV1, authMiddleware)
-	itemHandler.RegisterRoutes(apiV1, authMiddleware)
+	// Rate limiters for security against brute-force & spam
+	authRateLimit := middleware.RateLimitMiddleware(10, 10)
+	createItemRateLimit := middleware.RateLimitMiddleware(20, 20)
+	chatMessageRateLimit := middleware.RateLimitMiddleware(60, 60)
+
+	authHandler.RegisterRoutes(apiV1, authMiddleware, authRateLimit)
+	userHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
+	itemHandler.RegisterRoutes(apiV1, authMiddleware, createItemRateLimit, middleware.OptionalAuth())
 	claimHandler.RegisterRoutes(apiV1, authMiddleware, requireStaff)
 	matchingHandler.RegisterRoutes(apiV1, authMiddleware)
 	notifHandler.RegisterRoutes(apiV1, authMiddleware)
@@ -120,6 +134,8 @@ func main() {
 	locHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	adminHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)
 	reportHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)
+	chatHandler.RegisterRoutes(apiV1, authMiddleware, chatMessageRateLimit)
+	chatbotHandler.RegisterRoutes(apiV1, middleware.OptionalAuth())
 
 	port := os.Getenv("PORT")
 	if port == "" {

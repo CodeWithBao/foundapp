@@ -14,6 +14,7 @@ import RegisterPage from './pages/public/RegisterPage';
 import SearchPage from './pages/public/SearchPage';
 import ItemDetailPage from './pages/public/ItemDetailPage';
 import GuidePage from './pages/public/GuidePage';
+import CampusMapPage from './pages/public/CampusMapPage';
 
 // User Pages
 import ReportLostPage from './pages/user/ReportLostPage';
@@ -24,6 +25,7 @@ import MyClaimsPage from './pages/user/MyClaimsPage';
 import MatchesPage from './pages/user/MatchesPage';
 import NotificationsPage from './pages/user/NotificationsPage';
 import StudentCardPage from './pages/user/StudentCardPage';
+import MessagesPage from './pages/user/MessagesPage';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -31,6 +33,7 @@ import StaffItems from './pages/staff/StaffItems';
 import StaffClaims from './pages/staff/StaffClaims';
 import StaffClaimDetail from './pages/staff/StaffClaimDetail';
 import StaffHandovers from './pages/staff/StaffHandovers';
+import StaffTickets from './pages/staff/StaffTickets';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -56,6 +59,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/items/:id" element={<ItemDetailPage />} />
+            <Route path="/campus/*" element={<CampusMapPage />} />
             <Route path="/guide" element={<GuidePage />} />
 
             {/* Protected User Routes inside UserLayout */}
@@ -65,7 +69,8 @@ export default function App() {
             <Route path="/my-posts" element={<ProtectedRoute><MyPostsPage /></ProtectedRoute>} />
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/student-card" element={<ProtectedRoute><StudentCardPage /></ProtectedRoute>} />
           </Route>
 
@@ -80,6 +85,7 @@ export default function App() {
             <Route path="claims" element={<StaffClaims />} />
             <Route path="claims/:id" element={<StaffClaimDetail />} />
             <Route path="handovers" element={<StaffHandovers />} />
+            <Route path="tickets" element={<StaffTickets />} />
           </Route>
 
       {/* Admin Routes */}

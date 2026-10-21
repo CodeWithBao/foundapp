@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"unifind-dntu/internal/models"
 	"unifind-dntu/internal/patterns/facade"
 	"unifind-dntu/pkg/response"
 
@@ -41,6 +42,24 @@ func (h *ClaimHandler) GetAll(c *gin.Context) {
 	claimantID, _ := strconv.ParseUint(c.Query("claimant_id"), 10, 32)
 	itemID, _ := strconv.ParseUint(c.Query("item_id"), 10, 32)
 
+	var viewerID uint
+	if v, exists := c.Get("user_id"); exists {
+		if id, ok := v.(uint); ok {
+			viewerID = id
+		}
+	}
+	var viewerRole models.Role
+	if r, exists := c.Get("role"); exists {
+		if role, ok := r.(models.Role); ok {
+			viewerRole = role
+		}
+	}
+
+	if viewerRole != models.RoleStaff && viewerRole != models.RoleAdmin {
+		// Non-staff/admin users can only view their own claims
+		claimantID = uint64(viewerID)
+	}
+
 	claims, err := h.repo.FindAll(status, uint(claimantID), uint(itemID))
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err.Error())
@@ -66,6 +85,25 @@ func (h *ClaimHandler) GetByID(c *gin.Context) {
 		response.Error(c, http.StatusNotFound, "Claim not found")
 		return
 	}
+
+	var viewerID uint
+	if v, exists := c.Get("user_id"); exists {
+		if uid, ok := v.(uint); ok {
+			viewerID = uid
+		}
+	}
+	var viewerRole models.Role
+	if r, exists := c.Get("role"); exists {
+		if role, ok := r.(models.Role); ok {
+			viewerRole = role
+		}
+	}
+
+	if viewerRole != models.RoleStaff && viewerRole != models.RoleAdmin && claim.ClaimantID != viewerID {
+		response.Error(c, http.StatusForbidden, "Access denied")
+		return
+	}
+
 	response.Success(c, http.StatusOK, "Claim retrieved", claim)
 }
 
@@ -136,12 +174,12 @@ func (h *ClaimHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Han
 	{
 		claimsGroup.POST("", h.SubmitClaim)
 		claimsGroup.GET("", h.GetAll)
-		claimsGroup.GET("/handovers", h.GetHandovers)
 		claimsGroup.GET("/:id", h.GetByID)
 
 		staffGroup := claimsGroup.Group("")
 		staffGroup.Use(requireStaff)
 		{
+			staffGroup.GET("/handovers", h.GetHandovers)
 			staffGroup.PUT("/:id/review", h.Review)
 			staffGroup.PUT("/:id/approve", h.Approve)
 			staffGroup.PUT("/:id/reject", h.Reject)

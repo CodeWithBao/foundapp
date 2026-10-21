@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Cú DNTU chưa tìm thấy">
+  <ellipse cx="120" cy="216" rx="68" ry="11" fill="#334155" opacity=".14"/>
+  <path d="M62 83 52 33l43 27M178 83l10-50-43 27" fill="#94a3b8" stroke="#475569" stroke-width="6"/>
+  <ellipse cx="120" cy="134" rx="70" ry="82" fill="#94a3b8" stroke="#475569" stroke-width="6"/>
+  <ellipse cx="120" cy="159" rx="44" ry="50" fill="#f1f5f9"/>
+  <circle cx="89" cy="106" r="29" fill="#fff"/><circle cx="151" cy="106" r="29" fill="#fff"/>
+  <circle cx="89" cy="111" r="10" fill="#334155"/><circle cx="151" cy="111" r="10" fill="#334155"/>
+  <path d="m120 120-14 11 14 10 14-10z" fill="#f59e0b"/><path d="M99 170q21-18 42 0" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+  <path d="M192 55v33M176 72h32" stroke="#ef4444" stroke-width="8" stroke-linecap="round" transform="rotate(45 192 72)"/>
+  <text x="120" y="195" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#475569">THỬ LẠI NHÉ</text>
+</svg>
+
