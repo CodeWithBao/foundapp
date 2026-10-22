@@ -30,6 +30,21 @@ export const truncate = (str, len = 100) => {
   return str.slice(0, len) + '...';
 };
 
+export const normalizeEntityId = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  return String(value);
+};
+
+export const getItemOwnerId = (item) => normalizeEntityId(
+  item?.userId ?? item?.user_id ?? item?.user?.id
+);
+
+export const isSameEntityId = (left, right) => {
+  const normalizedLeft = normalizeEntityId(left);
+  const normalizedRight = normalizeEntityId(right);
+  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+};
+
 export const getStatusColor = (status) => {
   const map = {
     PENDING: 'bg-yellow-100 text-yellow-800',

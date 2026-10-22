@@ -112,3 +112,21 @@ func TestItemService_CreateItem_Found(t *testing.T) {
 		t.Errorf("Expected Status FOUND, got %s", item.Status)
 	}
 }
+
+func TestItemService_UpdateItemRequiresOwnerOrElevatedRole(t *testing.T) {
+	repo := newMockItemRepo()
+	repo.items[7] = &models.Item{ID: 7, UserID: 1, Title: "Ví đen", Type: models.ItemTypeLost, Status: models.ItemStatusLost}
+	service := NewItemService(repo, nil)
+
+	if _, err := service.UpdateItem(7, 2, models.RoleUser, UpdateItemDTO{Title: "Sửa trái phép"}); err == nil {
+		t.Fatal("expected a permission error for a non-owner user")
+	}
+
+	updated, err := service.UpdateItem(7, 1, models.RoleUser, UpdateItemDTO{Title: "Ví đen đã cập nhật"})
+	if err != nil {
+		t.Fatalf("expected owner update to succeed, got %v", err)
+	}
+	if updated.Title != "Ví đen đã cập nhật" {
+		t.Fatalf("expected updated title, got %q", updated.Title)
+	}
+}

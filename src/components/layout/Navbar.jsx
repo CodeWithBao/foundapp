@@ -73,7 +73,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-hairline shadow-navbar">
+    <header data-sticky-header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-hairline shadow-navbar">
       {/* Top DNTU Branding Announcement Banner */}
       <div className="bg-[#8F1822] text-white py-1.5 px-4 text-[11px] font-medium border-b border-white/10">
         <div className="page-container flex items-center justify-between gap-3">

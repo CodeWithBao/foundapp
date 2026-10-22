@@ -18,7 +18,7 @@ import ItemCard from '../../components/common/ItemCard';
 import CategoryIcon from '../../components/common/CategoryIcon';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import ItemChatModal from '../../components/chat/ItemChatModal';
-import { formatDate, formatRelative } from '../../utils';
+import { formatDate, formatRelative, getItemOwnerId, isSameEntityId } from '../../utils';
 import { STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
 import scrollRestorationService from '../../services/scrollRestorationService';
@@ -30,7 +30,7 @@ export default function ItemDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const navType = useNavigationType();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,9 +74,6 @@ export default function ItemDetailPage() {
 
   useEffect(() => {
     loadItemData();
-    if (navType !== 'POP') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
   }, [loadItemData, navType]);
 
   useEffect(() => {
@@ -107,9 +104,10 @@ export default function ItemDetailPage() {
       };
     }
     const users = storageService.get(STORAGE_KEYS.USERS) || [];
-    const found = users.find(u => u.id === item.userId);
+    const ownerId = getItemOwnerId(item);
+    const found = users.find(u => isSameEntityId(u.id, ownerId));
     return found || {
-      id: item.userId || item.user_id,
+      id: ownerId,
       name: item.contactName || 'Người dùng DNTU',
       role: 'Sinh viên DNTU',
       faculty: '',
@@ -225,6 +223,35 @@ export default function ItemDetailPage() {
     });
   };
 
+  const ownerId = getItemOwnerId(item);
+  const isMyPost = !authLoading && isSameEntityId(user?.id, ownerId);
+
+  useEffect(() => {
+    if (loading || authLoading || location.state?.resumeAction !== 'contact') return;
+
+    if (!user) {
+      navigate('/login', {
+        replace: true,
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+            state: { ...location.state, resumeAction: 'contact' },
+          },
+          resumeAction: 'contact',
+        },
+      });
+      return;
+    }
+
+    if (!isMyPost && ownerId) setShowChatModal(true);
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: { ...location.state, resumeAction: null },
+    });
+  }, [authLoading, isMyPost, loading, location, navigate, ownerId, user]);
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-[#F8F6F3] min-h-screen">
@@ -247,12 +274,19 @@ export default function ItemDetailPage() {
     item.holderType === 'STAFF' ||
     item.status === 'HANDED_OVER'
   );
-  const isMyPost = Boolean(user?.id && item.userId && (user.id === item.userId || user.id === item.user_id));
-
   const handleOpenChat = () => {
+    if (authLoading) return;
     if (!user) {
       toast.error('Vui lòng đăng nhập để trao đổi tin nhắn riêng.');
-      navigate('/login', { state: { from: { pathname: `/items/${id}` } } });
+      navigate('/login', {
+        state: {
+          from: {
+            pathname: `/items/${id}`,
+            state: { resumeAction: 'contact' },
+          },
+          resumeAction: 'contact',
+        },
+      });
       return;
     }
     if (isMyPost) {
@@ -260,6 +294,10 @@ export default function ItemDetailPage() {
       return;
     }
     setShowChatModal(true);
+  };
+
+  const handleManagePost = () => {
+    navigate(`/my-posts?edit=${encodeURIComponent(item.id)}`);
   };
   
   // Chỉ hiển thị ảnh thật gắn với bản ghi; không ghép ảnh demo vào gallery production.
@@ -550,7 +588,24 @@ export default function ItemDetailPage() {
               {/* CTA Action Buttons */}
               <div className="space-y-2.5 pt-1">
                 {/* 1. Phân quyền theo người giữ: Cán bộ/Văn phòng vs Cá nhân */}
-                {isOfficeKept ? (
+                {authLoading ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full bg-gray-100 text-gray-500 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-wait"
+                  >
+                    Đang xác định quyền...
+                  </button>
+                ) : isMyPost ? (
+                  <button
+                    type="button"
+                    onClick={handleManagePost}
+                    className="w-full bg-[#741216] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#8e171c] transition shadow-xs"
+                  >
+                    <FileText className="w-4 h-4 shrink-0" />
+                    <span>Quản lý bài đăng</span>
+                  </button>
+                ) : isOfficeKept ? (
                   <div className="p-3 bg-[#FAF0F1] rounded-xl border border-red-100 text-xs space-y-2">
                     <div className="flex items-center gap-2 text-[#741216] font-bold">
                       <Building2 className="w-4 h-4 shrink-0" />
@@ -582,7 +637,7 @@ export default function ItemDetailPage() {
                 )}
 
                 {/* 2. Nút xem thông tin liên hệ bảo mật (chỉ cho cá nhân) */}
-                {!isOfficeKept && (
+                {!authLoading && !isMyPost && !isOfficeKept && (
                   <button
                     type="button"
                     onClick={() => setShowContact(!showContact)}
@@ -594,7 +649,7 @@ export default function ItemDetailPage() {
                 )}
 
                 {/* Show contact information if toggled */}
-                {showContact && !isOfficeKept && (
+                {showContact && !isMyPost && !isOfficeKept && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2 animate-fadeIn">
                     <div className="flex items-center gap-2 text-gray-700">
                       <Phone className="w-3.5 h-3.5 text-[#741216]" />
@@ -611,7 +666,7 @@ export default function ItemDetailPage() {
                 )}
 
                 {/* 3. Claim Request Button (for FOUND) or Found Report (for LOST) */}
-                {isFound ? (
+                {!isMyPost && (isFound ? (
                   <button
                     type="button"
                     onClick={() => setShowClaimModal(true)}
@@ -628,7 +683,7 @@ export default function ItemDetailPage() {
                   >
                     <span>Tôi đã tìm thấy vật này</span>
                   </button>
-                )}
+                ))}
 
                 {/* 4. Bookmark button */}
                 <button
@@ -892,7 +947,7 @@ export default function ItemDetailPage() {
         item={item}
         currentUser={user}
         recipientUser={{
-          id: reporter.id || item.userId || item.user_id,
+          id: ownerId,
           name: reporter.name || 'Người dùng DNTU',
           avatar: reporter.avatar || '',
           role: reporter.role || (isOfficeKept ? 'Cán bộ Lost & Found DNTU' : 'Sinh viên DNTU')

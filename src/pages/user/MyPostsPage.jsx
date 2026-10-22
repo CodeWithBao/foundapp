@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Eye, MapPin, Tag, CheckCircle2, Edit3, Save } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
@@ -12,11 +12,13 @@ import Textarea from '../../components/common/Textarea';
 import EmptyState from '../../components/common/EmptyState';
 import Modal, { ConfirmModal } from '../../components/common/Modal';
 import Tabs from '../../components/common/Tabs';
-import { formatDate } from '../../utils';
+import { formatDate, isSameEntityId } from '../../utils';
 import { toast } from 'sonner';
 
 export default function MyPostsPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const processedEditIdRef = useRef(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState(null);
@@ -94,6 +96,16 @@ export default function MyPostsPage() {
       description: item.description || '',
     });
   };
+
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (loading || !editId || processedEditIdRef.current === editId) return;
+    const targetItem = items.find(item => isSameEntityId(item.id, editId));
+    if (!targetItem) return;
+    processedEditIdRef.current = editId;
+    setActiveTab(targetItem.type);
+    handleOpenEdit(targetItem);
+  }, [items, loading, searchParams]);
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();

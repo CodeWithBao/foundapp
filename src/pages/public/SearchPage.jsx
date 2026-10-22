@@ -122,13 +122,11 @@ export default function SearchPage() {
 
   const shouldRestoreRef = useRef(navType === 'POP');
 
-  // Yêu cầu 5: Nếu chủ động vào danh sách / tìm kiếm mới (PUSH), bắt đầu ở đầu trang
   useEffect(() => {
-    if (navType !== 'POP') {
-      scrollRestorationService.clearSnapshot();
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [navType]);
+    // Chỉ xét loại điều hướng lúc mount. Các lần đồng bộ query bằng REPLACE
+    // không được xóa snapshot đang chờ khôi phục sau nút Back.
+    if (!shouldRestoreRef.current) scrollRestorationService.clearSnapshot();
+  }, []);
 
   // Yêu cầu 1, 2, 4: Sau khi dữ liệu tải xong, đưa bài vừa xem trở lại đúng vị trí trên màn hình
   useEffect(() => {
@@ -151,7 +149,7 @@ export default function SearchPage() {
   }, [loading]);
 
   // Lưu vị trí cuộn và ID bài viết trước khi mở trang chi tiết
-  const handleItemClick = (item, e) => {
+  const handleItemClick = (item, e, navigationState = {}) => {
     const cardEl = document.getElementById(`item-card-${item.id}`) || e?.currentTarget;
     const cardTop = cardEl ? cardEl.getBoundingClientRect().top : null;
     scrollRestorationService.saveSnapshot({
@@ -172,6 +170,7 @@ export default function SearchPage() {
         from: window.location.pathname + window.location.search,
         itemId: item.id,
         scrollY: window.scrollY || document.documentElement.scrollTop || 0,
+        ...navigationState,
       }
     });
   };
