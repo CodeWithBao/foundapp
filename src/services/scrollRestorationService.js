@@ -98,6 +98,7 @@ export const scrollRestorationService = {
    */
   restorePosition({ itemId, cardTop, scrollY, maxAttempts = 6, onComplete }) {
     let attempts = 0;
+    let frame;
 
     const tryScroll = () => {
       attempts++;
@@ -108,9 +109,9 @@ export const scrollRestorationService = {
           const rect = el.getBoundingClientRect();
           const currentY = window.scrollY || document.documentElement.scrollTop || 0;
           const targetY = currentY + (rect.top - cardTop);
-          window.scrollTo({ top: Math.max(0, targetY), behavior: 'instant' });
+          window.scrollTo({ top: Math.max(0, targetY), behavior: 'auto' });
         } else {
-          el.scrollIntoView({ block: 'center', behavior: 'instant' });
+          el.scrollIntoView({ block: 'center', behavior: 'auto' });
         }
 
         // Tạo hiệu ứng nhận diện nhẹ nhàng (highlight ring) cho bài vừa xem
@@ -126,17 +127,18 @@ export const scrollRestorationService = {
       if (attempts >= maxAttempts) {
         // Fallback vị trí cuộn gần nhất nếu không tìm thấy element cụ thể
         if (typeof scrollY === 'number') {
-          window.scrollTo({ top: Math.max(0, scrollY), behavior: 'instant' });
+          window.scrollTo({ top: Math.max(0, scrollY), behavior: 'auto' });
         }
         onComplete?.();
         return;
       }
 
-      // Thử lại ở frame tiếp theo khi DOM sẵn sàng
-      setTimeout(tryScroll, 60);
+      // Chờ đúng chu kỳ render tiếp theo, không dùng độ trễ thời gian tùy ý.
+      frame = requestAnimationFrame(tryScroll);
     };
 
-    requestAnimationFrame(tryScroll);
+    frame = requestAnimationFrame(tryScroll);
+    return () => cancelAnimationFrame(frame);
   }
 };
 

@@ -13,7 +13,13 @@ export default function LoginPage() {
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname;
+  const fromLocation = location.state?.from;
+
+  const getSafeReturnPath = () => {
+    const pathname = fromLocation?.pathname;
+    if (!pathname || !pathname.startsWith('/') || pathname.startsWith('//')) return null;
+    return `${pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`;
+  };
 
   const [accountInput, setAccountInput] = useState('');
   const [password, setPassword] = useState('');
@@ -27,8 +33,12 @@ export default function LoginPage() {
   const handleAuthSuccess = (user) => {
     setSuccessMessage(`Đăng nhập thành công. Xin chào, ${user.name}!`);
     setTimeout(() => {
-      if (from) {
-        navigate(from, { replace: true });
+      const returnPath = getSafeReturnPath();
+      if (returnPath) {
+        navigate(returnPath, {
+          replace: true,
+          state: fromLocation.state || (location.state?.resumeAction ? { resumeAction: location.state.resumeAction } : null),
+        });
       } else if (user.role === ROLES.ADMIN) {
         navigate('/admin');
       } else if (user.role === ROLES.STAFF) {

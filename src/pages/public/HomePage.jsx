@@ -31,7 +31,6 @@ export default function HomePage() {
       }
     } else {
       scrollRestorationService.clearSnapshot();
-      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [navType]);
 
@@ -79,7 +78,7 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
-  const handleItemClick = (item, e) => {
+  const handleItemClick = (item, e, navigationState = {}) => {
     const cardEl = document.getElementById(`item-card-${item.id}`) || e?.currentTarget;
     const cardTop = cardEl ? cardEl.getBoundingClientRect().top : null;
     scrollRestorationService.saveSnapshot({
@@ -98,6 +97,7 @@ export default function HomePage() {
         from: 'home',
         returnPath: '/',
         itemId: item.id,
+        ...navigationState,
       }
     });
   };

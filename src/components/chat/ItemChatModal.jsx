@@ -9,7 +9,7 @@ import Avatar from '../common/Avatar';
 import CategoryIcon from '../common/CategoryIcon';
 import chatService from '../../services/chatService';
 import apiClient from '../../services/apiClient';
-import { formatDate } from '../../utils';
+import { formatDate, getItemOwnerId, isSameEntityId } from '../../utils';
 
 const QUICK_CHIPS = [
   'Chào bạn, mình muốn hỏi thêm về món đồ này.',
@@ -54,11 +54,12 @@ export default function ItemChatModal({
 
   // Fallback target user if not explicitly provided
   const recipient = recipientUser || targetUser || {
-    id: item?.userId || item?.user_id,
+    id: getItemOwnerId(item),
     name: item?.contactName || 'Người giữ đồ DNTU',
     role: isFound ? 'Người nhặt được' : 'Người đăng bài',
     avatar: item?.contactAvatar || null
   };
+  const isSelfChat = isSameEntityId(currentUser?.id, recipient?.id);
 
   // Close menu on click outside
   useEffect(() => {
@@ -99,6 +100,11 @@ export default function ItemChatModal({
   // Load or initialize conversation
   useEffect(() => {
     if (!isOpen || !itemId || !currentUser || !recipient?.id) return;
+    if (isSelfChat) {
+      toast.error('Bạn không thể tạo cuộc trò chuyện với chính mình.');
+      onClose();
+      return;
+    }
 
     let isMounted = true;
     const loadChat = async () => {
@@ -147,7 +153,7 @@ export default function ItemChatModal({
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose]);
+  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose, isSelfChat]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -165,6 +171,10 @@ export default function ItemChatModal({
     if (!inputText.trim() && !selectedImage) return;
     if (!currentUser?.id || !recipient?.id) {
       toast.error('Không xác định được người gửi hoặc người nhận. Vui lòng tải lại trang.');
+      return;
+    }
+    if (isSelfChat) {
+      toast.error('Bạn không thể gửi tin nhắn cho chính mình.');
       return;
     }
     if (isReturned) {

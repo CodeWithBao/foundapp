@@ -2,6 +2,7 @@ import apiClient, { withFallback } from './apiClient';
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
 import notificationService from './notificationService';
+import { isSameEntityId } from '../utils';
 
 const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -63,6 +64,9 @@ const localChat = {
     if (!currentUser?.id || !recipient?.id) {
       throw new Error('Thiếu thông tin người gửi hoặc người nhận. Vui lòng tải lại trang.');
     }
+    if (isSameEntityId(currentUser.id, recipient.id)) {
+      throw new Error('Bạn không thể tạo cuộc trò chuyện với chính mình.');
+    }
     const chats = this.getChats();
     const id = this.makeId(itemId, currentUser.id, recipient.id);
     let conversation = chats.find(row => row.id === id);
@@ -93,6 +97,9 @@ export const chatService = {
   async getConversation(itemId, currentUserId, recipientId, itemData = {}) {
     if (!currentUserId || !recipientId) {
       throw new Error('Không xác định được người gửi hoặc người nhận.');
+    }
+    if (isSameEntityId(currentUserId, recipientId)) {
+      throw new Error('Bạn không thể tạo cuộc trò chuyện với chính mình.');
     }
     return withFallback(
       async () => normalizeConversation(await apiClient.post('/chats', {
@@ -139,6 +146,7 @@ export const chatService = {
   async sendMessage({ conversationId, itemId, sender, recipientId, text, image = null, itemData = {} }) {
     if (!text?.trim() && !image) throw new Error('Nội dung tin nhắn hoặc hình ảnh không được để trống');
     if (!sender?.id || !recipientId) throw new Error('Không xác định được người gửi hoặc người nhận. Vui lòng tải lại trang.');
+    if (isSameEntityId(sender.id, recipientId)) throw new Error('Bạn không thể gửi tin nhắn cho chính mình.');
     return withFallback(
       async () => {
         let activeConversationId = conversationId;

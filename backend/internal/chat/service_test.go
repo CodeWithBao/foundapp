@@ -100,6 +100,15 @@ func TestGetOrCreateConversationRequiresItemOwner(t *testing.T) {
 	}
 }
 
+func TestGetOrCreateConversationRejectsSelfChat(t *testing.T) {
+	repo := newFakeRepository()
+	service := NewService(repo)
+
+	if _, err := service.GetOrCreateConversation(1, CreateConversationDTO{ItemID: 7, RecipientID: 1}); !errors.Is(err, ErrInvalidChat) {
+		t.Fatalf("expected ErrInvalidChat, got %v", err)
+	}
+}
+
 func TestSendMessageAndParticipantAuthorization(t *testing.T) {
 	repo := newFakeRepository()
 	repo.conversation = &models.ChatConversation{

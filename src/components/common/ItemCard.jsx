@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { MapPin, Clock, Eye, Heart, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Clock, Eye, Heart, ArrowUpRight, Edit3 } from 'lucide-react';
 import CategoryIcon from './CategoryIcon';
-import { formatDate } from '../../utils';
+import { formatDate, getItemOwnerId, isSameEntityId } from '../../utils';
 import { getCampusLocationUrl } from '../../data/locations';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ItemCard({ item, onClick }) {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(item.likes || Math.floor((item.views || 30) / 4) + 2);
@@ -18,6 +22,7 @@ export default function ItemCard({ item, onClick }) {
     : (typeof item.category === 'string' ? item.category : '');
 
   const isFound = item.type === 'FOUND' || item.status === 'FOUND';
+  const isMyPost = !authLoading && isSameEntityId(user?.id, getItemOwnerId(item));
   const campusUrl = getCampusLocationUrl({
     ...(typeof item.location === 'object' && item.location !== null ? item.location : {}),
     id: item.location_id || item.locationId,
@@ -30,6 +35,15 @@ export default function ItemCard({ item, onClick }) {
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
   };
 
+  const handlePrimaryAction = (e) => {
+    e.stopPropagation();
+    if (isMyPost) {
+      navigate(`/my-posts?edit=${encodeURIComponent(item.id)}`);
+      return;
+    }
+    onClick?.(item, e, { resumeAction: 'contact' });
+  };
+
   return (
     <article
       id={`item-card-${item.id}`}
@@ -39,6 +53,7 @@ export default function ItemCard({ item, onClick }) {
       tabIndex={0}
       role="button"
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onClick?.(item, e);
@@ -65,7 +80,7 @@ export default function ItemCard({ item, onClick }) {
         )}
         
         {/* Floating status pill according to mockup 04_search */}
-        <div className="absolute top-2.5 left-2.5 z-10">
+        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col items-start gap-1.5">
           {isFound ? (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9] shadow-sm">
               Đã nhặt được
@@ -73,6 +88,11 @@ export default function ItemCard({ item, onClick }) {
           ) : (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FFEBEE] text-[#C62828] border border-[#FFCDD2] shadow-sm">
               Đã đánh mất
+            </span>
+          )}
+          {isMyPost && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white text-[#741216] border border-[#E8E2DD] shadow-sm">
+              Bài đăng của bạn
             </span>
           )}
         </div>
@@ -140,14 +160,31 @@ export default function ItemCard({ item, onClick }) {
           </div>
 
           {/* Row 2: Action button full width */}
-          {isFound ? (
+          {authLoading ? (
+            <span className="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold border border-[#E8E2DD] text-gray-500 bg-[#FAF8F5] text-center select-none">
+              Xem chi tiết →
+            </span>
+          ) : isMyPost ? (
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold bg-[#741216] text-white hover:bg-[#8b161b] transition shadow-xs text-center"
+            >
+              <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
+              Quản lý bài đăng
+            </button>
+          ) : isFound ? (
             <span className="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold bg-[#741216] text-white group-hover:bg-[#8b161b] transition shadow-xs text-center select-none">
               Xem chi tiết →
             </span>
           ) : (
-            <span className="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold border border-[#741216] text-[#741216] bg-[#FAF8F5] group-hover:bg-[#FAF0F1] transition shadow-xs text-center select-none">
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-[13px] font-semibold border border-[#741216] text-[#741216] bg-[#FAF8F5] hover:bg-[#FAF0F1] transition shadow-xs text-center"
+            >
               Liên hệ người đăng
-            </span>
+            </button>
           )}
         </div>
       </div>
