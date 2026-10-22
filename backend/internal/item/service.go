@@ -2,12 +2,28 @@ package item
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"unifind-dntu/internal/models"
 	"unifind-dntu/internal/patterns/observer"
 	"unifind-dntu/internal/patterns/strategy"
 )
+
+const maxItemImages = 8
+
+func validateImageURLs(images []string) error {
+	if len(images) > maxItemImages {
+		return fmt.Errorf("mỗi bài đăng chỉ được có tối đa %d ảnh", maxItemImages)
+	}
+	for _, imageURL := range images {
+		trimmed := strings.TrimSpace(imageURL)
+		if trimmed == "" || len(trimmed) > 2048 || strings.HasPrefix(strings.ToLower(trimmed), "data:") {
+			return fmt.Errorf("đường dẫn ảnh không hợp lệ")
+		}
+	}
+	return nil
+}
 
 type ItemService interface {
 	CreateItem(userID uint, dto CreateItemDTO) (*models.Item, error)
@@ -28,8 +44,13 @@ func NewItemService(repo ItemRepository, notifier *observer.Subject) ItemService
 }
 
 func (s *itemService) CreateItem(userID uint, dto CreateItemDTO) (*models.Item, error) {
+	if err := validateImageURLs(dto.Images); err != nil {
+		return nil, err
+	}
 	status := models.ItemStatusLost
-	if dto.Type == models.ItemTypeFound { status = models.ItemStatusFound }
+	if dto.Type == models.ItemTypeFound {
+		status = models.ItemStatusFound
+	}
 
 	item := models.Item{
 		Title: dto.Title, Type: dto.Type, CategoryID: dto.CategoryID, LocationID: dto.LocationID,
@@ -39,76 +60,137 @@ func (s *itemService) CreateItem(userID uint, dto CreateItemDTO) (*models.Item, 
 		Status: status, UserID: userID,
 	}
 	for i, imageURL := range dto.Images {
-		item.Images = append(item.Images, models.ItemImage{ImageURL: imageURL, IsPrimary: i == 0})
+		item.Images = append(item.Images, models.ItemImage{ImageURL: strings.TrimSpace(imageURL), IsPrimary: i == 0, SortOrder: i})
 	}
-	if err := s.repo.Create(&item); err != nil { return nil, err }
+	if err := s.repo.Create(&item); err != nil {
+		return nil, err
+	}
 	go s.runMatching(&item)
 	return s.repo.FindByID(item.ID)
 }
 
 func (s *itemService) runMatching(newItem *models.Item) {
-	if newItem == nil || (newItem.Status != models.ItemStatusLost && newItem.Status != models.ItemStatusFound) { return }
+	if newItem == nil || (newItem.Status != models.ItemStatusLost && newItem.Status != models.ItemStatusFound) {
+		return
+	}
 	candidates, err := s.repo.FindOppositeTypeItems(newItem.Type)
-	if err != nil || len(candidates) == 0 { return }
+	if err != nil || len(candidates) == 0 {
+		return
+	}
 
 	matcher := &strategy.CategoryLocationMatchingStrategy{}
 	for i := range candidates {
 		candidate := &candidates[i]
 		var lostItem, foundItem *models.Item
-		if newItem.Type == models.ItemTypeLost { lostItem, foundItem = newItem, candidate } else { lostItem, foundItem = candidate, newItem }
+		if newItem.Type == models.ItemTypeLost {
+			lostItem, foundItem = newItem, candidate
+		} else {
+			lostItem, foundItem = candidate, newItem
+		}
 		explanation := matcher.Explain(lostItem, foundItem)
-		if explanation.Score < 35 { continue }
+		if explanation.Score < 35 {
+			continue
+		}
 
 		matchRecord := models.Match{LostItemID: lostItem.ID, FoundItemID: foundItem.ID, Score: explanation.Score, MatchedAt: time.Now()}
 		created, saveErr := s.repo.SaveMatch(&matchRecord)
-		if saveErr != nil || !created || s.notifier == nil { continue }
+		if saveErr != nil || !created || s.notifier == nil {
+			continue
+		}
 
 		s.notifier.Notify(observer.Event{
 			Type: observer.EventItemMatched, UserID: lostItem.UserID,
-			Title: "Cú DNTU tìm thấy món đồ nghi vấn trùng khớp!",
-			Message: fmt.Sprintf("'%s' giống %.0f%% với '%s'. Bấm xem danh sách để kiểm tra ảnh, nội dung và vị trí.", lostItem.Title, explanation.Score, foundItem.Title),
+			Title:     "Cú DNTU tìm thấy món đồ nghi vấn trùng khớp!",
+			Message:   fmt.Sprintf("'%s' giống %.0f%% với '%s'. Bấm xem danh sách để kiểm tra ảnh, nội dung và vị trí.", lostItem.Title, explanation.Score, foundItem.Title),
 			RelatedID: foundItem.ID,
 		})
 	}
 }
 
 func (s *itemService) GetItemByID(id uint, incrementView bool) (*models.Item, error) {
-	if incrementView { _ = s.repo.IncrementViews(id) }
+	if incrementView {
+		_ = s.repo.IncrementViews(id)
+	}
 	return s.repo.FindByID(id)
 }
-func (s *itemService) GetAllItems(filter ItemFilterDTO) ([]models.Item, int64, error) { return s.repo.FindAll(filter) }
-func (s *itemService) GetUserItems(userID uint) ([]models.Item, error) { return s.repo.FindByUserID(userID) }
+func (s *itemService) GetAllItems(filter ItemFilterDTO) ([]models.Item, int64, error) {
+	return s.repo.FindAll(filter)
+}
+func (s *itemService) GetUserItems(userID uint) ([]models.Item, error) {
+	return s.repo.FindByUserID(userID)
+}
 
 func (s *itemService) UpdateItem(id, userID uint, userRole models.Role, dto UpdateItemDTO) (*models.Item, error) {
+	if err := validateImageURLs(dto.Images); err != nil {
+		return nil, err
+	}
 	item, err := s.repo.FindByID(id)
-	if err != nil { return nil, err }
-	if item.UserID != userID && userRole != models.RoleStaff && userRole != models.RoleAdmin { return nil, fmt.Errorf("permission denied to edit this item") }
+	if err != nil {
+		return nil, err
+	}
+	if item.UserID != userID && userRole != models.RoleStaff && userRole != models.RoleAdmin {
+		return nil, fmt.Errorf("permission denied to edit this item")
+	}
 
-	if dto.Title != "" { item.Title = dto.Title }
-	if dto.CategoryID > 0 { item.CategoryID = dto.CategoryID }
-	if dto.LocationID > 0 { item.LocationID = dto.LocationID }
-	if dto.Date != "" { item.Date = dto.Date }
-	if dto.Time != "" { item.Time = dto.Time }
-	if dto.Description != "" { item.Description = dto.Description }
-	if dto.Color != "" { item.Color = dto.Color }
-	if dto.Brand != "" { item.Brand = dto.Brand }
-	if dto.DistinctFeatures != "" { item.DistinctFeatures = dto.DistinctFeatures }
-	if dto.ImageFingerprint != "" { item.ImageFingerprint = dto.ImageFingerprint }
-	if dto.CurrentStorageLocation != "" { item.CurrentStorageLocation = dto.CurrentStorageLocation }
-	if dto.CustodyStatus != "" { item.CustodyStatus = dto.CustodyStatus }
-	if dto.Status != "" { item.Status = dto.Status }
+	if dto.Title != "" {
+		item.Title = dto.Title
+	}
+	if dto.CategoryID > 0 {
+		item.CategoryID = dto.CategoryID
+	}
+	if dto.LocationID > 0 {
+		item.LocationID = dto.LocationID
+	}
+	if dto.Date != "" {
+		item.Date = dto.Date
+	}
+	if dto.Time != "" {
+		item.Time = dto.Time
+	}
+	if dto.Description != "" {
+		item.Description = dto.Description
+	}
+	if dto.Color != "" {
+		item.Color = dto.Color
+	}
+	if dto.Brand != "" {
+		item.Brand = dto.Brand
+	}
+	if dto.DistinctFeatures != "" {
+		item.DistinctFeatures = dto.DistinctFeatures
+	}
+	if dto.ImageFingerprint != "" {
+		item.ImageFingerprint = dto.ImageFingerprint
+	}
+	if dto.CurrentStorageLocation != "" {
+		item.CurrentStorageLocation = dto.CurrentStorageLocation
+	}
+	if dto.CustodyStatus != "" {
+		item.CustodyStatus = dto.CustodyStatus
+	}
+	if dto.Status != "" {
+		item.Status = dto.Status
+	}
 	if len(dto.Images) > 0 {
 		item.Images = nil
-		for i, imageURL := range dto.Images { item.Images = append(item.Images, models.ItemImage{ItemID: item.ID, ImageURL: imageURL, IsPrimary: i == 0}) }
+		for i, imageURL := range dto.Images {
+			item.Images = append(item.Images, models.ItemImage{ItemID: item.ID, ImageURL: strings.TrimSpace(imageURL), IsPrimary: i == 0, SortOrder: i})
+		}
 	}
-	if err := s.repo.Update(item); err != nil { return nil, err }
+	if err := s.repo.Update(item); err != nil {
+		return nil, err
+	}
 	go s.runMatching(item)
 	return s.repo.FindByID(item.ID)
 }
 
 func (s *itemService) DeleteItem(id, userID uint, userRole models.Role) error {
 	item, err := s.repo.FindByID(id)
-	if err != nil { return err }
-	if item.UserID != userID && userRole != models.RoleStaff && userRole != models.RoleAdmin { return fmt.Errorf("permission denied to delete this item") }
+	if err != nil {
+		return err
+	}
+	if item.UserID != userID && userRole != models.RoleStaff && userRole != models.RoleAdmin {
+		return fmt.Errorf("permission denied to delete this item")
+	}
 	return s.repo.Delete(id)
 }

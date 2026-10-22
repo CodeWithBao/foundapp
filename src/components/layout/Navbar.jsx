@@ -6,9 +6,16 @@ import DNTULogo from '../common/DNTULogo';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import { ROLES } from '../../constants';
+import { useRealtime } from '../../context/RealtimeContext';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const {
+    unreadMessages,
+    unreadNotifications,
+    unreadMessagesLabel,
+    unreadNotificationsLabel,
+  } = useRealtime();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -70,9 +77,10 @@ export default function Navbar() {
       {/* Top DNTU Branding Announcement Banner */}
       <div className="bg-[#8F1822] text-white py-1.5 px-4 text-[11px] font-medium border-b border-white/10">
         <div className="page-container flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-white/95 font-semibold">
-              <Building2 className="h-3.5 w-3.5 text-champagne-300" /> Đại học Công nghệ Đồng Nai (DNTU)
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-white/95 font-semibold">
+              <Building2 className="h-3.5 w-3.5 shrink-0 text-champagne-300" />
+              <span className="truncate">Đại học Công nghệ Đồng Nai (DNTU)</span>
             </span>
             <span className="hidden sm:inline text-white/40">|</span>
             <span className="hidden sm:inline text-white/80">Cổng tiếp nhận & hỗ trợ tìm kiếm đồ thất lạc</span>
@@ -85,10 +93,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="page-container h-[4.5rem] flex items-center justify-between gap-2 2xl:gap-4 min-w-0">
+      <div className="w-full max-w-[1760px] mx-auto px-[clamp(16px,3vw,40px)] h-[4.5rem] flex items-center justify-between gap-2 2xl:gap-4 min-w-0">
         {/* LEFT: Logo */}
         <Link to="/" className="flex items-center gap-2 group shrink-0">
-          <DNTULogo size="md" />
+          <DNTULogo size="md" compactOnMobile />
         </Link>
 
         {/* CENTER: Desktop Nav Links */}
@@ -111,17 +119,17 @@ export default function Navbar() {
         </nav>
 
         {/* RIGHT: Search + User / Auth actions */}
-        <div className="hidden xl:flex items-center gap-2 2xl:gap-3 shrink-0">
+        <div className="hidden xl:flex items-center gap-2 2xl:ml-4 2xl:gap-3 shrink-0">
           {/* Interactive Search Input with Filter Dropdown */}
           <form
             onSubmit={handleNavSearch}
-            className="hidden 2xl:flex items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
+            className="hidden 2xl:flex min-w-0 items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
           >
             <div className="relative flex items-center shrink-0">
               <select
                 value={navCategory}
                 onChange={(e) => setNavCategory(e.target.value)}
-                className="appearance-none bg-transparent text-[11.5px] font-semibold text-ink-slate hover:text-ink focus:outline-none pl-1 pr-4.5 py-0.5 cursor-pointer"
+                className="appearance-none bg-transparent text-[11.5px] leading-5 font-semibold text-ink-slate hover:text-ink focus:outline-none pl-1 pr-5 py-0.5 cursor-pointer"
                 aria-label="Lọc danh mục"
               >
                 <option value="all">Tất cả</option>
@@ -137,13 +145,13 @@ export default function Navbar() {
 
             <div className="h-3.5 w-px bg-[#E4DDD5] mx-1.5 shrink-0" />
 
-            <div className="relative flex items-center">
+            <div className="relative flex w-36 min-w-0 items-center">
               <input
                 type="text"
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Tìm đồ thất lạc..."
-                className="bg-transparent text-xs text-ink placeholder:text-ink-muted/80 focus:outline-none w-40 focus:w-48 transition-all duration-200 px-1"
+                className="min-w-0 flex-1 bg-transparent px-1 text-xs text-ink placeholder:text-ink-muted/80 focus:outline-none"
               />
               {navSearch && (
                 <button
@@ -181,18 +189,23 @@ export default function Navbar() {
               <Link
                 to="/messages"
                 className="relative p-2.5 text-ink-slate hover:text-accent hover:bg-paper-panel rounded-full transition-all"
-                aria-label="Tin nhắn"
+                aria-label={`Tin nhắn${unreadMessages ? `, ${unreadMessages} chưa đọc` : ''}`}
                 title="Tin nhắn"
               >
                 <MessageCircle className="w-5 h-5" />
+                {unreadMessages > 0 && (
+                  <span className="unifind-count-badge" aria-hidden="true">{unreadMessagesLabel}</span>
+                )}
               </Link>
               <Link
                 to="/notifications"
                 className="relative p-2.5 text-ink-slate hover:text-accent hover:bg-paper-panel rounded-full transition-all"
-                aria-label="Thông báo"
+                aria-label={`Thông báo${unreadNotifications ? `, ${unreadNotifications} chưa đọc` : ''}`}
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full ring-2 ring-white" />
+                {unreadNotifications > 0 && (
+                  <span className="unifind-count-badge" aria-hidden="true">{unreadNotificationsLabel}</span>
+                )}
               </Link>
 
               {/* User Dropdown */}
@@ -208,7 +221,7 @@ export default function Navbar() {
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-card shadow-landing-lg border border-hairline py-1.5 z-50 animate-scaleIn">
+                  <div className="absolute right-0 mt-2 w-[min(13rem,calc(100vw-1rem))] bg-white rounded-card shadow-landing-lg border border-hairline py-1.5 z-50 animate-scaleIn">
                     <div className="px-4 py-2 border-b border-hairline/60 bg-paper-soft">
                       <p className="text-[11px] font-semibold uppercase text-ink-muted tracking-wider">Tài khoản</p>
                       <p className="text-sm font-bold text-ink truncate">{user.fullName || user.name}</p>
@@ -221,6 +234,7 @@ export default function Navbar() {
                     >
                       <MessageCircle className="w-4 h-4 text-ink-muted" />
                       Tin nhắn
+                      {unreadMessages > 0 && <span className="ml-auto unifind-inline-badge">{unreadMessagesLabel}</span>}
                     </Link>
                     <Link
                       to="/profile"
@@ -304,7 +318,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-white border-b border-hairline px-4 pt-3 pb-5 space-y-2 animate-fadeIn shadow-lg max-h-[calc(100vh-7rem)] overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full xl:hidden bg-white border-b border-hairline px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-2 animate-fadeIn shadow-lg max-h-[calc(100dvh-6.5rem)] overflow-y-auto overscroll-contain">
           {/* Mobile Search Bar */}
           <form
             onSubmit={(e) => {
@@ -319,7 +333,7 @@ export default function Navbar() {
               value={navSearch}
               onChange={(e) => setNavSearch(e.target.value)}
               placeholder="Tìm kiếm đồ thất lạc..."
-              className="bg-transparent text-sm text-ink placeholder:text-ink-muted/80 focus:outline-none flex-1"
+              className="min-w-0 bg-transparent text-sm text-ink placeholder:text-ink-muted/80 focus:outline-none flex-1"
             />
             {navSearch && (
               <button
@@ -362,14 +376,15 @@ export default function Navbar() {
                 className="flex items-center justify-between px-3.5 py-2 rounded-lg text-sm font-medium text-ink-slate hover:bg-paper-panel"
               >
                 <span>Thông báo hệ thống</span>
-                <span className="w-2 h-2 rounded-full bg-accent" />
+                {unreadNotifications > 0 && <span className="unifind-inline-badge">{unreadNotificationsLabel}</span>}
               </Link>
               <Link
                 to="/messages"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3.5 py-2 rounded-lg text-sm font-medium text-ink-slate hover:bg-paper-panel"
+                className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-lg text-sm font-medium text-ink-slate hover:bg-paper-panel"
               >
-                Tin nhắn
+                <span>Tin nhắn</span>
+                {unreadMessages > 0 && <span className="unifind-inline-badge">{unreadMessagesLabel}</span>}
               </Link>
               <Link
                 to="/profile"

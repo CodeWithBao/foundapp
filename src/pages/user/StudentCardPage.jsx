@@ -26,46 +26,46 @@ export default function StudentCardPage() {
   return (
     <div className="min-h-screen bg-[#F8F6F3] py-8 md:py-12 px-4 sm:px-6 flex flex-col items-center justify-start">
       {/* Top Header Navigation */}
-      <div className="w-full max-w-2xl mb-6 flex items-center justify-between print:hidden">
+      <div className="w-full max-w-2xl mb-6 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center print:hidden">
         <Link
           to="/profile"
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-stone-700 bg-white rounded-2xl border border-stone-200 hover:bg-stone-50 transition-colors shadow-xs"
+          className="inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-stone-700 bg-white rounded-2xl border border-stone-200 hover:bg-stone-50 transition-colors shadow-xs sm:justify-start"
         >
           <ArrowLeft className="w-4 h-4 text-[#981B1E]" />
           Quay lại hồ sơ
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-col gap-2 min-[390px]:flex-row">
           {/* Orientation switch */}
-          <div className="flex items-center bg-white p-1 rounded-2xl border border-stone-200 shadow-xs text-xs font-semibold">
+          <div className="grid min-w-0 flex-1 grid-cols-2 items-stretch bg-white p-1 rounded-2xl border border-stone-200 shadow-xs text-xs font-semibold">
             <button
               type="button"
               onClick={() => setCardOrientation('HORIZONTAL')}
-              className={`px-3 py-1.5 rounded-xl transition-colors ${
+              className={`min-h-10 min-w-0 px-2 py-1.5 rounded-xl transition-colors leading-tight ${
                 cardOrientation === 'HORIZONTAL'
                   ? 'bg-[#981B1E] text-white shadow-xs'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              Thẻ ngang (Mockup)
+              Thẻ ngang
             </button>
             <button
               type="button"
               onClick={() => setCardOrientation('VERTICAL')}
-              className={`px-3 py-1.5 rounded-xl transition-colors ${
+              className={`min-h-10 min-w-0 px-2 py-1.5 rounded-xl transition-colors leading-tight ${
                 cardOrientation === 'VERTICAL'
                   ? 'bg-[#981B1E] text-white shadow-xs'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              Thẻ dọc (Thẻ đeo)
+              Thẻ dọc
             </button>
           </div>
 
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#981B1E] hover:bg-[#741216] rounded-2xl transition-colors shadow-xs"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#981B1E] hover:bg-[#741216] rounded-2xl transition-colors shadow-xs"
           >
             <Printer className="w-4 h-4" />
             In thẻ
@@ -120,20 +120,20 @@ export default function StudentCardPage() {
               />
             </svg>
 
-            <div className="relative z-10 p-6 sm:p-8 flex flex-col justify-between min-h-[320px] sm:min-h-[360px]">
+            <div className="relative z-10 p-4 min-[390px]:p-5 sm:p-8 flex flex-col justify-between min-h-[320px] sm:min-h-[360px]">
               {/* Card Header Top */}
-              <div className="flex items-start justify-between">
+              <div className="flex min-w-0 flex-col gap-4 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between">
                 {/* Left: DNTU School branding inside the top curve */}
-                <div className="flex items-center gap-3 text-white max-w-[280px]">
+                <div className="flex min-w-0 items-center gap-2 min-[390px]:gap-3 text-white max-w-[280px]">
                   <img
                     src="/DNTU_Web_Asset_Kit/branding/dntu-symbol-white.png"
                     alt="DNTU Logo"
-                    className="w-12 h-12 object-contain drop-shadow"
+                    className="w-10 h-10 min-[390px]:w-12 min-[390px]:h-12 shrink-0 object-contain drop-shadow"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xs font-semibold tracking-wider text-white/90 uppercase leading-none">
                       TRƯỜNG ĐẠI HỌC
                     </div>
@@ -144,7 +144,7 @@ export default function StudentCardPage() {
                 </div>
 
                 {/* Right: Card Title */}
-                <div className="text-right">
+                <div className="text-left min-[520px]:text-right">
                   <div className="text-base sm:text-lg font-black text-[#981B1E] uppercase tracking-wide">
                     THẺ SINH VIÊN
                   </div>
@@ -232,11 +232,11 @@ export default function StudentCardPage() {
               </div>
 
               {/* Card Footer Slogans inside curves */}
-              <div className="flex items-end justify-between pt-1">
-                <span className="font-['Caveat',cursive] text-sm sm:text-base text-stone-600">
+              <div className="flex flex-col gap-2 pt-1 min-[520px]:flex-row min-[520px]:items-end min-[520px]:justify-between">
+                <span className="font-['Caveat',cursive] text-sm sm:text-base text-stone-600 break-words">
                   Kiến tạo giá trị cho một tương lai tốt đẹp hơn
                 </span>
-                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-normal min-[390px]:tracking-wider break-words min-[520px]:text-right">
                   DNTU VĂN MINH - NGHĨA TÌNH - TỬ TẾ
                 </span>
               </div>
@@ -246,7 +246,7 @@ export default function StudentCardPage() {
           /* VERTICAL LANYARD CARD */
           <div
             ref={cardRef}
-            className="w-[340px] sm:w-[370px] bg-white rounded-3xl shadow-xl overflow-hidden border border-stone-200 select-none relative flex flex-col transition-all duration-300 print:shadow-none"
+            className="w-full max-w-[370px] bg-white rounded-3xl shadow-xl overflow-hidden border border-stone-200 select-none relative flex flex-col transition-all duration-300 print:shadow-none"
           >
             {/* Top red header */}
             <div

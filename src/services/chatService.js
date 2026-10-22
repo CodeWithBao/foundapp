@@ -5,6 +5,10 @@ import notificationService from './notificationService';
 
 const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
 
+function notifyDataChanged() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('unifind:data-changed'));
+}
+
 function normalizeMessage(message = {}) {
   return {
     ...message,
@@ -146,6 +150,7 @@ export const chatService = {
           text: text?.trim() || '',
           image_url: image || '',
         }, { timeout: 12000 }));
+        notifyDataChanged();
         return { message, conversationId: activeConversationId };
       },
       async () => {
@@ -177,7 +182,7 @@ export const chatService = {
   },
 
   async markAsRead(conversationId, currentUserId) {
-    return withFallback(
+    const result = await withFallback(
       async () => apiClient.put(`/chats/${conversationId}/read`, {}),
       async () => {
         const chats = localChat.getChats();
@@ -188,10 +193,12 @@ export const chatService = {
         localChat.saveChats(chats);
       },
     );
+    notifyDataChanged();
+    return result;
   },
 
   async setBlocked(conversationId, blocked) {
-    return withFallback(
+    const result = await withFallback(
       async () => apiClient.put(`/chats/${conversationId}/block`, { blocked }),
       async () => {
         const chats = localChat.getChats();
@@ -203,6 +210,8 @@ export const chatService = {
         }
       },
     );
+    notifyDataChanged();
+    return result;
   },
 };
 

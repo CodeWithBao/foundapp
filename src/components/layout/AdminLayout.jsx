@@ -6,6 +6,7 @@ import {
   ChevronDown, UserRound, Bell, CheckCheck, Home, Flag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useRealtime } from '../../context/RealtimeContext';
 import notificationService from '../../services/notificationService';
 import { formatRelative } from '../../utils';
 import { toast } from 'sonner';
@@ -132,6 +133,7 @@ function SidebarContent({ onClose, user, handleLogout }) {
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { unreadNotifications, unreadNotificationsLabel } = useRealtime();
   const navigate = useNavigate();
 
   // Desktop sidebar state open by default
@@ -151,14 +153,28 @@ export default function AdminLayout() {
   }, [sidebarOpen]);
 
   useEffect(() => {
-    if (user?.id) {
+    let active = true;
+    const loadNotifications = () => {
+      if (!user?.id || document.visibilityState === 'hidden') return;
       notificationService.getByUser(user.id).then((data) => {
-        setNotifications(data || []);
-      });
-    }
+        if (active) setNotifications(data || []);
+      }).catch(() => {});
+    };
+
+    setNotifications([]);
+    loadNotifications();
+    const timer = window.setInterval(loadNotifications, 3000);
+    window.addEventListener('online', loadNotifications);
+    window.addEventListener('unifind:data-changed', loadNotifications);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('online', loadNotifications);
+      window.removeEventListener('unifind:data-changed', loadNotifications);
+    };
   }, [user?.id]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = unreadNotifications;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -210,7 +226,7 @@ export default function AdminLayout() {
       await notificationService.markAllAsRead(user.id);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
-    } catch (err) {
+    } catch {
       toast.error('Có lỗi xảy ra khi cập nhật thông báo');
     }
   };
@@ -286,7 +302,7 @@ export default function AdminLayout() {
 
           <div className="relative z-10 flex h-full items-center justify-between px-4 sm:px-6">
             {/* Left: DNTU Logo Button Toggle & Admin Portal Breadcrumb */}
-            <div className="relative z-10 flex items-center gap-3">
+            <div className="relative z-10 flex min-w-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={toggleSidebar}
@@ -303,8 +319,8 @@ export default function AdminLayout() {
 
               <div className="h-[28px] w-px bg-[#E8E2DD]" />
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-[#981B1E]">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="truncate text-xs font-bold text-[#981B1E] min-[390px]:text-sm">
                   Admin Portal
                 </span>
                 <span className="hidden text-[#98A2B3] sm:inline">
@@ -317,7 +333,7 @@ export default function AdminLayout() {
             </div>
 
             {/* Right: Bell & Profile Dropdown */}
-            <div className="relative z-10 flex items-center gap-3">
+            <div className="relative z-10 flex shrink-0 items-center gap-1 sm:gap-3">
               {/* Notification Popover */}
               <div ref={notifMenuRef} className="relative">
                 <button
@@ -329,24 +345,26 @@ export default function AdminLayout() {
                       return !prev;
                     });
                   }}
-                  aria-label="Thông báo"
+                  aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ''}`}
                   title="Xem thông báo"
                   className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[#667085] hover:bg-[#F8F6F3] hover:text-[#981B1E] transition-colors"
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute right-2 top-2 flex h-2.5 w-2.5 rounded-full border-2 border-white bg-[#981B1E]" />
+                    <span className="unifind-count-badge" aria-hidden="true">
+                      {unreadNotificationsLabel}
+                    </span>
                   )}
                 </button>
 
                 {notifDropdownOpen && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[340px] overflow-hidden rounded-xl border border-[#E8E2DD] bg-white shadow-[0_10px_30px_rgba(40,25,20,0.16)] animate-scaleIn">
-                    <div className="flex items-center justify-between border-b border-[#E8E2DD] px-4 py-3">
-                      <div className="flex items-center gap-2">
+                  <div className="fixed left-2 right-2 top-[80px] z-[100] overflow-hidden rounded-xl border border-[#E8E2DD] bg-white shadow-[0_10px_30px_rgba(40,25,20,0.16)] animate-scaleIn sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[340px]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E2DD] px-3 py-3 sm:px-4">
+                      <div className="flex min-w-0 items-center gap-2">
                         <span className="font-bold text-[#18181B] text-sm">Thông báo</span>
                         {unreadCount > 0 && (
                           <span className="rounded-full bg-[#FBEDEE] px-2 py-0.5 text-[11px] font-bold text-[#981B1E]">
-                            {unreadCount} mới
+                            {unreadNotificationsLabel} mới
                           </span>
                         )}
                       </div>
@@ -468,7 +486,7 @@ export default function AdminLayout() {
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[220px] overflow-hidden rounded-xl border border-[#E8E2DD] bg-white py-1 shadow-[0_10px_30px_rgba(40,25,20,0.16)] animate-scaleIn">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[min(220px,calc(100vw-1rem))] overflow-hidden rounded-xl border border-[#E8E2DD] bg-white py-1 shadow-[0_10px_30px_rgba(40,25,20,0.16)] animate-scaleIn">
                     <button
                       type="button"
                       onClick={() => {

@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Search, Plus, Bell, User, AlertCircle, Package, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useRealtime } from '../../context/RealtimeContext';
 
 export default function MobileNavigation() {
   const { user } = useAuth();
+  const { unreadNotifications, unreadNotificationsLabel } = useRealtime();
   const navigate = useNavigate();
   const [showPostMenu, setShowPostMenu] = useState(false);
 
@@ -35,7 +37,7 @@ export default function MobileNavigation() {
 
           {/* Bottom Sheet Card placed precisely above bottom bar */}
           <div
-            className="relative w-full bg-white rounded-t-2xl p-5 shadow-landing-lg border-t border-x border-hairline space-y-4 animate-slideUp z-10"
+            className="relative z-10 max-h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom))] w-full overflow-y-auto overscroll-contain rounded-t-2xl border-x border-t border-hairline bg-white p-4 shadow-landing-lg space-y-4 animate-slideUp sm:p-5"
             style={{ marginBottom: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
           >
             <div className="flex items-start justify-between border-b pb-3 border-hairline/80">
@@ -79,7 +81,7 @@ export default function MobileNavigation() {
 
       {/* Bottom Bar */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-hairline shadow-lg px-2 flex items-center justify-around"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-hairline shadow-lg px-1 flex items-center"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.375rem', height: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
       >
         {/* Home */}
@@ -87,32 +89,32 @@ export default function MobileNavigation() {
           to="/"
           end
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center py-1 px-3 rounded-lg text-xs font-semibold transition-all ${
+            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
         >
           <Home className="w-5 h-5 mb-0.5" />
-          <span>Trang chủ</span>
+          <span className="max-w-full truncate">Trang chủ</span>
         </NavLink>
 
         {/* Search */}
         <NavLink
           to="/search"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center py-1 px-3 rounded-lg text-xs font-semibold transition-all ${
+            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
         >
           <Search className="w-5 h-5 mb-0.5" />
-          <span>Tìm kiếm</span>
+          <span className="max-w-full truncate">Tìm kiếm</span>
         </NavLink>
 
         {/* Plus / Đăng bài center button */}
         <button
           onClick={() => setShowPostMenu((prev) => !prev)}
-          className="flex flex-col items-center justify-center -mt-6"
+          className="min-w-0 flex-1 flex flex-col items-center justify-center -mt-6"
           aria-label="Đăng tin"
         >
           <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-md ring-4 ring-[#FAF8F2] hover:bg-burgundy-700 transition-transform active:scale-95">
@@ -125,29 +127,31 @@ export default function MobileNavigation() {
         <NavLink
           to="/notifications"
           className={({ isActive }) =>
-            `relative flex flex-col items-center justify-center py-1 px-3 rounded-lg text-xs font-semibold transition-all ${
+            `relative min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
         >
           <div className="relative">
             <Bell className="w-5 h-5 mb-0.5" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full ring-2 ring-white" />
+            {unreadNotifications > 0 && (
+              <span className="unifind-count-badge unifind-count-badge--mobile" aria-hidden="true">{unreadNotificationsLabel}</span>
+            )}
           </div>
-          <span>Thông báo</span>
+          <span className="max-w-full truncate">Thông báo</span>
         </NavLink>
 
         {/* Profile */}
         <NavLink
           to={user ? '/profile' : '/login'}
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center py-1 px-3 rounded-lg text-xs font-semibold transition-all ${
+            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
         >
           <User className="w-5 h-5 mb-0.5" />
-          <span>{user ? 'Cá nhân' : 'Đăng nhập'}</span>
+          <span className="max-w-full truncate">{user ? 'Cá nhân' : 'Đăng nhập'}</span>
         </NavLink>
       </nav>
     </>

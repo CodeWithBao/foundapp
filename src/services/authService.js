@@ -86,6 +86,9 @@ const authService = {
   logout() {
     localStorage.removeItem('token');
     storageService.remove(STORAGE_KEYS.CURRENT_USER);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('unifind:data-changed'));
+    }
   },
 
   getCurrentUser() {

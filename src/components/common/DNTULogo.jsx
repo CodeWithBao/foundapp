@@ -7,7 +7,7 @@ const sizeMap = {
   lg: { img: 'w-14 h-14', text: 'text-2xl', subtitle: 'text-sm' },
 };
 
-export default function DNTULogo({ size = 'md', showText = true, light = false }) {
+export default function DNTULogo({ size = 'md', showText = true, light = false, compactOnMobile = false }) {
   const s = sizeMap[size] || sizeMap.md;
   const logo = light ? logoWhite : logoBurgundy;
 
@@ -17,7 +17,7 @@ export default function DNTULogo({ size = 'md', showText = true, light = false }
         <img src={logo} alt="DNTU Logo" className={`${s.img} object-contain filter drop-shadow-sm`} />
       </div>
       {showText && (
-        <div className="flex flex-col">
+        <div className={`${compactOnMobile ? 'hidden min-[390px]:flex' : 'flex'} min-w-0 flex-col`}>
           <span className={`font-serif font-bold ${s.text} leading-none tracking-tight ${light ? 'text-white' : 'text-burgundy-600'}`}>
             UNIFIND <span className="text-champagne-500 font-sans font-black tracking-normal">DNTU</span>
           </span>

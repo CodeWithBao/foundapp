@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './context/AuthContext'
+import { RealtimeProvider } from './context/RealtimeContext'
 import storageService from './services/storageService'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import RouteScrollManager from './components/common/RouteScrollManager'
 import './index.css'
 import App from './App.jsx'
 
@@ -42,9 +44,12 @@ createRoot(document.getElementById('root')).render(
     )}
     <ErrorBoundary>
       <BrowserRouter>
+        <RouteScrollManager />
         <AuthProvider>
-          <Toaster position="top-center" richColors visibleToasts={1} toastOptions={{ duration: 2200 }} />
-          <App />
+          <RealtimeProvider>
+            <Toaster position="top-center" richColors visibleToasts={1} toastOptions={{ duration: 2200 }} />
+            <App />
+          </RealtimeProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

@@ -110,12 +110,12 @@ export default function ItemDetailPage() {
     const found = users.find(u => u.id === item.userId);
     return found || {
       id: item.userId || item.user_id,
-      name: item.contactName || 'Trần Minh Khoa',
+      name: item.contactName || 'Người dùng DNTU',
       role: 'Sinh viên DNTU',
-      faculty: 'Khoa Công nghệ Thông tin',
-      phone: item.contactPhone || '0987 123 321',
-      email: item.contactEmail || 'khoa.tran@dntu.edu.vn',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop'
+      faculty: '',
+      phone: item.contactPhone || '',
+      email: item.contactEmail || '',
+      avatar: '',
     };
   };
 
@@ -262,17 +262,8 @@ export default function ItemDetailPage() {
     setShowChatModal(true);
   };
   
-  // Gallery images fallback array if single image
-  const galleryImages = hasImages 
-    ? (item.images.length >= 2 ? item.images : [
-        item.images[0],
-        'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&h=600&fit=crop'
-      ])
-    : [];
+  // Chỉ hiển thị ảnh thật gắn với bản ghi; không ghép ảnh demo vào gallery production.
+  const galleryImages = hasImages ? item.images : [];
 
   const categoryText = typeof item.category === 'object' && item.category !== null
     ? item.category.name || ''
@@ -393,20 +384,14 @@ export default function ItemDetailPage() {
                   </div>
                 )}
 
-                {/* Handwritten slogan overlay */}
-                <div className="absolute bottom-3 left-3 pointer-events-none">
-                  <span className="font-['Caveat'] text-lg text-white/95 drop-shadow">
-                    Nhặt được cũng là duyên ♡
-                  </span>
-                </div>
               </div>
 
               {/* Thumbnails Row */}
               {galleryImages.length > 1 && (
-                <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50/80 border-t border-[#E8E2DD]">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))] gap-2 p-3 bg-gray-50/80 border-t border-[#E8E2DD]">
                   {galleryImages.map((img, idx) => (
                     <button
-                      key={idx}
+                    key={`${item.id}-${img}`}
                       type="button"
                       onClick={() => setSelectedImage(idx)}
                       className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
@@ -442,7 +427,7 @@ export default function ItemDetailPage() {
             </div>
 
             {/* Status & Views Row */}
-            <div className="flex items-center gap-3 text-xs text-gray-500 py-1 border-b border-gray-200">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-500 py-1 border-b border-gray-200">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E8F5E9] text-[#2E7D32]">
                 {isFound ? 'Nhặt được' : 'Đang tìm'}
               </span>
@@ -454,7 +439,7 @@ export default function ItemDetailPage() {
             </div>
 
             {/* 6 Key Attributes Grid according to mockup */}
-            <div className="grid grid-cols-2 gap-4 py-2 text-xs">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-4 py-2 text-xs">
               {/* 1. Time */}
               <div className="flex items-start gap-2.5">
                 <div className="p-1.5 rounded-lg bg-red-50 text-[#741216] shrink-0 mt-0.5">

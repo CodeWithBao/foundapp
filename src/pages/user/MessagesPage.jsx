@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, CheckCheck, Image as ImageIcon, Loader2, MessageCircle, Search, Send, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, Check, CheckCheck, Image as ImageIcon, Loader2, MessageCircle, Search, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import chatService from '../../services/chatService';
 import Avatar from '../../components/common/Avatar';
+import { useRealtime } from '../../context/RealtimeContext';
 
 const POLL_INTERVAL = 5000;
 
@@ -23,6 +24,7 @@ function conversationTime(value) {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { conversations: realtimeConversations } = useRealtime();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -31,16 +33,22 @@ export default function MessagesPage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showNewMessages, setShowNewMessages] = useState(false);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const messagesViewportRef = useRef(null);
+  const nearBottomRef = useRef(true);
+  const previousMessageIdsRef = useRef(new Set());
+  const activeUserIdRef = useRef(user?.id);
   const selectedId = searchParams.get('conversation');
 
   const refreshList = useCallback(async ({ silent = false } = {}) => {
     if (!user?.id) return;
+    const requestUserId = user.id;
     try {
       if (!silent) setLoading(true);
-      const rows = await chatService.getConversationsForUser(user.id);
-      setConversations(rows);
+      const rows = await chatService.getConversationsForUser(requestUserId);
+      if (String(activeUserIdRef.current) === String(requestUserId)) setConversations(rows);
     } catch (err) {
       if (!silent) toast.error(err.message || 'Không thể tải danh sách trò chuyện.');
     } finally {
@@ -53,12 +61,19 @@ export default function MessagesPage() {
       setActiveConversation(null);
       return;
     }
+    const requestUserId = user.id;
     try {
       const conversation = await chatService.getConversationById(selectedId);
+      if (String(activeUserIdRef.current) !== String(requestUserId)) return;
+      const newIncoming = (conversation.messages || []).some(message =>
+        !previousMessageIdsRef.current.has(String(message.id)) && String(message.senderId) !== String(user.id));
       setActiveConversation(conversation);
-      await chatService.markAsRead(conversation.id, user.id);
-      setConversations(prev => prev.map(row => row.id === conversation.id
-        ? { ...row, ...conversation, messages: row.messages, unreadCount: 0 }
+      previousMessageIdsRef.current = new Set((conversation.messages || []).map(message => String(message.id)));
+      const canMarkRead = document.visibilityState === 'visible' && nearBottomRef.current;
+      if (canMarkRead) await chatService.markAsRead(conversation.id, user.id);
+      if (newIncoming && !nearBottomRef.current) setShowNewMessages(true);
+      setConversations(prev => prev.map(row => String(row.id) === String(conversation.id)
+        ? { ...row, ...conversation, messages: row.messages, unreadCount: canMarkRead ? 0 : conversation.unreadCount }
         : row));
     } catch (err) {
       if (!silent) toast.error(err.message || 'Không thể tải cuộc trò chuyện.');
@@ -66,8 +81,18 @@ export default function MessagesPage() {
   }, [selectedId, user?.id]);
 
   useEffect(() => {
+    activeUserIdRef.current = user?.id;
+    setConversations([]);
+    setActiveConversation(null);
+    previousMessageIdsRef.current = new Set();
+    nearBottomRef.current = true;
+    setShowNewMessages(false);
     refreshList();
-  }, [refreshList]);
+  }, [refreshList, user?.id]);
+
+  useEffect(() => {
+    if (realtimeConversations.length > 0) setConversations(realtimeConversations);
+  }, [realtimeConversations]);
 
   useEffect(() => {
     refreshActive();
@@ -82,8 +107,33 @@ export default function MessagesPage() {
   }, [refreshActive, refreshList, selectedId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (nearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      setShowNewMessages(false);
+    }
   }, [activeConversation?.messages?.length]);
+
+  const handleMessagesScroll = () => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    const wasNearBottom = nearBottomRef.current;
+    nearBottomRef.current = distance < 96;
+    if (!wasNearBottom && nearBottomRef.current && activeConversation?.id && document.visibilityState === 'visible') {
+      chatService.markAsRead(activeConversation.id, user.id).then(() => {
+        setConversations(prev => prev.map(row => String(row.id) === String(activeConversation.id)
+          ? { ...row, unreadCount: 0 }
+          : row));
+      }).catch(() => {});
+      setShowNewMessages(false);
+    }
+  };
+
+  const scrollToLatest = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    nearBottomRef.current = true;
+    setShowNewMessages(false);
+  };
 
   const filteredConversations = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -96,6 +146,9 @@ export default function MessagesPage() {
   }, [conversations, query]);
 
   const openConversation = conversation => {
+    previousMessageIdsRef.current = new Set();
+    nearBottomRef.current = true;
+    setShowNewMessages(false);
     setSearchParams({ conversation: String(conversation.id) });
   };
 
@@ -161,7 +214,7 @@ export default function MessagesPage() {
           <p className="mt-1 text-sm text-gray-500">Trao đổi trực tiếp và an toàn với người đăng bài về vật phẩm.</p>
         </div>
 
-        <div className="h-[calc(100vh-12rem)] min-h-[560px] bg-white border border-[#E5DED8] rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="h-[calc(100dvh-10.5rem)] min-h-[360px] sm:min-h-[460px] md:min-h-[560px] bg-white border border-[#E5DED8] rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
           <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} min-w-0 flex-col border-r border-[#E5DED8] bg-white`}>
             <div className="p-4 border-b border-[#E5DED8]">
               <label className="flex items-center gap-2 rounded-xl border border-[#DED7D0] bg-[#FAF8F5] px-3 py-2.5 focus-within:border-[#8F1822] focus-within:ring-2 focus-within:ring-[#8F1822]/10">
@@ -210,7 +263,7 @@ export default function MessagesPage() {
             </div>
           </aside>
 
-          <section className={`${selectedId ? 'flex' : 'hidden md:flex'} min-w-0 flex-col bg-[#FAF9F6]`}>
+          <section className={`${selectedId ? 'fixed inset-0 z-[90] flex md:static md:z-auto' : 'hidden md:flex'} min-w-0 flex-col bg-[#FAF9F6] md:min-h-0`}>
             {!activeConversation ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center text-gray-500">
                 <MessageCircle className="w-14 h-14 text-gray-300 mb-4" />
@@ -219,32 +272,32 @@ export default function MessagesPage() {
               </div>
             ) : (
               <>
-                <header className="px-3 sm:px-5 py-3 bg-white border-b border-[#E5DED8] flex items-center gap-3">
-                  <button type="button" onClick={closeMobileConversation} className="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100" aria-label="Về danh sách trò chuyện">
-                    <X className="w-5 h-5" />
+                <header className="px-3 sm:px-5 py-2.5 sm:py-3 bg-white border-b border-[#E5DED8] flex items-center gap-2 sm:gap-3 shrink-0" style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}>
+                  <button type="button" onClick={closeMobileConversation} className="md:hidden w-11 h-11 -ml-2 shrink-0 rounded-lg hover:bg-gray-100 flex items-center justify-center" aria-label="Về danh sách trò chuyện">
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
                   <Avatar name={activeConversation.recipient?.name} src={activeConversation.recipient?.avatar} size="md" />
                   <div className="min-w-0 flex-1">
                     <h2 className="font-bold text-sm sm:text-base text-gray-900 truncate">{activeConversation.recipient?.name}</h2>
                     <p className="text-xs text-gray-500 truncate">Về: {activeConversation.itemTitle}</p>
                   </div>
-                  <Link to={`/items/${activeConversation.itemId}`} className="text-xs font-semibold text-[#8F1822] hover:underline shrink-0">Xem bài</Link>
+                  <Link to={`/items/${activeConversation.itemId}`} className="hidden min-[390px]:inline text-xs font-semibold text-[#8F1822] hover:underline shrink-0">Xem bài</Link>
                 </header>
 
                 <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-[11px] text-amber-900 text-center">
                   Không chia sẻ mật khẩu, OTP hoặc chuyển tiền. Hãy hẹn gặp tại khu vực đông người trong campus.
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
+                <div ref={messagesViewportRef} onScroll={handleMessagesScroll} className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-5 space-y-3">
                   {(activeConversation.messages || []).length === 0 ? (
                     <div className="h-full flex items-center justify-center text-sm text-gray-400 text-center px-8">Chưa có tin nhắn trong cuộc trò chuyện này.</div>
                   ) : activeConversation.messages.map(message => {
                     const isMe = String(message.senderId) === String(user.id);
                     return (
                       <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[82%] sm:max-w-[70%] rounded-2xl px-3.5 py-2.5 shadow-sm ${isMe ? 'bg-[#8F1822] text-white rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'}`}>
-                          {message.text && <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>}
-                          {message.image && <img src={message.image} alt="Ảnh đính kèm" className="mt-2 max-h-64 rounded-xl object-contain" />}
+                        <div className={`min-w-0 max-w-[86%] sm:max-w-[70%] rounded-2xl px-3.5 py-2.5 shadow-sm ${isMe ? 'bg-[#8F1822] text-white rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'}`}>
+                          {message.text && <p className="chat-user-content text-sm">{message.text}</p>}
+                          {message.image && <img src={message.image} alt="Ảnh đính kèm" className="mt-2 h-auto max-h-64 max-w-full rounded-xl object-contain" />}
                           <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
                             <span>{messageTime(message.createdAt)}</span>
                             {isMe && (message.read ? <CheckCheck className="w-3 h-3 text-sky-300" /> : <Check className="w-3 h-3" />)}
@@ -254,23 +307,28 @@ export default function MessagesPage() {
                     );
                   })}
                   <div ref={messagesEndRef} />
+                  {showNewMessages && (
+                    <button type="button" onClick={scrollToLatest} className="sticky bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-[#8F1822] px-3.5 py-2 text-xs font-semibold text-white shadow-lg">
+                      <ArrowDown className="w-4 h-4" /> Tin nhắn mới
+                    </button>
+                  )}
                 </div>
 
                 {selectedImage && (
-                  <div className="px-4 py-2 bg-white border-t flex items-center gap-3">
+                  <div className="px-3 sm:px-4 py-2 bg-white border-t flex min-w-0 items-center gap-3 shrink-0">
                     <img src={selectedImage} alt="Ảnh chuẩn bị gửi" className="w-12 h-12 object-cover rounded-lg" />
-                    <span className="text-xs text-gray-500 flex-1">Ảnh đã sẵn sàng gửi</span>
+                    <span className="min-w-0 text-xs text-gray-500 flex-1 break-words">Ảnh đã sẵn sàng gửi</span>
                     <button type="button" onClick={() => setSelectedImage(null)} className="p-2" aria-label="Bỏ ảnh"><X className="w-4 h-4" /></button>
                   </div>
                 )}
 
-                <footer className="p-3 sm:p-4 bg-white border-t border-[#E5DED8]">
+                <footer className="px-2.5 pt-2.5 sm:p-4 bg-white border-t border-[#E5DED8] shrink-0" style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}>
                   {isReadOnly || activeConversation.blocked ? (
                     <div className="rounded-xl bg-gray-100 p-3 text-center text-xs font-medium text-gray-500">
                       {activeConversation.blocked ? 'Cuộc trò chuyện đang bị chặn.' : 'Vật phẩm đã đóng hoặc trao trả; cuộc trò chuyện ở chế độ chỉ đọc.'}
                     </div>
                   ) : (
-                    <form onSubmit={handleSend} className="flex items-end gap-2">
+                    <form onSubmit={handleSend} className="flex min-w-0 items-end gap-1.5 sm:gap-2">
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
                       <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-xl flex items-center justify-center text-gray-500 hover:text-[#8F1822] hover:bg-red-50" aria-label="Đính kèm ảnh">
                         <ImageIcon className="w-5 h-5" />
@@ -286,7 +344,7 @@ export default function MessagesPage() {
                         }}
                         rows={1}
                         maxLength={2000}
-                        className="min-h-11 max-h-28 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 text-sm outline-none focus:border-[#8F1822] focus:ring-2 focus:ring-[#8F1822]/10"
+                        className="min-w-0 min-h-11 max-h-28 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-3.5 py-3 text-sm outline-none focus:border-[#8F1822] focus:ring-2 focus:ring-[#8F1822]/10"
                         placeholder="Nhập tin nhắn..."
                       />
                       <button type="submit" disabled={sending || (!inputText.trim() && !selectedImage)} className="w-11 h-11 rounded-xl bg-[#8F1822] text-white flex items-center justify-center disabled:opacity-40" aria-label="Gửi tin nhắn">

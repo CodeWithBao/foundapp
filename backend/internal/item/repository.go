@@ -25,7 +25,9 @@ func NewItemRepository(db *gorm.DB) ItemRepository       { return &itemRepositor
 func (r *itemRepository) Create(item *models.Item) error { return r.db.Create(item).Error }
 
 func preloadItem(query *gorm.DB) *gorm.DB {
-	return query.Preload("Category").Preload("Location").Preload("User").Preload("Images")
+	return query.Preload("Category").Preload("Location").Preload("User").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Order("sort_order ASC, id ASC")
+	})
 }
 
 func (r *itemRepository) FindByID(id uint) (*models.Item, error) {

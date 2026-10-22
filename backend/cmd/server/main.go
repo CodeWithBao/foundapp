@@ -20,6 +20,7 @@ import (
 	"unifind-dntu/internal/patterns/facade"
 	"unifind-dntu/internal/patterns/observer"
 	"unifind-dntu/internal/report"
+	"unifind-dntu/internal/upload"
 	"unifind-dntu/internal/user"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,7 @@ func main() {
 	itemRepo := item.NewItemRepository(db)
 	itemService := item.NewItemService(itemRepo, notifier)
 	itemHandler := item.NewItemHandler(itemService)
+	uploadHandler := upload.NewHandler(db)
 
 	claimFacade := facade.NewClaimFacade(db, notifier)
 	claimRepo := claim.NewClaimRepository(db)
@@ -96,6 +98,7 @@ func main() {
 	chatHandler := chat.NewHandler(chatService)
 
 	r := gin.Default()
+	r.MaxMultipartMemory = 12 << 20
 	r.Use(middleware.CORSMiddleware())
 
 	healthHandler := func(c *gin.Context) {
@@ -122,11 +125,13 @@ func main() {
 	// Rate limiters for security against brute-force & spam
 	authRateLimit := middleware.RateLimitMiddleware(10, 10)
 	createItemRateLimit := middleware.RateLimitMiddleware(20, 20)
+	uploadImageRateLimit := middleware.RateLimitMiddleware(40, 40)
 	chatMessageRateLimit := middleware.RateLimitMiddleware(60, 60)
 
 	authHandler.RegisterRoutes(apiV1, authMiddleware, authRateLimit)
 	userHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	itemHandler.RegisterRoutes(apiV1, authMiddleware, createItemRateLimit, middleware.OptionalAuth())
+	uploadHandler.RegisterRoutes(apiV1, authMiddleware, uploadImageRateLimit)
 	claimHandler.RegisterRoutes(apiV1, authMiddleware, requireStaff)
 	matchingHandler.RegisterRoutes(apiV1, authMiddleware)
 	notifHandler.RegisterRoutes(apiV1, authMiddleware)

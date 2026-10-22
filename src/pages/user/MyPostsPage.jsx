@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, Eye, MapPin, Calendar, Tag, CheckCircle2, Edit3, Save } from 'lucide-react';
+import { Plus, Trash2, Eye, MapPin, Tag, CheckCircle2, Edit3, Save } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
 import adminService from '../../services/adminService';
@@ -12,10 +12,6 @@ import Textarea from '../../components/common/Textarea';
 import EmptyState from '../../components/common/EmptyState';
 import Modal, { ConfirmModal } from '../../components/common/Modal';
 import Tabs from '../../components/common/Tabs';
-import PageHeader from '../../components/common/PageHeader';
-import { STORAGE_KEYS } from '../../constants';
-import storageService from '../../services/storageService';
-import { mockLocations } from '../../data/locations';
 import { formatDate } from '../../utils';
 import { toast } from 'sonner';
 
@@ -30,8 +26,8 @@ export default function MyPostsPage() {
   const [updating, setUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('LOST');
 
-  const categories = storageService.get(STORAGE_KEYS.CATEGORIES) || [];
-  const [locations, setLocations] = useState(mockLocations);
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   useEffect(() => {
     if (user?.id) loadItems();
@@ -39,8 +35,13 @@ export default function MyPostsPage() {
 
   useEffect(() => {
     let live = true;
-    adminService.getLocations().then(rows => {
-      if (live) setLocations(rows);
+    Promise.all([
+      adminService.getCategories(),
+      adminService.getLocations(),
+    ]).then(([categoryRows, locationRows]) => {
+      if (!live) return;
+      setCategories(categoryRows || []);
+      setLocations(locationRows || []);
     }).catch(() => {});
     return () => { live = false; };
   }, []);

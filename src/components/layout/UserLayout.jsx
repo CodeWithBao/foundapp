@@ -9,7 +9,7 @@ export default function UserLayout() {
     <div className="dntu-app-shell min-h-screen flex flex-col bg-cream-100">
       <div className="dntu-campus-backdrop" aria-hidden="true" />
       <Navbar />
-      <main className="relative z-[1] flex-1 pb-20 md:pb-0">
+      <main className="relative flex-1 min-w-0 pb-20 md:pb-0">
         <Outlet />
       </main>
       <Footer />

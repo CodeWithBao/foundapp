@@ -1,8 +1,8 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
-import { getImageForCategory } from '../data/items';
 import apiClient, { withFallback } from './apiClient';
 import { createImageFingerprint } from '../utils/imageFingerprint';
+import { MAX_IMAGES, normalizeImageOrder, prepareImageFile } from '../utils/selectedImages';
 import { resolveLocationMapKey } from '../data/locations';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
@@ -43,6 +43,60 @@ export function normalizeItem(item) {
 }
 
 const itemService = {
+	async uploadSelectedImages(images, onUpdate) {
+		const ordered = normalizeImageOrder(images || []);
+		if (ordered.length > MAX_IMAGES) throw new Error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh.`);
+		const results = new Array(ordered.length);
+		let cursor = 0;
+
+		const updateImage = (id, patch) => {
+			onUpdate?.(id, patch);
+		};
+		const worker = async () => {
+			while (cursor < ordered.length) {
+				const index = cursor++;
+				const image = ordered[index];
+				if (image.status === 'success' && image.uploadedUrl) {
+					results[index] = image.uploadedUrl;
+					continue;
+				}
+				try {
+					updateImage(image.id, { status: 'compressing', progress: 0, error: undefined });
+					const file = await prepareImageFile(image);
+					updateImage(image.id, { file, compressed: true, status: 'uploading', progress: 0 });
+					const body = new FormData();
+					body.append('image', file, file.name);
+					const uploaded = await apiClient.upload('/uploads', body, {
+						onProgress: progress => updateImage(image.id, { status: 'uploading', progress }),
+					});
+					results[index] = uploaded.url;
+					updateImage(image.id, {
+						file,
+						compressed: true,
+						status: 'success',
+						progress: 100,
+						uploadedUrl: uploaded.url,
+						error: undefined,
+					});
+				} catch (error) {
+					updateImage(image.id, { status: 'error', progress: 0, error: error.message });
+				}
+			}
+		};
+
+		await Promise.all(Array.from({ length: Math.min(3, ordered.length) }, () => worker()));
+		if (results.some(url => !url)) {
+			throw new Error('Có ảnh tải lên chưa thành công. Các ảnh đã tải vẫn được giữ lại để bạn thử lại riêng ảnh lỗi.');
+		}
+		return results;
+	},
+
+	async deleteUploadedImage(url) {
+		const match = String(url || '').match(/\/api\/v1\/uploads\/([a-f0-9]{32})$/i);
+		if (!match) return;
+		await apiClient.delete(`/uploads/${match[1]}`);
+	},
+
   async getMapItems() {
     try {
       const first = await this.getItems({ page: 1, limit: 50 });
@@ -202,7 +256,7 @@ const itemService = {
           id,
           ...data,
           status: data.type,
-          images: data.images?.length ? data.images : [getImageForCategory(data.category)],
+          images: data.images?.length ? data.images : [],
           imageFingerprint: data.imageFingerprint || await createImageFingerprint(data.images?.[0]),
           views: 0,
           createdAt: new Date().toISOString(),
