@@ -57,4 +57,5 @@ type ItemImage struct {
 	ItemID    uint   `gorm:"not null;index" json:"item_id"`
 	ImageURL  string `gorm:"type:text;not null" json:"image_url"`
 	IsPrimary bool   `gorm:"default:false" json:"is_primary"`
+	SortOrder int    `gorm:"default:0;index" json:"sort_order"`
 }

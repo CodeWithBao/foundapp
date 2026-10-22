@@ -24,11 +24,11 @@ export default function ProfilePage() {
   const DEFAULT_QUOTE = 'Sống tích cực, lan tỏa điều tốt đẹp cùng cộng đồng DNTU!';
 
   const [stats, setStats] = useState({
-    posts: 12,
-    claims: 5,
-    returned: 5,
-    thanks: 28,
-    views: '1.2K'
+    posts: 0,
+    claims: 0,
+    returned: 0,
+    thanks: 0,
+    views: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -94,51 +94,19 @@ export default function ProfilePage() {
         setUserPosts(myItems);
         setStats({
           posts: myItems.length,
-          claims: claims.length || 5,
-          returned: returnedItems.length || 5,
-          thanks: 28,
-          views: '1.2K'
+          claims: claims.length,
+          returned: returnedItems.length,
+          thanks: 0,
+          views: myItems.reduce((total, item) => total + Number(item.views || 0), 0)
         });
       } else {
-        // Fallback demo posts matching mockup 07_student_portal.png
-        setUserPosts([
-          {
-            id: 'mock-p1',
-            title: 'Ví da màu đen',
-            status: 'RETURNED',
-            statusLabel: 'Đã nhận lại',
-            statusBadgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            date: '04/03/2024',
-            likes: 8,
-            views: 320,
-            image: '/DNTU_Web_Asset_Kit/asset/01_event_entertainment_center.jpg'
-          },
-          {
-            id: 'mock-p2',
-            title: 'Tai nghe AirPods',
-            status: 'ACTIVE',
-            statusLabel: 'Đang hiển thị',
-            statusBadgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-            date: '28/02/2024',
-            likes: 25,
-            views: 680,
-            image: '/DNTU_Web_Asset_Kit/asset/02_home_story_visual.png'
-          },
-          {
-            id: 'mock-p3',
-            title: 'Thẻ sinh viên DNTU',
-            status: 'HIDDEN',
-            statusLabel: 'Đã ẩn',
-            statusBadgeClass: 'bg-stone-100 text-stone-600 border-stone-200',
-            date: '15/02/2024',
-            likes: 12,
-            views: 410,
-            image: '/DNTU_Web_Asset_Kit/watermarks/dntu-slogan-burgundy.png'
-          }
-        ]);
+        setUserPosts([]);
+        setStats({ posts: 0, claims: claims.length, returned: 0, thanks: 0, views: 0 });
       }
     } catch (err) {
       console.error(err);
+      setUserPosts([]);
+      setStats({ posts: 0, claims: 0, returned: 0, thanks: 0, views: 0 });
     } finally {
       setLoading(false);
     }
@@ -832,10 +800,10 @@ export default function ProfilePage() {
                         {/* Thumbnail */}
                         <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
                           <img
-                            src={item.image || item.images?.[0] || '/mascot/found.png'}
+                            src={item.image || item.images?.[0] || ''}
                             alt={item.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => { e.currentTarget.src = '/mascot/found.png'; }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         </div>
 
@@ -846,7 +814,7 @@ export default function ProfilePage() {
                               {item.statusLabel || (item.status === 'RETURNED' ? 'Đã nhận lại' : 'Đang hiển thị')}
                             </span>
                             <span className="text-[11px] text-stone-400 font-mono">
-                              {item.date || '04/03/2024'}
+                              {item.date || 'Chưa cập nhật'}
                             </span>
                           </div>
 
@@ -857,11 +825,11 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-3 mt-1.5 text-xs text-stone-500 font-mono">
                             <span className="flex items-center gap-1">
                               <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                              {item.likes || 8}
+                              {item.likes || 0}
                             </span>
                             <span className="flex items-center gap-1">
                               <Eye className="w-3.5 h-3.5 text-stone-400" />
-                              {item.views || 320}
+                              {item.views || 0}
                             </span>
                           </div>
                         </div>
@@ -975,7 +943,7 @@ export default function ProfilePage() {
                   <h4 className="text-sm font-bold text-stone-900 mb-3">
                     Thao tác nhanh
                   </h4>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 gap-2 min-[520px]:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
                     <Link
                       to="/report-lost"
                       className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-stone-50 hover:bg-red-50 text-stone-700 hover:text-[#981B1E] transition-all group border border-stone-100 text-center"

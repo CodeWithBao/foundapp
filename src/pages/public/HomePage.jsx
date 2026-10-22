@@ -102,6 +102,17 @@ export default function HomePage() {
     });
   };
 
+  const handleCampusClick = () => {
+    scrollRestorationService.saveSnapshot({
+      path: '/',
+      fullPath: '/',
+      scrollY: window.scrollY || document.documentElement.scrollTop || 0,
+      extra: {
+        activeTab,
+      },
+    });
+  };
+
   const featuredCategories = [
     { name: 'Điện thoại', query: 'Điện thoại' },
     { name: 'Ví, bóp', query: 'Ví / Bóp' },
@@ -121,7 +132,7 @@ export default function HomePage() {
     <div className="bg-[#F8F6F3] min-h-screen">
       {/* Hero Section matching 01_home.png */}
       <section
-        className="relative min-h-[520px] md:min-h-[580px] lg:min-h-[620px] flex items-center px-4 sm:px-6 lg:px-10 overflow-hidden"
+        className="relative min-h-[520px] md:min-h-[580px] lg:min-h-[620px] flex items-center overflow-hidden"
         style={{
           backgroundImage: `url(/DNTU_Web_Asset_Kit/asset/campus_colorful_building.jpg)`,
           backgroundSize: 'cover',
@@ -144,9 +155,8 @@ export default function HomePage() {
             </p>
 
             {/* Editorial Serif Heading */}
-            <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-serif font-extrabold text-[#741216] leading-[1.18] tracking-tight mb-3">
-              Tìm lại những giá trị<br />
-              Kết nối cộng đồng DNTU
+            <h1 className="text-[clamp(2rem,3.4vw,2.875rem)] leading-[1.2] tracking-[-0.01em] font-serif font-extrabold text-[#741216] mb-3 break-words text-balance">
+              Tìm lại những giá trị Kết nối cộng đồng DNTU
             </h1>
             
             <p className="text-ink-slate text-sm sm:text-base mb-7 max-w-xl leading-relaxed">
@@ -156,29 +166,31 @@ export default function HomePage() {
             {/* Hero Search Bar */}
             <form
               onSubmit={handleSearch}
-              className="relative flex items-center bg-white rounded-full p-1.5 pl-4 sm:pl-5 shadow-landing-md border border-hairline/80 max-w-xl mb-6 focus-within:ring-2 focus-within:ring-[#981B1E]/20 focus-within:border-[#981B1E] transition-all"
+              className="flex w-full max-w-xl min-w-0 items-center rounded-full border border-hairline/80 bg-white p-1.5 pl-4 shadow-landing-md transition-all focus-within:border-[#981B1E] focus-within:ring-2 focus-within:ring-[#981B1E]/20 sm:pl-5 mb-6"
             >
-              <Search className="w-5 h-5 text-ink-muted mr-2.5 sm:mr-3 shrink-0 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Bạn đang tìm kiếm gì? (ví dụ: điện thoại, ví, thẻ sinh viên...)"
-                className="flex-1 min-w-0 py-2 sm:py-2.5 pr-2 text-ink text-sm sm:text-base placeholder:text-ink-muted focus:outline-none bg-transparent"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="p-1 text-ink-muted hover:text-ink mr-2 transition-colors"
-                  aria-label="Xóa từ khóa"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <div className="flex min-w-0 flex-1 items-center">
+                <Search className="w-5 h-5 text-ink-muted mr-2.5 sm:mr-3 shrink-0 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Tìm điện thoại, ví, thẻ sinh viên..."
+                  className="w-0 min-w-0 flex-1 bg-transparent py-2 sm:py-2.5 pr-2 text-sm sm:text-base leading-6 text-ink placeholder:text-ink-muted focus:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-paper-panel hover:text-ink"
+                    aria-label="Xóa từ khóa"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               <button
                 type="submit"
-                className="bg-[#981B1E] hover:bg-[#741216] text-white px-5 sm:px-7 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm shrink-0 transition-colors shadow-sm active:scale-95"
+                className="min-h-10 shrink-0 whitespace-nowrap rounded-full bg-[#981B1E] px-3 min-[390px]:px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#741216] active:scale-95"
               >
                 Tìm kiếm
               </button>
@@ -224,9 +236,9 @@ export default function HomePage() {
       </section>
 
       {/* Stats Ribbon Bar matching 01_home.png */}
-      <section className="bg-white border-y border-hairline py-5 px-4 sm:px-6">
+      <section className="bg-white border-y border-hairline py-5">
         <div className="page-container flex flex-wrap items-center justify-between gap-6">
-          <div className="flex flex-wrap items-center gap-8 sm:gap-12 flex-1">
+          <div className="grid w-full flex-1 grid-cols-1 gap-5 min-[430px]:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             {/* Stat 1 */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-accent-tint text-accent flex items-center justify-center shrink-0">
@@ -289,7 +301,7 @@ export default function HomePage() {
             {/* Section: Tìm kiếm theo danh mục */}
             <div>
               <h2 className="font-serif font-bold text-xl text-ink mb-4">Tìm kiếm theo danh mục</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 min-[390px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-3">
                 {featuredCategories.map((cat) => (
                   <button
                     key={cat.name}
@@ -310,10 +322,10 @@ export default function HomePage() {
             {/* Section: Tin đăng mới nhất */}
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <h2 className="font-serif font-bold text-xl text-ink">Tin đăng mới nhất</h2>
                   {/* Filter tabs */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {[
                       { key: 'ALL', label: 'Tất cả' },
                       { key: 'LOST', label: 'Đồ bị mất' },
@@ -417,6 +429,7 @@ export default function HomePage() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Link
                     to="/campus/"
+                    onClick={handleCampusClick}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#981B1E] hover:bg-[#741216] text-white text-xs font-bold transition-colors shadow-md"
                   >
                     <span>Xem bản đồ</span>

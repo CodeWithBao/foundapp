@@ -59,7 +59,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/items/:id" element={<ItemDetailPage />} />
-            <Route path="/campus/*" element={<CampusMapPage />} />
+            <Route path="/campus" element={<CampusMapPage />} />
             <Route path="/guide" element={<GuidePage />} />
 
             {/* Protected User Routes inside UserLayout */}

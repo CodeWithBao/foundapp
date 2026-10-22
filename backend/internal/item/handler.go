@@ -78,7 +78,11 @@ func (h *ItemHandler) CreateItem(c *gin.Context) {
 
 	item, err := h.itemService.CreateItem(userIDVal.(uint), dto)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		if strings.Contains(err.Error(), "ảnh") || strings.Contains(err.Error(), "image") {
+			response.Error(c, http.StatusBadRequest, err.Error())
+		} else {
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 

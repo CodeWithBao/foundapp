@@ -2,10 +2,7 @@ const rawBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_UR
 const BASE_URL = (typeof rawBase === 'string' && rawBase.startsWith('http')) ? '/api/v1' : rawBase;
 const DEFAULT_TIMEOUT = 5000;
 
-export async function apiFetch(endpoint, options = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout || DEFAULT_TIMEOUT);
-
+export function getAuthToken() {
   let token = localStorage.getItem('token');
   if (!token) {
     try {
@@ -15,9 +12,19 @@ export async function apiFetch(endpoint, options = {}) {
       token = null;
     }
   }
+  return token;
+}
+
+export async function apiFetch(endpoint, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || DEFAULT_TIMEOUT);
+
+  const token = getAuthToken();
+
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   const headers = {
-    'Content-Type': 'application/json',
+    ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
@@ -63,6 +70,49 @@ export async function apiFetch(endpoint, options = {}) {
   }
 }
 
+export function apiUpload(endpoint, formData, { onProgress, timeout = 60000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE_URL}${endpoint}`);
+    xhr.timeout = timeout;
+    const token = getAuthToken();
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      let payload = {};
+      try {
+        payload = JSON.parse(xhr.responseText || '{}');
+      } catch {
+        payload = {};
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(payload.data !== undefined ? payload.data : payload);
+        return;
+      }
+      const error = new Error(payload.message || payload.error || `HTTP Error ${xhr.status}`);
+      error.status = xhr.status;
+      reject(error);
+    };
+    xhr.onerror = () => {
+      const error = new Error('Không thể kết nối máy chủ để tải ảnh');
+      error.isNetworkError = true;
+      reject(error);
+    };
+    xhr.ontimeout = () => {
+      const error = new Error('Tải ảnh quá thời gian cho phép');
+      error.isNetworkError = true;
+      reject(error);
+    };
+    xhr.onabort = () => reject(new Error('Đã hủy tải ảnh'));
+    xhr.send(formData);
+  });
+}
+
 export async function withFallback(apiFn, fallbackFn) {
   try {
     return await apiFn();
@@ -92,6 +142,7 @@ export const apiClient = {
   post: (url, body, opts) => apiFetch(url, { ...opts, method: 'POST', body: JSON.stringify(body) }),
   put: (url, body, opts) => apiFetch(url, { ...opts, method: 'PUT', body: JSON.stringify(body) }),
   delete: (url, opts) => apiFetch(url, { ...opts, method: 'DELETE' }),
+  upload: apiUpload,
 };
 
 export default apiClient;

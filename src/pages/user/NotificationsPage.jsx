@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutGrid,
@@ -20,187 +20,25 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
 import EmptyState from '../../components/common/EmptyState';
+import { formatRelative } from '../../utils';
 import { toast } from 'sonner';
-
-// Dữ liệu thông báo hệ thống và cộng đồng chuẩn hóa theo thiết kế DNTU
-const SYSTEM_COMMUNITY_NOTIFICATIONS = [
-  {
-    id: 'notif_sys_1',
-    title: 'Thông báo bảo trì hệ thống',
-    message: 'Hệ thống UniFind DNTU sẽ được bảo trì định kỳ vào ngày 15/12/2024 từ 00:00 - 04:00. Trong thời gian này, một số tính năng có thể tạm thời không truy cập được.',
-    type: 'maintenance',
-    badge: '★ Quan trọng',
-    badgeType: 'important',
-    isImportant: true,
-    isSystem: true,
-    timeText: '2 giờ trước',
-    read: false,
-    link: null,
-  },
-  {
-    id: 'notif_sys_2',
-    title: 'Có vật phẩm mới được nhặt',
-    message: 'Một vật phẩm mới "Tai nghe AirPods" đã được đăng tải tại khu vực Căn tin khu B. Hãy xem chi tiết để kiểm tra xem có phải của bạn không.',
-    type: 'item',
-    badge: 'Xem chi tiết',
-    badgeType: 'detail',
-    isImportant: true,
-    isSystem: false,
-    timeText: '4 giờ trước',
-    read: false,
-    link: '/search?category=Điện thoại - Phụ kiện',
-  },
-  {
-    id: 'notif_sys_3',
-    title: 'Chào mừng thành viên mới',
-    message: 'Chào mừng 50 sinh viên mới đã tham gia cộng đồng UniFind DNTU tuần này! Cùng nhau xây dựng một môi trường học tập an toàn và thân thiện hơn.',
-    type: 'community',
-    badge: 'Cộng đồng',
-    badgeType: 'community',
-    isImportant: false,
-    isSystem: false,
-    timeText: 'Hôm qua',
-    read: true,
-    link: null,
-  },
-  {
-    id: 'notif_sys_4',
-    title: 'Cập nhật hướng dẫn sử dụng',
-    message: 'Chúng tôi đã cập nhật hướng dẫn chi tiết về cách báo mất đồ và xác minh thông tin. Hãy xem để có trải nghiệm tốt hơn trên UniFind DNTU.',
-    type: 'guide',
-    badge: 'Xem hướng dẫn',
-    badgeType: 'guide',
-    isImportant: false,
-    isSystem: true,
-    timeText: '2 ngày trước',
-    read: false,
-    link: '/guide',
-  },
-  {
-    id: 'notif_sys_5',
-    title: 'Sự kiện: Ngày hội Sinh viên DNTU 2024',
-    message: 'UniFind DNTU sẽ có gian hàng tại Ngày hội Sinh viên vào ngày 20/12/2024. Hãy ghé thăm để tìm hiểu thêm về dự án và nhận những phần quà hấp dẫn!',
-    type: 'event',
-    badge: 'Sự kiện',
-    badgeType: 'event',
-    isImportant: false,
-    isSystem: false,
-    timeText: '3 ngày trước',
-    read: true,
-    link: null,
-  },
-  {
-    id: 'notif_sys_6',
-    title: 'Nhắc nhở bảo mật thông tin',
-    message: 'Vui lòng không chia sẻ thông tin cá nhân (số điện thoại, địa chỉ, mã sinh viên) công khai trong phần mô tả bài đăng để đảm bảo an toàn.',
-    type: 'security',
-    badge: 'An toàn',
-    badgeType: 'security',
-    isImportant: false,
-    isSystem: true,
-    timeText: '5 ngày trước',
-    read: true,
-    link: null,
-  },
-  {
-    id: 'notif_sys_7',
-    title: 'Cảm ơn cộng đồng',
-    message: 'Cảm ơn các bạn đã giúp đỡ tìm lại hơn 680 vật phẩm trong tháng qua! Sự tử tế của bạn đang tạo nên một cộng đồng DNTU tốt đẹp hơn mỗi ngày.',
-    type: 'thanks',
-    badge: 'Cộng đồng',
-    badgeType: 'community',
-    isImportant: false,
-    isSystem: false,
-    timeText: '1 tuần trước',
-    read: true,
-    link: null,
-  },
-  {
-    id: 'notif_sys_8',
-    title: 'Có tin nhắn mới từ người liên hệ',
-    message: 'Bạn có 1 tin nhắn mới liên quan đến bài đăng "Ví da màu đen". Hãy kiểm tra và phản hồi sớm nhé!',
-    type: 'message',
-    badge: 'Xem tin nhắn',
-    badgeType: 'message',
-    isImportant: true,
-    isSystem: false,
-    timeText: '1 tuần trước',
-    read: false,
-    link: '/search',
-  },
-  {
-    id: 'notif_sys_9',
-    title: 'Xác thực tài khoản sinh viên thành công',
-    message: 'Hệ thống đã tự động liên kết mã định danh sinh viên của bạn với cổng DNTU Portal an toàn.',
-    type: 'security',
-    badge: 'An toàn',
-    badgeType: 'security',
-    isImportant: false,
-    isSystem: true,
-    timeText: '1 tuần trước',
-    read: true,
-    link: '/student-card',
-  },
-  {
-    id: 'notif_sys_10',
-    title: 'Tính năng mới: Tìm kiếm bằng AI thông minh',
-    message: 'Hệ thống hỗ trợ quét và so sánh đặc điểm nhận dạng ảnh tự động giữa vật phẩm nhặt được và đồ báo mất.',
-    type: 'maintenance',
-    badge: 'Hệ thống',
-    badgeType: 'system',
-    isImportant: false,
-    isSystem: true,
-    timeText: '2 tuần trước',
-    read: true,
-    link: '/search',
-  },
-  {
-    id: 'notif_sys_11',
-    title: 'Hoàn tất trao trả đồ thất lạc',
-    message: 'Vật phẩm "Bình giữ nhiệt Lock&Lock" đã được bàn giao cho chủ sở hữu tại Văn phòng Đoàn - Hội DNTU.',
-    type: 'thanks',
-    badge: 'Cộng đồng',
-    badgeType: 'community',
-    isImportant: false,
-    isSystem: false,
-    timeText: '2 tuần trước',
-    read: true,
-    link: null,
-  },
-  {
-    id: 'notif_sys_12',
-    title: 'Khảo sát trải nghiệm người dùng UniFind',
-    message: 'Đóng góp ý kiến của bạn để giúp chúng tôi hoàn thiện và nâng cao chất lượng dịch vụ hỗ trợ sinh viên DNTU.',
-    type: 'guide',
-    badge: 'Hệ thống',
-    badgeType: 'system',
-    isImportant: false,
-    isSystem: true,
-    timeText: '3 tuần trước',
-    read: true,
-    link: null,
-  },
-];
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifications, setNotifications] = useState(SYSTEM_COMMUNITY_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const activeUserIdRef = useRef(user?.id);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadUserNotifications();
-    }
-  }, [user?.id]);
-
-  const loadUserNotifications = async () => {
+  const loadUserNotifications = useCallback(async ({ silent = false } = {}) => {
+    const requestUserId = user?.id;
+    if (!requestUserId) return;
     try {
-      setLoading(true);
-      const userNotifs = await notificationService.getByUser(user.id);
-      if (userNotifs && userNotifs.length > 0) {
+      if (!silent) setLoading(true);
+      const userNotifs = await notificationService.getByUser(requestUserId);
+      if (String(activeUserIdRef.current) === String(requestUserId) && userNotifs) {
         // Map user notifications to match UI presentation
         const mappedUserNotifs = userNotifs.map((n) => {
           let badge = 'Xem chi tiết';
@@ -242,7 +80,7 @@ export default function NotificationsPage() {
             badgeType,
             isImportant,
             isSystem,
-            timeText: 'Gần đây',
+            timeText: formatRelative(n.createdAt) || 'Gần đây',
             read: n.read,
             relatedId: n.relatedId,
             link: n.type?.includes('chat_message')
@@ -251,24 +89,39 @@ export default function NotificationsPage() {
           };
         });
 
-        // Ghép thông báo cá nhân vào đầu danh sách, loại bỏ trùng lặp id
-        setNotifications((prev) => {
-          const ids = new Set(mappedUserNotifs.map((m) => m.id));
-          const rest = prev.filter((p) => !ids.has(p.id));
-          return [...mappedUserNotifs, ...rest];
-        });
+        setNotifications(mappedUserNotifs);
       }
     } catch (err) {
       console.warn('Lỗi khi tải thông báo cá nhân:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    activeUserIdRef.current = user?.id;
+    setNotifications([]);
+    if (!user?.id) {
+      return undefined;
+    }
+    loadUserNotifications();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadUserNotifications({ silent: true });
+    }, 3000);
+    const handleRefresh = () => loadUserNotifications({ silent: true });
+    window.addEventListener('online', handleRefresh);
+    window.addEventListener('unifind:data-changed', handleRefresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('online', handleRefresh);
+      window.removeEventListener('unifind:data-changed', handleRefresh);
+    };
+  }, [loadUserNotifications, user?.id]);
 
   const handleNotificationClick = async (item) => {
     try {
       if (!item.read) {
-        if (user?.id && !item.id.startsWith('notif_sys_')) {
+        if (user?.id) {
           await notificationService.markAsRead(item.id);
         }
         setNotifications((prev) =>
@@ -291,7 +144,7 @@ export default function NotificationsPage() {
       }
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
-    } catch (err) {
+    } catch {
       toast.error('Lỗi khi cập nhật trạng thái');
     }
   };
@@ -300,8 +153,6 @@ export default function NotificationsPage() {
   const totalCount = notifications.length;
   const unreadCount = notifications.filter((n) => !n.read).length;
   const importantCount = notifications.filter((n) => n.isImportant).length;
-  const systemCount = notifications.filter((n) => n.isSystem).length;
-
   // Lọc theo tab và tìm kiếm
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
@@ -466,7 +317,7 @@ export default function NotificationsPage() {
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white">
                 Thông báo
               </h1>
 
@@ -556,7 +407,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* Right Actions: Mark all read + Search */}
-          <div className="flex items-center gap-3 w-full lg:w-auto">
+          <div className="flex min-w-0 items-center gap-3 w-full lg:w-auto">
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -568,14 +419,15 @@ export default function NotificationsPage() {
               </button>
             )}
 
-            <div className="relative flex-1 sm:w-72 lg:w-80">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="relative min-w-0 flex-1 sm:w-72 lg:w-80">
+              <Search aria-hidden="true" className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm thông báo..."
-                className="w-full pl-9.5 pr-4 py-2 text-sm bg-white border border-[#E2DDD5] rounded-full focus:outline-none focus:border-[#7A1D24] transition-all placeholder:text-stone-400 shadow-2xs"
+                aria-label="Tìm kiếm thông báo"
+                className="w-full min-w-0 pl-10 pr-4 py-2 text-sm bg-white border border-[#E2DDD5] rounded-full focus:outline-none focus:border-[#7A1D24] transition-colors placeholder:text-stone-400 shadow-2xs"
               />
             </div>
           </div>
@@ -608,7 +460,7 @@ export default function NotificationsPage() {
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className={`bg-white rounded-2xl border border-[#ECE7E0] p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 transition-all duration-200 hover:shadow-card-hover hover:border-[#D9D2C7] cursor-pointer group ${
+                className={`bg-white rounded-2xl border border-[#ECE7E0] p-4 sm:p-5 flex items-start justify-between gap-3 sm:gap-4 transition-all duration-200 hover:shadow-card-hover hover:border-[#D9D2C7] cursor-pointer group ${
                   !n.read ? 'bg-red-50/15' : ''
                 }`}
               >
@@ -621,24 +473,24 @@ export default function NotificationsPage() {
                     {!n.read && (
                       <span className="w-2 h-2 rounded-full bg-[#C2222E] shrink-0" title="Chưa đọc" />
                     )}
-                    <h3 className="text-sm sm:text-base font-bold text-[#1C2530] group-hover:text-[#7A1D24] transition-colors truncate">
+                    <h3 className="text-sm sm:text-base font-bold text-[#1C2530] group-hover:text-[#7A1D24] transition-colors break-words">
                       {n.title}
                     </h3>
                   </div>
-                  <p className="text-xs sm:text-sm text-stone-500 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed break-words [overflow-wrap:anywhere]">
                     {n.message}
                   </p>
                 </div>
 
                 {/* Right: Badge, Time & Arrow */}
-                <div className="shrink-0 flex items-center gap-3 sm:gap-6 self-center">
+                <div className="shrink-0 flex flex-col items-end gap-1.5 self-start sm:self-center sm:flex-row sm:items-center sm:gap-6">
                   <div className="hidden xs:block">
                     {renderBadge(n.badge, n.badgeType)}
                   </div>
-                  <span className="text-xs text-stone-400 whitespace-nowrap min-w-[70px] text-right font-normal">
+                  <span className="text-[11px] sm:text-xs text-stone-400 whitespace-nowrap text-right font-normal">
                     {n.timeText}
                   </span>
-                  <ChevronRight className="w-5 h-5 text-stone-400 group-hover:text-[#7A1D24] group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="hidden w-5 h-5 text-stone-400 group-hover:text-[#7A1D24] group-hover:translate-x-0.5 transition-all sm:block" />
                 </div>
               </div>
             ))
@@ -657,7 +509,7 @@ export default function NotificationsPage() {
           />
 
           {/* Left stats counter */}
-          <div className="grid grid-cols-3 gap-6 sm:gap-10 w-full md:w-auto relative z-10">
+          <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-3 min-[520px]:gap-4 sm:gap-6 lg:gap-10 w-full md:w-auto relative z-10">
             {/* Stat 1 */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200/60 flex items-center justify-center shrink-0">
@@ -667,7 +519,7 @@ export default function NotificationsPage() {
                 <div className="text-base sm:text-lg font-bold text-[#1C2530] leading-none">
                   1.200+
                 </div>
-                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal whitespace-nowrap">
+                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal break-words">
                   Thành viên tham gia
                 </div>
               </div>
@@ -682,7 +534,7 @@ export default function NotificationsPage() {
                 <div className="text-base sm:text-lg font-bold text-[#1C2530] leading-none">
                   680+
                 </div>
-                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal whitespace-nowrap">
+                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal break-words">
                   Vật phẩm đã được trao trả
                 </div>
               </div>
@@ -697,7 +549,7 @@ export default function NotificationsPage() {
                 <div className="text-base sm:text-lg font-bold text-[#1C2530] leading-none">
                   100%
                 </div>
-                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal whitespace-nowrap">
+                <div className="text-[11px] sm:text-xs text-stone-500 mt-1 font-normal break-words">
                   Vì một cộng đồng tử tế
                 </div>
               </div>

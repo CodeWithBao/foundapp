@@ -194,9 +194,9 @@ export default function StaffTickets() {
       </div>
 
       {/* Main Split Content: Left List + Right Chat Drawer */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col lg:flex-row h-[720px]">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col lg:flex-row h-[calc(100dvh-12rem)] min-h-[480px] max-h-[720px]">
         {/* LEFT COLUMN: TICKET LIST */}
-        <div className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-stone-200 flex flex-col h-full bg-stone-50/50">
+        <div className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-stone-200 flex flex-col min-h-0 h-1/2 lg:h-full bg-stone-50/50">
           {/* Search & Filter */}
           <div className="p-3.5 border-b border-stone-200 space-y-2 bg-white">
             <div className="relative">
@@ -300,7 +300,7 @@ export default function StaffTickets() {
 
         {/* RIGHT COLUMN: TICKET DETAIL & CHAT */}
         {selectedTicket ? (
-          <div className="flex-1 flex flex-col h-full bg-white">
+          <div className="flex-1 min-h-0 flex flex-col h-1/2 lg:h-full bg-white">
             {/* Ticket Header & Status Manager */}
             <div className="p-4 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50/40">
               <div className="space-y-1">
@@ -324,7 +324,7 @@ export default function StaffTickets() {
                   <span>{selectedTicket.topic}</span>
                 </h2>
 
-                <div className="flex items-center gap-3 text-xs text-stone-500">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
                   <span>Họ tên: <strong className="text-stone-700">{selectedTicket.userName}</strong></span>
                   {selectedTicket.userEmail && (
                     <span>Email: <span className="text-stone-600">{selectedTicket.userEmail}</span></span>

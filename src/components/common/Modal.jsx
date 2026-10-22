@@ -19,16 +19,16 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
       <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      <div className={`relative bg-white rounded-card-lg shadow-landing-lg border border-hairline w-full ${sizeMap[size]} animate-scaleIn max-h-[90vh] flex flex-col overflow-hidden`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-hairline/80 bg-paper-soft">
-          <h2 className="text-lg font-serif font-bold text-ink">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-ink-muted hover:bg-paper-panel hover:text-ink transition-colors">
+      <div className={`relative bg-white rounded-card-lg shadow-landing-lg border border-hairline w-full ${sizeMap[size]} animate-scaleIn max-h-[calc(100dvh-1.5rem)] sm:max-h-[90dvh] flex flex-col overflow-hidden`}>
+        <div className="flex min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 border-b border-hairline/80 bg-paper-soft">
+          <h2 className="min-w-0 text-base sm:text-lg font-serif font-bold text-ink break-words">{title}</h2>
+          <button onClick={onClose} className="shrink-0 p-2 rounded-lg text-ink-muted hover:bg-paper-panel hover:text-ink transition-colors" aria-label="Đóng hộp thoại">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 overflow-y-auto">{children}</div>
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">{children}</div>
       </div>
     </div>
   );

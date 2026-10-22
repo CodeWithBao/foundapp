@@ -24,7 +24,7 @@ export default function Footer() {
       <div className="page-container relative z-10">
         {/* Top Quick Action Banner */}
         <div className="bg-white/[0.06] backdrop-blur-md rounded-2xl border border-white/10 p-5 sm:p-6 mb-12 flex flex-col md:flex-row items-center justify-between gap-5 shadow-landing-sm">
-          <div className="flex items-center gap-4 text-center md:text-left">
+          <div className="flex flex-col items-center gap-3 text-center min-[430px]:flex-row min-[430px]:gap-4 md:text-left">
             <div className="w-12 h-12 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 text-amber-300">
               <Sparkles className="w-6 h-6" />
             </div>
@@ -37,7 +37,7 @@ export default function Footer() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+          <div className="grid grid-cols-1 min-[390px]:grid-cols-2 items-stretch gap-3 shrink-0 w-full md:flex md:w-auto">
             <Link
               to="/report-lost"
               className="flex-1 md:flex-initial text-center px-4 py-2.5 bg-white text-[#741216] hover:bg-amber-50 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm active:scale-95"
@@ -227,7 +227,7 @@ export default function Footer() {
             <p className="text-white/70">UniFind DNTU — Nền tảng kết nối tìm kiếm đồ thất lạc</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end">
             <Link to="/guide" className="hover:text-white transition-colors">
               Quy định sử dụng
             </Link>

@@ -4,6 +4,10 @@ import apiClient, { withFallback } from './apiClient';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
+const notifyDataChanged = () => {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('unifind:data-changed'));
+};
+
 export const normalizeNotification = notification => ({
   ...notification,
   userId: notification.userId ?? notification.user_id,
@@ -42,7 +46,7 @@ const notificationService = {
   },
 
   async markAsRead(notifId) {
-    return withFallback(
+    const result = await withFallback(
       async () => {
         return await apiClient.put(`/notifications/${notifId}/read`, {});
       },
@@ -56,10 +60,12 @@ const notificationService = {
         }
       }
     );
+    notifyDataChanged();
+    return result;
   },
 
   async markAllAsRead(userId) {
-    return withFallback(
+    const result = await withFallback(
       async () => {
         return await apiClient.put('/notifications/read-all', {});
       },
@@ -70,6 +76,8 @@ const notificationService = {
         storageService.set(STORAGE_KEYS.NOTIFICATIONS, notifications);
       }
     );
+    notifyDataChanged();
+    return result;
   },
 
   async addNotification(userId, title, message, type, relatedId) {

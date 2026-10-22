@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, Send, Image as ImageIcon, ShieldAlert, Flag, Ban, Check, CheckCheck, 
-  Lock, MapPin, AlertCircle, Info, ChevronRight, CornerDownLeft
+  Lock, MapPin, AlertCircle, Info, ChevronRight, CornerDownLeft, ArrowDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Avatar from '../common/Avatar';
@@ -38,8 +39,12 @@ export default function ItemChatModal({
   const [reportReason, setReportReason] = useState('Lừa đảo / Đòi tiền chuộc trái phép');
   const [reportDesc, setReportDesc] = useState('');
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [showNewMessages, setShowNewMessages] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const messagesViewportRef = useRef(null);
+  const nearBottomRef = useRef(true);
+  const previousMessageIdsRef = useRef(new Set());
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -68,6 +73,29 @@ export default function ItemChatModal({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showMenu]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  const scrollToLatest = useCallback((behavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+    nearBottomRef.current = true;
+    setShowNewMessages(false);
+  }, []);
+
+  const handleMessagesScroll = () => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    nearBottomRef.current = distance < 96;
+    if (nearBottomRef.current) setShowNewMessages(false);
+  };
+
   // Load or initialize conversation
   useEffect(() => {
     if (!isOpen || !itemId || !currentUser || !recipient?.id) return;
@@ -83,12 +111,20 @@ export default function ItemChatModal({
         );
         if (isMounted) {
           setConversation(conv);
-          setMessages(conv.messages || []);
+          const nextMessages = conv.messages || [];
+          const incomingNewMessage = nextMessages.some(message =>
+            !previousMessageIdsRef.current.has(String(message.id)) &&
+            String(message.senderId) !== String(currentUser.id));
+          setMessages(nextMessages);
+          previousMessageIdsRef.current = new Set(nextMessages.map(message => String(message.id)));
           setIsBlocked(Boolean(conv.blocked));
           setIsBlockedByMe(Boolean(conv.blockedByMe));
 
-          // Mark unread messages as read
-          await chatService.markAsRead(conv.id, currentUser.id);
+          if (document.visibilityState === 'visible' && nearBottomRef.current) {
+            await chatService.markAsRead(conv.id, currentUser.id);
+          } else if (incomingNewMessage) {
+            setShowNewMessages(true);
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -99,18 +135,28 @@ export default function ItemChatModal({
     };
 
     loadChat();
+    const timer = window.setInterval(loadChat, 3000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadChat();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       isMounted = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [isOpen, itemId, currentUser, recipient?.id, item, onClose]);
 
   // Auto scroll to bottom
   useEffect(() => {
-    if (isOpen && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (isOpen && nearBottomRef.current) {
+      scrollToLatest(messages.length <= 1 ? 'auto' : 'smooth');
+    } else if (isOpen && messages.length > 0) {
+      setShowNewMessages(true);
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, scrollToLatest]);
 
   if (!isOpen || !item) return null;
 
@@ -157,8 +203,15 @@ export default function ItemChatModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ hỗ trợ tệp hình ảnh.');
+      e.target.value = '';
+      return;
+    }
+
     if (file.size > 3 * 1024 * 1024) {
       toast.error('Kích thước ảnh tối đa 3MB.');
+      e.target.value = '';
       return;
     }
 
@@ -214,35 +267,36 @@ export default function ItemChatModal({
     ? item.location.name
     : (item.locationName || (typeof item.location === 'string' ? item.location : 'Khuôn viên DNTU'));
 
-  return (
+  return createPortal(
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         role="dialog"
         aria-modal="true"
         aria-label={`Trò chuyện với ${recipient.name}`}
         onClick={onClose}
     >
-      <div 
-        className="w-full max-w-2xl h-[92vh] max-h-[780px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn"
+      <div
+        className="w-full max-w-2xl h-full max-h-[100dvh] sm:h-[min(92dvh,780px)] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <header className="px-4 py-3 bg-[#741216] text-white flex items-center justify-between shadow-sm shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative">
+        <header className="px-3 py-2.5 sm:px-4 sm:py-3 bg-[#741216] text-white flex items-center justify-between gap-2 shadow-sm shrink-0" style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="relative shrink-0">
               <Avatar name={recipient.name} src={recipient.avatar} size="md" className="ring-2 ring-white/20" />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#741216] rounded-full" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
                 <h3 className="font-bold text-sm sm:text-base leading-snug truncate">
                   {recipient.name}
                 </h3>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-white/15 text-white/90">
+                <span className="hidden min-[390px]:inline-flex shrink-0 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-white/15 text-white/90">
                   {recipient.role || (isFound ? 'Người nhặt được' : 'Người đăng')}
                 </span>
               </div>
-              <p className="text-xs text-white/75 truncate">
+              <p className="hidden min-[390px]:block text-xs text-white/75 truncate">
                 Đại học Công nghệ Đồng Nai • Trò chuyện bảo mật
               </p>
             </div>
@@ -263,7 +317,7 @@ export default function ItemChatModal({
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 text-gray-700 text-xs animate-fadeIn">
+                <div className="absolute right-0 mt-1 w-[min(13rem,calc(100vw-1rem))] bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 text-gray-700 text-xs animate-fadeIn">
                   <button
                     type="button"
                     onClick={() => { setShowMenu(false); setShowReportModal(true); }}
@@ -296,9 +350,9 @@ export default function ItemChatModal({
         </header>
 
         {/* Item Context Banner (Fixed reference header) */}
-        <div className="px-4 py-2.5 bg-[#FAF8F5] border-b border-[#E8E2DD] flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+        <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-[#FAF8F5] border-b border-[#E8E2DD] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
               {item.images?.[0] ? (
                 <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
               ) : (
@@ -306,11 +360,11 @@ export default function ItemChatModal({
               )}
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span className="font-bold text-xs text-gray-900 truncate">
                   {item.title}
                 </span>
-                <span className="text-[10px] font-mono text-gray-400">#{item.id}</span>
+                <span className="shrink-0 text-[10px] font-mono text-gray-400">#{item.id}</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-gray-500 truncate mt-0.5">
                 <span className={`inline-flex items-center px-1.5 py-0.2 rounded font-semibold text-[10px] ${
@@ -347,7 +401,7 @@ export default function ItemChatModal({
         </div>
 
         {/* Safety Note Alert */}
-        <div className="px-4 py-2 bg-amber-50/80 border-b border-amber-200/70 text-amber-900 text-[11px] flex items-start gap-2 shrink-0">
+        <div className="px-3 py-2 sm:px-4 bg-amber-50/80 border-b border-amber-200/70 text-amber-900 text-[11px] flex items-start gap-2 shrink-0">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.2" />
           <div className="leading-tight">
             <span><strong>Bảo mật thông tin:</strong> Không chia sẻ mật khẩu, mã OTP, thông tin ngân hàng; không chuyển tiền chuộc hoặc hẹn gặp tại nơi vắng vẻ.</span>
@@ -381,7 +435,11 @@ export default function ItemChatModal({
         )}
 
         {/* Chat Messages Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF9F6]">
+        <div
+          ref={messagesViewportRef}
+          onScroll={handleMessagesScroll}
+          className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 bg-[#FAF9F6]"
+        >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
               <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#741216] flex items-center justify-center mb-3">
@@ -423,7 +481,7 @@ export default function ItemChatModal({
 
                 return (
                   <div 
-                    key={msg.id || idx}
+                    key={msg.id || `${msg.senderId}-${msg.createdAt}-${idx}`}
                     className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
                   >
                     {!isMe && (
@@ -435,7 +493,7 @@ export default function ItemChatModal({
                       />
                     )}
 
-                    <div className={`max-w-[78%] sm:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className={`min-w-0 max-w-[84%] sm:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
                       {!isMe && (
                         <span className="text-[11px] font-semibold text-gray-500 px-1">
                           {msg.senderName}
@@ -450,12 +508,12 @@ export default function ItemChatModal({
                         }`}
                       >
                         {msg.text && (
-                          <p className="whitespace-pre-line break-words">{msg.text}</p>
+                          <p className="chat-user-content">{msg.text}</p>
                         )}
 
                         {/* Image attachment */}
                         {msg.image && (
-                          <div className={`mt-2 rounded-xl overflow-hidden max-w-[260px] border ${isMe ? 'border-white/20' : 'border-gray-200'}`}>
+                          <div className={`mt-2 max-w-full rounded-xl overflow-hidden sm:max-w-[260px] border ${isMe ? 'border-white/20' : 'border-gray-200'}`}>
                             <img 
                               src={msg.image} 
                               alt="Đính kèm" 
@@ -484,6 +542,16 @@ export default function ItemChatModal({
               })}
               <div ref={messagesEndRef} />
             </>
+          )}
+          {showNewMessages && (
+            <button
+              type="button"
+              onClick={() => scrollToLatest('smooth')}
+              className="sticky bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-[#741216] px-3.5 py-2 text-xs font-semibold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-[#741216]/30 focus:ring-offset-2"
+            >
+              <ArrowDown className="h-4 w-4" />
+              Tin nhắn mới
+            </button>
           )}
         </div>
 
@@ -522,7 +590,7 @@ export default function ItemChatModal({
         )}
 
         {/* Chat Input Bar */}
-        <footer className="p-3 bg-white border-t border-[#E8E2DD] shrink-0">
+        <footer className="px-2.5 pt-2.5 sm:p-3 bg-white border-t border-[#E8E2DD] shrink-0" style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}>
           {isReturned ? (
             <div className="p-2.5 rounded-xl bg-gray-100 text-center text-xs text-gray-500 font-medium">
               Vật phẩm đã bàn giao thành công. Cuộc trò chuyện này ở trạng thái chỉ đọc.
@@ -532,7 +600,7 @@ export default function ItemChatModal({
               Bạn không thể gửi tin nhắn trong cuộc trò chuyện bị chặn.
             </div>
           ) : (
-            <form onSubmit={handleSend} className="flex items-center gap-2">
+            <form onSubmit={handleSend} className="flex min-w-0 items-center gap-1.5 sm:gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -543,7 +611,7 @@ export default function ItemChatModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2.5 rounded-xl text-gray-500 hover:text-[#741216] hover:bg-red-50 transition"
+                className="w-11 h-11 shrink-0 rounded-xl text-gray-500 hover:text-[#741216] hover:bg-red-50 transition flex items-center justify-center"
                 title="Gửi ảnh đính kèm"
                 aria-label="Gửi ảnh đính kèm"
               >
@@ -555,14 +623,14 @@ export default function ItemChatModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Nhập tin nhắn trao đổi về đồ vật..."
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741216]/20 focus:border-[#741216] transition"
+                className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs sm:px-3.5 sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741216]/20 focus:border-[#741216] transition"
                 disabled={isSending || !currentUser?.id || !recipient?.id}
               />
 
               <button
                 type="submit"
                 disabled={isSending || !currentUser?.id || !recipient?.id || (!inputText.trim() && !selectedImage)}
-                className="px-4 py-2.5 rounded-xl bg-[#741216] text-white hover:bg-[#8b161b] disabled:opacity-40 disabled:hover:bg-[#741216] transition flex items-center justify-center shadow-xs"
+                className="w-11 h-11 shrink-0 rounded-xl bg-[#741216] text-white hover:bg-[#8b161b] disabled:opacity-40 disabled:hover:bg-[#741216] transition flex items-center justify-center shadow-xs"
                 aria-label="Gửi tin nhắn"
               >
                 <Send className="w-4 h-4" />
@@ -575,11 +643,12 @@ export default function ItemChatModal({
       {/* Safety Report Modal */}
       {showReportModal && (
         <div 
-          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
           onClick={() => setShowReportModal(false)}
         >
           <div 
-            className="w-full max-w-md bg-white rounded-2xl p-5 shadow-2xl border border-gray-200 space-y-4"
+            className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain bg-white rounded-2xl p-4 sm:p-5 shadow-2xl border border-gray-200 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
@@ -652,6 +721,7 @@ export default function ItemChatModal({
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

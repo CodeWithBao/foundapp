@@ -203,7 +203,8 @@ export default function StaffClaimDetail() {
     : claimIdStr.startsWith('CLM') ? `#${claimIdStr}` : `#CLM-${claimIdStr}`;
 
   const itemIdStr = String(item?.id || '');
-  const itemDisplayId = item?.id ? (itemIdStr.startsWith('P') ? itemIdStr : `P${itemIdStr.padStart(3, '0')}`) : 'P005';
+  const itemDisplayId = item?.id ? (itemIdStr.startsWith('P') ? itemIdStr : `P${itemIdStr.padStart(3, '0')}`) : 'Chưa có';
+  const itemImage = item?.images?.[0] || '';
 
   return (
     <div className="space-y-4 pb-32">
@@ -232,7 +233,7 @@ export default function StaffClaimDetail() {
           <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <span>Ngày gửi yêu cầu:</span>
-            <span className="font-medium text-slate-700">{formatDateTime(claim.createdAt || '2026-09-14T17:00:00')}</span>
+            <span className="font-medium text-slate-700">{formatDateTime(claim.createdAt) || 'Chưa cập nhật'}</span>
           </p>
         </div>
 
@@ -272,32 +273,43 @@ export default function StaffClaimDetail() {
             <div className="p-5 space-y-5">
               {/* Product Image */}
               <div className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                <img
-                  src={item?.images?.[0] || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&auto=format&fit=crop&q=80'}
-                  alt={item?.title || 'iPhone 14 Pro Max'}
-                  className="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                />
+                {itemImage ? (
+                  <img
+                    src={itemImage}
+                    alt={item?.title || 'Ảnh vật phẩm'}
+                    className="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex h-64 flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
+                    <ImageIcon className="h-10 w-10 text-slate-300" aria-hidden="true" />
+                    <span className="text-sm font-medium">Vật phẩm chưa có hình ảnh</span>
+                  </div>
+                )}
                 <div className="absolute top-3 left-3">
                   <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-900/80 text-white backdrop-blur-md shadow-xs">
                     {item?.type === 'FOUND' ? 'Vật phẩm nhặt được' : 'Vật phẩm mất'}
                   </span>
                 </div>
-                <button
-                  onClick={() => setPreviewImage(item?.images?.[0] || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=1200&auto=format&fit=crop&q=80')}
-                  className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white/90 text-slate-700 hover:text-black flex items-center justify-center shadow-md backdrop-blur-xs transition-transform hover:scale-110"
-                  title="Phóng to ảnh"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
+                {itemImage && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage(itemImage)}
+                    className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white/90 text-slate-700 hover:text-black flex items-center justify-center shadow-md backdrop-blur-xs transition-transform hover:scale-110"
+                    title="Phóng to ảnh"
+                    aria-label="Phóng to ảnh vật phẩm"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
               {/* Title & Description */}
               <div className="space-y-1.5">
                 <h3 className="text-xl font-bold text-slate-900 leading-snug">
-                  {item?.title || 'iPhone 14 Pro Max'}
+                  {item?.title || 'Vật phẩm chưa xác định'}
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  {item?.description || 'Màu tím (Deep Purple), bản 256GB, có ốp lưng MagSafe trong suốt viền đen, dán cường lực bị nứt góc phải.'}
+                  {item?.description || 'Chưa có mô tả chi tiết.'}
                 </p>
               </div>
 
@@ -308,7 +320,7 @@ export default function StaffClaimDetail() {
                     <Award className="w-4 h-4 text-slate-400" />
                     <span>Danh mục:</span>
                   </span>
-                  <span className="font-semibold text-slate-800">{item?.category || 'Điện thoại'}</span>
+                  <span className="font-semibold text-slate-800">{item?.category || 'Chưa cập nhật'}</span>
                 </div>
 
                 <div className="flex items-center justify-between py-0.5">
@@ -317,7 +329,7 @@ export default function StaffClaimDetail() {
                     <span>Nơi tiếp nhận / nhặt được:</span>
                   </span>
                   <span className="font-semibold text-slate-800 text-right max-w-[220px] truncate">
-                    {item?.location || 'Giảng đường B'}
+                    {item?.location || 'Chưa cập nhật'}
                   </span>
                 </div>
 
@@ -327,7 +339,7 @@ export default function StaffClaimDetail() {
                     <span>Ngày tiếp nhận:</span>
                   </span>
                   <span className="font-semibold text-slate-800">
-                    {formatDate(item?.date || item?.createdAt || '2026-09-08')}
+                    {formatDate(item?.date || item?.createdAt) || 'Chưa cập nhật'}
                   </span>
                 </div>
               </div>
@@ -350,39 +362,39 @@ export default function StaffClaimDetail() {
             <div className="p-5">
               <div className="flex items-start gap-4">
                 <Avatar
-                  name={claimant?.fullName || claimant?.name || claim.claimantName || 'Trương Quốc Bảo'}
+                  name={claimant?.fullName || claimant?.name || claim.claimantName || 'Người yêu cầu'}
                   src={claimant?.avatar}
                   size="lg"
                   className="w-14 h-14 ring-2 ring-slate-100"
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold text-slate-900 truncate">
-                    {claimant?.fullName || claimant?.name || claim.claimantName || 'Trương Quốc Bảo'}
+                    {claimant?.fullName || claimant?.name || claim.claimantName || 'Người yêu cầu'}
                   </h3>
                   
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
                     <div className="flex items-center gap-2 text-slate-600">
                       <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="truncate">{claimant?.email || 'bao.truong@dntu.edu.vn'}</span>
+                      <span className="truncate">{claimant?.email || 'Chưa cập nhật'}</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-600">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                         MSSV:
                       </span>
-                      <span className="font-mono font-semibold text-slate-800">{claimant?.studentId || 'SV20210600'}</span>
+                      <span className="font-mono font-semibold text-slate-800">{claimant?.studentId || 'Chưa cập nhật'}</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-600">
                       <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="font-mono">{claimant?.phone || '0967788990'}</span>
+                      <span className="font-mono">{claimant?.phone || 'Chưa cập nhật'}</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-600">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                         Khoa:
                       </span>
-                      <span className="font-medium text-slate-800 truncate">{claimant?.faculty || 'Công nghệ thông tin'}</span>
+                      <span className="font-medium text-slate-800 truncate">{claimant?.faculty || 'Chưa cập nhật'}</span>
                     </div>
                   </div>
                 </div>
@@ -417,7 +429,7 @@ export default function StaffClaimDetail() {
                   <span>Lý do xác nhận / Hoàn cảnh đánh rơi</span>
                 </label>
                 <div className="p-4 bg-[#FAFAFA] rounded-xl border border-[#D8DEE8] text-sm text-slate-800 leading-relaxed">
-                  {claim.message || 'Hôm qua em có học ca 2 tại phòng B.302, sau khi ra về em để quên điện thoại ở góc bàn số 3 dãy thứ 2 từ trên xuống.'}
+                  {claim.message || 'Người yêu cầu chưa cung cấp lời nhắn.'}
                 </div>
               </div>
 
@@ -428,7 +440,7 @@ export default function StaffClaimDetail() {
                   <span>Đặc điểm chỉ chủ sở hữu biết</span>
                 </label>
                 <div className="p-4 bg-[#FFF9E8] rounded-xl border border-[#F1D58A] text-sm text-slate-800 leading-relaxed font-medium">
-                  {claim.evidence || 'Hình nền khóa là ảnh mèo màu vàng xám. Mật khẩu 6 số kết thúc bằng 88. Trong khe ốp lưng có 1 tờ tiền 200.000đ gấp đôi.'}
+                  {claim.evidence || 'Người yêu cầu chưa cung cấp bằng chứng nhận dạng.'}
                 </div>
               </div>
 
@@ -491,22 +503,22 @@ export default function StaffClaimDetail() {
       </div>
 
       {/* STICKY BOTTOM ACTION BAR */}
-      <div className={`fixed bottom-0 right-0 h-[76px] bg-white/95 backdrop-blur-md border-t border-[#E8E2DD] px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40 transition-all duration-300 ${sidebarOpen ? 'lg:left-[240px]' : 'left-0'}`}>
-        <div className="max-w-[1440px] mx-auto h-full flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className={`fixed bottom-0 right-0 max-h-[min(45dvh,280px)] overflow-y-auto overscroll-contain bg-white/95 backdrop-blur-md border-t border-[#E8E2DD] px-3 py-3 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40 transition-all duration-300 ${sidebarOpen ? 'lg:left-[252px]' : 'left-0'}`} style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           
           {/* Status Indicator */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 border border-slate-200">
               <ClipboardCheck className="w-5 h-5 text-[#88171B]" />
             </div>
-            <div>
-              <div className="text-xs uppercase font-bold tracking-wider text-slate-500 flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="text-xs uppercase font-bold tracking-normal sm:tracking-wider text-slate-500 flex flex-wrap items-center gap-1.5">
                 <span>TRẠNG THÁI:</span>
                 <span className="font-extrabold text-blue-700">
                   {claim.status === CLAIM_STATUS.UNDER_REVIEW ? 'Đang xem xét' : (CLAIM_STATUS_CONFIG[claim.status]?.label || claim.status)}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="hidden text-xs text-slate-500 mt-0.5 sm:block">
                 Vui lòng kiểm tra kỹ thông tin trước khi đưa ra quyết định.
               </p>
             </div>

@@ -85,6 +85,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Location{},
 		&models.Item{},
 		&models.ItemImage{},
+		&models.UploadedImage{},
 		&models.Claim{},
 		&models.ClaimEvidence{},
 		&models.HandoverRecord{},

@@ -1,13 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Image as ImageIcon, MapPin, FileText, CheckSquare, ShieldCheck, UserCheck, Send } from 'lucide-react';
-import ImageUploadCamera from '../../components/common/ImageUploadCamera';
+import MultiImageUpload from '../../components/common/MultiImageUpload';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
 import adminService from '../../services/adminService';
-import { mockLocations } from '../../data/locations';
-import { STORAGE_KEYS } from '../../constants';
-import storageService from '../../services/storageService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -25,13 +22,18 @@ const STEPS = [
 export default function ReportFoundPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const categories = storageService.get(STORAGE_KEYS.CATEGORIES) || [];
-  const [locations, setLocations] = useState(mockLocations);
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
   useEffect(() => {
     let live = true;
-    adminService.getLocations().then(rows => {
-      if (live) setLocations(rows);
-    }).catch(err => toast.error(err.message));
+    Promise.all([
+      adminService.getCategories(),
+      adminService.getLocations(),
+    ]).then(([categoryRows, locationRows]) => {
+      if (!live) return;
+      setCategories(categoryRows || []);
+      setLocations(locationRows || []);
+    }).catch(err => toast.error(err.message || 'Không thể tải danh mục và địa điểm'));
     return () => { live = false; };
   }, []);
 
@@ -47,13 +49,28 @@ export default function ReportFoundPage() {
     brand: '',
     feature: '',
     description: '',
-    imageUrl: '',
+    images: [],
     confirmTruth: false,
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const submitRequestId = useRef(null);
+  const imageDraftRef = useRef([]);
+  const reportCreatedRef = useRef(false);
+
+  useEffect(() => {
+    imageDraftRef.current = form.images;
+  }, [form.images]);
+
+  useEffect(() => () => {
+    imageDraftRef.current.forEach(image => URL.revokeObjectURL(image.previewUrl));
+    if (!reportCreatedRef.current) {
+      imageDraftRef.current.forEach(image => {
+        if (image.uploadedUrl) itemService.deleteUploadedImage(image.uploadedUrl).catch(() => {});
+      });
+    }
+  }, []);
 
   const validateStep = (step) => {
     const e = {};
@@ -91,6 +108,12 @@ export default function ReportFoundPage() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      const uploadedImages = await itemService.uploadSelectedImages(form.images, (id, patch) => {
+        setForm(current => ({
+          ...current,
+          images: current.images.map(image => image.id === id ? { ...image, ...patch } : image),
+        }));
+      });
       await itemService.createItem({
         title: form.title.trim(),
         category: form.category,
@@ -102,13 +125,14 @@ export default function ReportFoundPage() {
         brand: form.brand.trim(),
         feature: form.feature.trim(),
         description: form.description.trim(),
-        images: form.imageUrl ? [form.imageUrl] : [],
+        images: uploadedImages,
         type: 'FOUND',
         status: 'FOUND',
         userId: user.id,
         userName: user.name,
         clientRequestId: submitRequestId.current,
       });
+      reportCreatedRef.current = true;
       toast.success('Gửi báo cáo nhặt được đồ thành công!');
       navigate('/my-posts');
     } catch (err) {
@@ -129,6 +153,22 @@ export default function ReportFoundPage() {
       return next;
     });
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
+  };
+
+  const retryImage = async id => {
+    const image = form.images.find(current => current.id === id);
+    if (!image) return;
+    try {
+      await itemService.uploadSelectedImages([image], (imageId, patch) => {
+        setForm(current => ({
+          ...current,
+          images: current.images.map(currentImage => currentImage.id === imageId ? { ...currentImage, ...patch } : currentImage),
+        }));
+      });
+      toast.success('Ảnh đã được tải lên thành công.');
+    } catch (error) {
+      toast.error(error.message || 'Không thể tải lại ảnh.');
+    }
   };
 
   const categoryOptions = [
@@ -363,10 +403,12 @@ export default function ReportFoundPage() {
                     <p className="text-xs text-[#5B6574] mt-0.5">Chụp ảnh thực tế từ camera hoặc tải tệp ảnh để đăng bài</p>
                   </div>
 
-                  <ImageUploadCamera
-                    value={form.imageUrl}
-                    onChange={(val) => update('imageUrl', val)}
+                  <MultiImageUpload
+                    value={form.images}
+                    onChange={(val) => update('images', val)}
                     label="Hình ảnh vật phẩm nhặt được"
+                    onRemoveUploaded={url => itemService.deleteUploadedImage(url).catch(() => {})}
+                    onRetryImage={retryImage}
                   />
                 </div>
               )}
@@ -414,6 +456,10 @@ export default function ReportFoundPage() {
                           <dd className="text-[#5B6574] mt-0.5">{form.description}</dd>
                         </div>
                       )}
+                      <div className="sm:col-span-2">
+                        <dt className="label-micro text-[#8C95A3]">Hình ảnh</dt>
+                        <dd className="font-semibold text-[#1C2530] mt-0.5">{form.images.length} ảnh đã chọn{form.images.length > 0 ? ' · ảnh đầu tiên là ảnh bìa' : ''}</dd>
+                      </div>
                     </dl>
                   </div>
 

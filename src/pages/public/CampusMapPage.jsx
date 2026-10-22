@@ -370,7 +370,7 @@ export default function CampusMapPage() {
   }, [mapData]);
 
   return (
-    <div ref={mapWorkspaceRef} className="campus-map-page flex flex-col h-[calc(100vh-7rem)] min-h-[580px] bg-slate-50 overflow-hidden">
+    <div ref={mapWorkspaceRef} className="campus-map-page flex flex-col h-[calc(100dvh-7rem)] min-h-[420px] sm:min-h-[520px] lg:min-h-[580px] bg-slate-50 overflow-hidden">
       {/* 1. Header tinh gọn */}
       <div className="flex items-center justify-between px-3 py-2 sm:px-6 bg-white border-b border-hairline shrink-0 z-20">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -588,7 +588,7 @@ export default function CampusMapPage() {
           <iframe
             ref={frame}
             title="Bản đồ campus DNTU 3D"
-            src="/campus/map?embed=true"
+            src="/campus/map.html?embed=true"
             onLoad={sendMapData}
             className="w-full h-full border-0 block"
           />

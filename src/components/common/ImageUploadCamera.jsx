@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, Link as LinkIcon, RefreshCw, Trash2, Check, AlertCircle } from 'lucide-react';
 import Button from './Button';
 
-export default function ImageUploadCamera({ value, onChange, label = 'Hình ảnh vật phẩm' }) {
+export default function ImageUploadCamera({ value, onChange, label = 'Hình ảnh vật phẩm', saved = false }) {
   const [activeTab, setActiveTab] = useState('camera'); // 'camera' | 'file' | 'url'
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [urlInput, setUrlInput] = useState('');
+  const [selectionError, setSelectionError] = useState('');
   
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -39,7 +40,7 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
             height: { ideal: 720 }
           }
         });
-      } catch (e) {
+      } catch {
         // Fallback for laptops/desktops without rear camera
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
@@ -78,10 +79,16 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG...)');
+      setSelectionError('Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, WEBP).');
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      setSelectionError('Kích thước ảnh tối đa 10MB.');
+      return;
+    }
+
+    setSelectionError('');
     const reader = new FileReader();
     reader.onload = (event) => {
       onChange(event.target.result);
@@ -130,7 +137,7 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
         <div className="space-y-3">
           <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-black max-w-md mx-auto aspect-video shadow-md group">
             <img src={value} alt="Chụp vật phẩm" className="w-full h-full object-contain" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            <div className="absolute inset-x-0 bottom-0 bg-black/55 p-3 flex flex-wrap items-center justify-center gap-2 opacity-100 transition-opacity sm:inset-0 sm:bg-black/40 sm:p-0 sm:opacity-0 sm:group-hover:opacity-100">
               <Button
                 type="button"
                 variant="outline"
@@ -152,17 +159,23 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
           </div>
           <div className="flex items-center justify-center gap-2 text-xs text-green-700 bg-green-50 py-2 px-3 rounded-lg border border-green-200">
             <Check className="w-4 h-4 text-green-600 shrink-0" />
-            <span>Đã có hình ảnh chụp/tải lên thành công</span>
+            <span>{saved ? 'Ảnh đã được lưu cùng bài đăng' : 'Ảnh đã được chọn, sẽ lưu khi bạn gửi bài đăng'}</span>
           </div>
         </div>
       ) : (
-        <div className="border rounded-2xl p-4 bg-gray-50/50 space-y-4">
+        <div className="border rounded-2xl p-3 sm:p-4 bg-gray-50/50 space-y-4">
           {/* Method selector tabs */}
-          <div className="flex items-center gap-2 p-1 bg-gray-200/70 rounded-xl text-xs sm:text-sm font-medium">
+          {selectionError && (
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-relaxed text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{selectionError}</span>
+            </div>
+          )}
+          <div className="grid grid-cols-1 min-[430px]:grid-cols-3 items-stretch gap-1.5 p-1 bg-gray-200/70 rounded-xl text-xs sm:text-sm font-medium">
             <button
               type="button"
               onClick={() => handleTabChange('camera')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
+              className={`min-h-11 min-w-0 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all ${
                 activeTab === 'camera' ? 'bg-white text-burgundy-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -172,7 +185,7 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
             <button
               type="button"
               onClick={() => handleTabChange('file')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
+              className={`min-h-11 min-w-0 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all ${
                 activeTab === 'file' ? 'bg-white text-burgundy-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -182,7 +195,7 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
             <button
               type="button"
               onClick={() => handleTabChange('url')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
+              className={`min-h-11 min-w-0 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all ${
                 activeTab === 'url' ? 'bg-white text-burgundy-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -233,7 +246,7 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex flex-col items-stretch justify-center gap-2 min-[390px]:flex-row min-[390px]:items-center min-[390px]:gap-3">
                     <Button
                       type="button"
                       variant="outline"
@@ -277,15 +290,15 @@ export default function ImageUploadCamera({ value, onChange, label = 'Hình ản
           {activeTab === 'url' && (
             <form onSubmit={handleUrlSubmit} className="space-y-3 bg-white p-4 rounded-xl border border-gray-200">
               <label className="block text-xs font-medium text-gray-700">Đường dẫn hình ảnh (URL)</label>
-              <div className="flex gap-2">
+               <div className="flex min-w-0 flex-col gap-2 min-[430px]:flex-row">
                 <input
                   type="url"
                   placeholder="https://example.com/hinh-anh-vat-pham.jpg"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-burgundy-500 focus:outline-none"
+                  className="min-w-0 flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-burgundy-500 focus:outline-none"
                 />
-                <Button type="submit" className="bg-burgundy-600 hover:bg-burgundy-700 text-white shrink-0">
+                <Button type="submit" className="w-full bg-burgundy-600 hover:bg-burgundy-700 text-white shrink-0 min-[430px]:w-auto">
                   Xác nhận URL
                 </Button>
               </div>
