@@ -143,50 +143,22 @@ export const chatService = {
     );
   },
 
-  async sendMessage({ conversationId, itemId, sender, recipientId, text, image = null, itemData = {} }) {
+  async sendMessage({ conversationId, itemId, sender, recipientId, text, image = null, itemData = {}, clientMessageId }) {
     if (!text?.trim() && !image) throw new Error('Nội dung tin nhắn hoặc hình ảnh không được để trống');
     if (!sender?.id || !recipientId) throw new Error('Không xác định được người gửi hoặc người nhận. Vui lòng tải lại trang.');
     if (isSameEntityId(sender.id, recipientId)) throw new Error('Bạn không thể gửi tin nhắn cho chính mình.');
-    return withFallback(
-      async () => {
-        let activeConversationId = conversationId;
-        if (!activeConversationId) {
-          const conversation = await this.getConversation(itemId, sender.id, recipientId, itemData);
-          activeConversationId = conversation.id;
-        }
-        const message = normalizeMessage(await apiClient.post(`/chats/${activeConversationId}/messages`, {
-          text: text?.trim() || '',
-          image_url: image || '',
-        }, { timeout: 12000 }));
-        notifyDataChanged();
-        return { message, conversationId: activeConversationId };
-      },
-      async () => {
-        const conversation = await localChat.getOrCreate(itemId, sender, { id: recipientId }, itemData);
-        const chats = localChat.getChats();
-        const stored = chats.find(row => String(row.id) === String(conversation.id));
-        if (!stored) throw new Error('Không thể khởi tạo cuộc trò chuyện. Vui lòng thử lại.');
-        const message = normalizeMessage({
-          id: `msg_${Date.now()}`,
-          senderId: String(sender.id),
-          senderName: sender.name || sender.fullName || 'Người dùng DNTU',
-          senderAvatar: sender.avatar || sender.avatar_url || null,
-          text: text?.trim() || '',
-          image,
-          read: false,
-          createdAt: new Date().toISOString(),
-        });
-        stored.messages.push(message);
-        stored.updatedAt = message.createdAt;
-        localChat.saveChats(chats);
-        try {
-          await notificationService.addNotification(recipientId, `Tin nhắn mới từ ${message.senderName}`, message.text || '[Hình ảnh]', 'chat_message', itemId);
-        } catch {
-          // Thông báo local không làm gián đoạn gửi tin nhắn.
-        }
-        return { message, conversationId: stored.id };
-      },
-    );
+    let activeConversationId = conversationId;
+    if (!activeConversationId) {
+      const conversation = await this.getConversation(itemId, sender.id, recipientId, itemData);
+      activeConversationId = conversation.id;
+    }
+    const message = normalizeMessage(await apiClient.post(`/chats/${activeConversationId}/messages`, {
+      text: text?.trim() || '',
+      image_url: image || '',
+      client_message_id: clientMessageId || '',
+    }, { timeout: 12000 }));
+    notifyDataChanged();
+    return { message, conversationId: activeConversationId };
   },
 
   async markAsRead(conversationId, currentUserId) {

@@ -16,6 +16,7 @@ import adminService from '../../services/adminService';
 import claimService from '../../services/claimService';
 import itemService from '../../services/itemService';
 import { BarChart3, PieChart as PieChartIcon, TrendingUp, MapPin, Tag } from 'lucide-react';
+import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 
 const DNTU_PALETTE = ['#8F1725', '#D8B26A', '#26965C', '#527BA8', '#7C746E', '#A84350', '#E5C88F', '#46B379'];
 
@@ -25,15 +26,18 @@ export default function AdminStatistics() {
   const [categoryData, setCategoryData] = useState([]);
   const [locationData, setLocationData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setLoadError('');
       try {
         const [monthly, items, claims] = await Promise.all([
-          adminService.getMonthlyStats().catch(() => []),
-          itemService.getItems().catch(() => []),
-          claimService.getClaims ? claimService.getClaims().catch(() => []) : Promise.resolve([])
+          adminService.getMonthlyStats(),
+          itemService.getItems(),
+          claimService.getClaims ? claimService.getClaims() : Promise.resolve([])
         ]);
 
         let dynamicMonthly = [];
@@ -133,22 +137,19 @@ export default function AdminStatistics() {
 
       } catch (err) {
         console.error(err);
+        setLoadError(err.message || 'Không thể tải số liệu thống kê.');
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [reloadKey]);
 
   if (loading) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-text-dark">Báo cáo Thống kê Chuyên sâu</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-80 bg-cream-200 rounded-card animate-pulse" />
-          ))}
-        </div>
+        <LoadingSkeleton type="statistics" count={4} />
       </div>
     );
   }
@@ -164,6 +165,13 @@ export default function AdminStatistics() {
           Phân tích dữ liệu thất lạc, xu hướng theo tháng, phân bố danh mục và điểm nóng vị trí DNTU
         </p>
       </div>
+
+      {loadError && (
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+          <span>{loadError}</span>
+          <button type="button" onClick={() => setReloadKey(value => value + 1)} className="min-h-10 rounded-lg border border-red-300 bg-white px-3 font-semibold hover:bg-red-100">Thử lại</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 1. Monthly Trends Bar Chart */}

@@ -16,10 +16,12 @@ import {
   Bell,
   ChevronRight,
   CheckCheck,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
 import EmptyState from '../../components/common/EmptyState';
+import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import { formatRelative } from '../../utils';
 import { toast } from 'sonner';
 
@@ -29,7 +31,10 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [markingIds, setMarkingIds] = useState(() => new Set());
+  const [markingAll, setMarkingAll] = useState(false);
   const activeUserIdRef = useRef(user?.id);
 
   const loadUserNotifications = useCallback(async ({ silent = false } = {}) => {
@@ -37,6 +42,7 @@ export default function NotificationsPage() {
     if (!requestUserId) return;
     try {
       if (!silent) setLoading(true);
+      if (!silent) setLoadError('');
       const userNotifs = await notificationService.getByUser(requestUserId);
       if (String(activeUserIdRef.current) === String(requestUserId) && userNotifs) {
         // Map user notifications to match UI presentation
@@ -93,6 +99,7 @@ export default function NotificationsPage() {
       }
     } catch (err) {
       console.warn('Lỗi khi tải thông báo cá nhân:', err);
+      if (!silent) setLoadError(err.message || 'Không thể tải thông báo.');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -119,8 +126,10 @@ export default function NotificationsPage() {
   }, [loadUserNotifications, user?.id]);
 
   const handleNotificationClick = async (item) => {
+    if (markingIds.has(item.id) || markingAll) return;
     try {
       if (!item.read) {
+        setMarkingIds(previous => new Set(previous).add(item.id));
         if (user?.id) {
           await notificationService.markAsRead(item.id);
         }
@@ -134,10 +143,20 @@ export default function NotificationsPage() {
       }
     } catch (err) {
       console.error(err);
+      toast.error(err.message || 'Không thể đồng bộ trạng thái thông báo.');
+      loadUserNotifications({ silent: true });
+    } finally {
+      setMarkingIds(previous => {
+        const next = new Set(previous);
+        next.delete(item.id);
+        return next;
+      });
     }
   };
 
   const handleMarkAllRead = async () => {
+    if (markingAll) return;
+    setMarkingAll(true);
     try {
       if (user?.id) {
         await notificationService.markAllAsRead(user.id);
@@ -146,6 +165,9 @@ export default function NotificationsPage() {
       toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
     } catch {
       toast.error('Lỗi khi cập nhật trạng thái');
+      loadUserNotifications({ silent: true });
+    } finally {
+      setMarkingAll(false);
     }
   };
 
@@ -412,10 +434,12 @@ export default function NotificationsPage() {
               <button
                 type="button"
                 onClick={handleMarkAllRead}
+                disabled={markingAll}
+                aria-busy={markingAll || undefined}
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#7A1D24] hover:bg-red-50 rounded-full transition-colors whitespace-nowrap"
               >
-                <CheckCheck className="w-4 h-4" />
-                Đánh dấu tất cả đã đọc
+                {markingAll ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <CheckCheck className="w-4 h-4" />}
+                {markingAll ? 'Đang cập nhật…' : 'Đánh dấu tất cả đã đọc'}
               </button>
             )}
 
@@ -435,12 +459,14 @@ export default function NotificationsPage() {
 
         {/* NOTIFICATION LIST */}
         <div className="space-y-3">
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-2xl p-5 border border-[#ECE7E0] animate-pulse h-24" />
-              ))}
+          {loadError && (
+            <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+              <span>{loadError}</span>
+              <button type="button" onClick={() => loadUserNotifications()} className="min-h-10 rounded-lg border border-red-300 bg-white px-3 font-semibold hover:bg-red-100">Thử lại</button>
             </div>
+          )}
+          {loading ? (
+            <LoadingSkeleton type="notification" count={4} />
           ) : filteredNotifications.length === 0 ? (
             <div className="bg-white rounded-2xl border border-[#ECE7E0] p-12 text-center shadow-xs">
               <EmptyState
@@ -460,6 +486,7 @@ export default function NotificationsPage() {
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
+                aria-busy={markingIds.has(n.id) || undefined}
                 className={`bg-white rounded-2xl border border-[#ECE7E0] p-4 sm:p-5 flex items-start justify-between gap-3 sm:gap-4 transition-all duration-200 hover:shadow-card-hover hover:border-[#D9D2C7] cursor-pointer group ${
                   !n.read ? 'bg-red-50/15' : ''
                 }`}
@@ -488,7 +515,7 @@ export default function NotificationsPage() {
                     {renderBadge(n.badge, n.badgeType)}
                   </div>
                   <span className="text-[11px] sm:text-xs text-stone-400 whitespace-nowrap text-right font-normal">
-                    {n.timeText}
+                    {markingIds.has(n.id) ? 'Đang cập nhật…' : n.timeText}
                   </span>
                   <ChevronRight className="hidden w-5 h-5 text-stone-400 group-hover:text-[#7A1D24] group-hover:translate-x-0.5 transition-all sm:block" />
                 </div>

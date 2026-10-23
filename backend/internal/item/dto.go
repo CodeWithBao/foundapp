@@ -3,6 +3,7 @@ package item
 import "unifind-dntu/internal/models"
 
 type CreateItemDTO struct {
+	ClientRequestID        string          `json:"client_request_id" binding:"omitempty,max=64"`
 	Title                  string          `json:"title" binding:"required"`
 	Type                   models.ItemType `json:"type" binding:"required"`
 	CategoryID             uint            `json:"category_id" binding:"required"`
@@ -17,6 +18,11 @@ type CreateItemDTO struct {
 	CurrentStorageLocation string          `json:"current_storage_location"`
 	CustodyStatus          string          `json:"custody_status"`
 	Images                 []string        `json:"images"`
+}
+
+type ItemContactDTO struct {
+	Phone string `json:"phone"`
+	Email string `json:"email"`
 }
 
 type UpdateItemDTO struct {

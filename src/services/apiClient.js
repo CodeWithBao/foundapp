@@ -18,6 +18,8 @@ export function getAuthToken() {
 export async function apiFetch(endpoint, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || DEFAULT_TIMEOUT);
+  const method = String(options.method || 'GET').toUpperCase();
+  const isMutation = !['GET', 'HEAD', 'OPTIONS'].includes(method);
 
   const token = getAuthToken();
 
@@ -42,9 +44,13 @@ export async function apiFetch(endpoint, options = {}) {
       const error = new Error(data.message || data.error || `HTTP Error ${response.status}`);
       error.status = response.status;
       error.code = data.error;
+      error.method = method;
+      error.endpoint = endpoint;
+      error.retryAfter = response.headers.get('Retry-After');
       if (response.status >= 500) {
         error.isServerError = true;
         error.isNetworkError = true;
+        error.isUncertain = isMutation;
       }
       throw error;
     }
@@ -56,6 +62,10 @@ export async function apiFetch(endpoint, options = {}) {
     if (err.name === 'AbortError') {
       const timeoutErr = new Error('Network timeout');
       timeoutErr.isNetworkError = true;
+      timeoutErr.isTimeout = true;
+      timeoutErr.isUncertain = isMutation;
+      timeoutErr.method = method;
+      timeoutErr.endpoint = endpoint;
       throw timeoutErr;
     }
     if (
@@ -65,7 +75,10 @@ export async function apiFetch(endpoint, options = {}) {
       err.isServerError
     ) {
       err.isNetworkError = true;
+      if (isMutation) err.isUncertain = true;
     }
+    err.method ||= method;
+    err.endpoint ||= endpoint;
     throw err;
   }
 }
@@ -73,6 +86,7 @@ export async function apiFetch(endpoint, options = {}) {
 export function apiUpload(endpoint, formData, { onProgress, timeout = 60000 } = {}) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let requestSent = false;
     xhr.open('POST', `${BASE_URL}${endpoint}`);
     xhr.timeout = timeout;
     const token = getAuthToken();
@@ -96,19 +110,30 @@ export function apiUpload(endpoint, formData, { onProgress, timeout = 60000 } = 
       }
       const error = new Error(payload.message || payload.error || `HTTP Error ${xhr.status}`);
       error.status = xhr.status;
+      error.method = 'POST';
+      error.endpoint = endpoint;
+      error.isUncertain = xhr.status >= 500;
       reject(error);
     };
     xhr.onerror = () => {
       const error = new Error('Không thể kết nối máy chủ để tải ảnh');
       error.isNetworkError = true;
+      error.isUncertain = requestSent;
+      error.method = 'POST';
+      error.endpoint = endpoint;
       reject(error);
     };
     xhr.ontimeout = () => {
       const error = new Error('Tải ảnh quá thời gian cho phép');
       error.isNetworkError = true;
+      error.isTimeout = true;
+      error.isUncertain = requestSent;
+      error.method = 'POST';
+      error.endpoint = endpoint;
       reject(error);
     };
     xhr.onabort = () => reject(new Error('Đã hủy tải ảnh'));
+    requestSent = true;
     xhr.send(formData);
   });
 }

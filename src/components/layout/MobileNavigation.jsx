@@ -81,15 +81,15 @@ export default function MobileNavigation() {
 
       {/* Bottom Bar */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-hairline shadow-lg px-1 flex items-center"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.375rem', height: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
+        className="fixed inset-x-0 bottom-0 z-50 flex w-full max-w-full items-center border-t border-hairline bg-white/95 px-1 shadow-lg backdrop-blur-md md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.375rem', minHeight: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
       >
         {/* Home */}
         <NavLink
           to="/"
           end
           className={({ isActive }) =>
-            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
+            `min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
@@ -102,7 +102,7 @@ export default function MobileNavigation() {
         <NavLink
           to="/search"
           className={({ isActive }) =>
-            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
+            `min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
@@ -114,7 +114,7 @@ export default function MobileNavigation() {
         {/* Plus / Đăng bài center button */}
         <button
           onClick={() => setShowPostMenu((prev) => !prev)}
-          className="min-w-0 flex-1 flex flex-col items-center justify-center -mt-6"
+          className="min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center -mt-6"
           aria-label="Đăng tin"
         >
           <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-md ring-4 ring-[#FAF8F2] hover:bg-burgundy-700 transition-transform active:scale-95">
@@ -127,7 +127,7 @@ export default function MobileNavigation() {
         <NavLink
           to="/notifications"
           className={({ isActive }) =>
-            `relative min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
+            `relative min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }
@@ -145,7 +145,7 @@ export default function MobileNavigation() {
         <NavLink
           to={user ? '/profile' : '/login'}
           className={({ isActive }) =>
-            `min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
+            `min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-lg text-[10px] min-[390px]:text-xs font-semibold transition-all ${
               isActive ? 'text-accent font-bold' : 'text-ink-muted hover:text-ink'
             }`
           }

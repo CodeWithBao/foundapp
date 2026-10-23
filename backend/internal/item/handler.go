@@ -63,6 +63,43 @@ func (h *ItemHandler) GetItemByID(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Item retrieved successfully", sanitizedItem)
 }
 
+func (h *ItemHandler) GetItemByClientRequestID(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	item, err := h.itemService.GetItemByClientRequestID(userIDVal.(uint), c.Param("clientRequestId"))
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Item request not found")
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Item request retrieved successfully", h.sanitizeItem(c, item))
+}
+
+func (h *ItemHandler) GetItemContact(c *gin.Context) {
+	if _, exists := c.Get("user_id"); !exists {
+		response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid item ID")
+		return
+	}
+
+	contact, err := h.itemService.GetItemContact(uint(id))
+	if err != nil {
+		response.Error(c, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Item contact retrieved successfully", contact)
+}
+
 func (h *ItemHandler) CreateItem(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -231,6 +268,9 @@ func (h *ItemHandler) sanitizeItem(c *gin.Context, item *models.Item) models.Ite
 func (h *ItemHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, createRateLimit gin.HandlerFunc, optionalAuth gin.HandlerFunc) {
 	itemsGroup := r.Group("/items")
 	{
+		itemsGroup.GET("/user/me", authMiddleware, h.GetMyItems)
+		itemsGroup.GET("/request/:clientRequestId", authMiddleware, h.GetItemByClientRequestID)
+		itemsGroup.GET("/:id/contact", authMiddleware, h.GetItemContact)
 		if optionalAuth != nil {
 			itemsGroup.GET("", optionalAuth, h.GetAllItems)
 			itemsGroup.GET("/:id", optionalAuth, h.GetItemByID)
@@ -238,7 +278,6 @@ func (h *ItemHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.Hand
 			itemsGroup.GET("", h.GetAllItems)
 			itemsGroup.GET("/:id", h.GetItemByID)
 		}
-		itemsGroup.GET("/user/me", authMiddleware, h.GetMyItems)
 		if createRateLimit != nil {
 			itemsGroup.POST("", authMiddleware, createRateLimit, h.CreateItem)
 		} else {

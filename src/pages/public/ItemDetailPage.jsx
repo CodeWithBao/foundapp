@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation, useNavigationType } from 'react-router-dom';
 import {
   Home, ArrowLeft, MapPin, Calendar, Eye, Phone, Mail,
-  Share2, ShieldAlert, CheckCircle2, ChevronLeft, ChevronRight,
+  Share2, ShieldAlert, ChevronRight,
   Bookmark, Send, MessageCircle, ShieldCheck, Smartphone, Sparkles,
-  FileText, Star, Heart, ExternalLink, Building2, Lock, Info
+  FileText, Star, Heart, ExternalLink, Building2, Lock
 } from 'lucide-react';
 import itemService from '../../services/itemService';
 import claimService from '../../services/claimService';
@@ -18,6 +18,7 @@ import ItemCard from '../../components/common/ItemCard';
 import CategoryIcon from '../../components/common/CategoryIcon';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import ItemChatModal from '../../components/chat/ItemChatModal';
+import ItemGallery from '../../components/item/ItemGallery';
 import { formatDate, formatRelative, getItemOwnerId, isSameEntityId } from '../../utils';
 import { STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
@@ -34,9 +35,11 @@ export default function ItemDetailPage() {
   
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [similarItems, setSimilarItems] = useState([]);
   const [showContact, setShowContact] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [fullContact, setFullContact] = useState(null);
+  const [contactError, setContactError] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   
@@ -56,6 +59,10 @@ export default function ItemDetailPage() {
 
   const loadItemData = useCallback(async () => {
     setLoading(true);
+    setShowContact(false);
+    setFullContact(null);
+    setContactError('');
+    setContactLoading(false);
     try {
       const data = await itemService.getItemById(id);
       setItem(data);
@@ -115,23 +122,6 @@ export default function ItemDetailPage() {
       email: item.contactEmail || '',
       avatar: '',
     };
-  };
-
-  // Mask SĐT và Email bảo vệ quyền riêng tư
-  const maskPhone = (phone) => {
-    if (!phone) return '09** *** ***';
-    const clean = String(phone).replace(/\s+/g, '');
-    if (clean.length < 7) return clean.slice(0, 3) + ' ••• •••';
-    return clean.slice(0, 4) + ' ••• ' + clean.slice(-2);
-  };
-
-  const maskEmail = (email) => {
-    if (!email) return '***@dntu.edu.vn';
-    const parts = String(email).split('@');
-    if (parts.length < 2) return '***@dntu.edu.vn';
-    const name = parts[0];
-    const masked = name.length > 2 ? `${name.slice(0, 2)}***` : `${name}***`;
-    return `${masked}@${parts[1]}`;
   };
 
   const handleClaimSubmit = async () => {
@@ -226,8 +216,52 @@ export default function ItemDetailPage() {
   const ownerId = getItemOwnerId(item);
   const isMyPost = !authLoading && isSameEntityId(user?.id, ownerId);
 
+  const handleToggleContact = useCallback(async () => {
+    if (showContact) {
+      setShowContact(false);
+      setContactError('');
+      return;
+    }
+    if (authLoading || contactLoading) return;
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để xem thông tin liên hệ.');
+      navigate('/login', {
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+            state: { ...location.state, resumeAction: 'revealContact' },
+          },
+          resumeAction: 'revealContact',
+        },
+      });
+      return;
+    }
+
+    setContactLoading(true);
+    setContactError('');
+    try {
+      const contact = await itemService.getItemContact(id);
+      const phone = String(contact?.phone || '').trim();
+      const email = String(contact?.email || '').trim();
+      if (!phone && !email) throw new Error('Người đăng chưa cung cấp thông tin liên hệ.');
+      setFullContact({ phone, email });
+      setShowContact(true);
+    } catch (error) {
+      const message = error.message || 'Không thể tải thông tin liên hệ.';
+      setFullContact(null);
+      setShowContact(false);
+      setContactError(message);
+      toast.error(message);
+    } finally {
+      setContactLoading(false);
+    }
+  }, [authLoading, contactLoading, id, location, navigate, showContact, user]);
+
   useEffect(() => {
-    if (loading || authLoading || location.state?.resumeAction !== 'contact') return;
+    const resumeAction = location.state?.resumeAction;
+    if (loading || authLoading || !['contact', 'revealContact'].includes(resumeAction)) return;
 
     if (!user) {
       navigate('/login', {
@@ -237,25 +271,26 @@ export default function ItemDetailPage() {
             pathname: location.pathname,
             search: location.search,
             hash: location.hash,
-            state: { ...location.state, resumeAction: 'contact' },
+            state: { ...location.state, resumeAction },
           },
-          resumeAction: 'contact',
+          resumeAction,
         },
       });
       return;
     }
 
-    if (!isMyPost && ownerId) setShowChatModal(true);
+    if (resumeAction === 'contact' && !isMyPost && ownerId) setShowChatModal(true);
+    if (resumeAction === 'revealContact') void handleToggleContact();
     navigate(`${location.pathname}${location.search}${location.hash}`, {
       replace: true,
       state: { ...location.state, resumeAction: null },
     });
-  }, [authLoading, isMyPost, loading, location, navigate, ownerId, user]);
+  }, [authLoading, handleToggleContact, isMyPost, loading, location, navigate, ownerId, user]);
 
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-[#F8F6F3] min-h-screen">
-        <LoadingSkeleton type="card" count={2} />
+        <LoadingSkeleton type="detail" count={4} />
       </div>
     );
   }
@@ -364,84 +399,15 @@ export default function ItemDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* 1. GALLERY (5 cols) */}
-          <div className="lg:col-span-5 space-y-3">
-            <div className="relative rounded-2xl overflow-hidden bg-white border border-[#E8E2DD] shadow-sm">
-              <div className="relative aspect-[4/3] bg-gray-50 flex items-center justify-center">
-                {galleryImages.length > 0 ? (
-                  <img
-                    src={galleryImages[selectedImage]}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-all duration-300"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-gray-400 p-8">
-                    <CategoryIcon category={categoryText} className="w-12 h-12 text-[#741216] mb-2" />
-                    <span className="text-xs">Không có hình ảnh</span>
-                  </div>
-                )}
-
-                {/* Floating Status Badge */}
-                <div className="absolute top-3 left-3 z-10">
-                  {isFound ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9] shadow-sm">
-                      Nhặt được
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#FFEBEE] text-[#C62828] border border-[#FFCDD2] shadow-sm">
-                      Đã đánh mất
-                    </span>
-                  )}
-                </div>
-
-                {/* Gallery Navigation Arrows */}
-                {galleryImages.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImage(prev => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-gray-700 hover:text-black flex items-center justify-center shadow-md backdrop-blur-xs transition"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImage(prev => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-gray-700 hover:text-black flex items-center justify-center shadow-md backdrop-blur-xs transition"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-
-                {/* Image Counter Badge */}
-                {galleryImages.length > 0 && (
-                  <div className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[11px] font-mono">
-                    {selectedImage + 1} / {galleryImages.length}
-                  </div>
-                )}
-
-              </div>
-
-              {/* Thumbnails Row */}
-              {galleryImages.length > 1 && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))] gap-2 p-3 bg-gray-50/80 border-t border-[#E8E2DD]">
-                  {galleryImages.map((img, idx) => (
-                    <button
-                    key={`${item.id}-${img}`}
-                      type="button"
-                      onClick={() => setSelectedImage(idx)}
-                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                        idx === selectedImage ? 'border-[#741216] ring-1 ring-[#741216]' : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="min-w-0 space-y-3 lg:col-span-5">
+            <ItemGallery
+              key={item.id}
+              images={galleryImages}
+              itemId={item.id}
+              title={item.title}
+              category={categoryText}
+              isFound={isFound}
+            />
           </div>
 
           {/* 2. ITEM MAIN INFORMATION (4 cols) */}
@@ -638,29 +604,43 @@ export default function ItemDetailPage() {
 
                 {/* 2. Nút xem thông tin liên hệ bảo mật (chỉ cho cá nhân) */}
                 {!authLoading && !isMyPost && !isOfficeKept && (
-                  <button
+                  <Button
                     type="button"
-                    onClick={() => setShowContact(!showContact)}
-                    className="w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-gray-200 text-gray-700 hover:bg-gray-50"
+                    onClick={handleToggleContact}
+                    loading={contactLoading}
+                    loadingText="Đang tải liên hệ…"
+                    icon={Lock}
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11 w-full"
                   >
-                    <Lock className="w-3.5 h-3.5 text-gray-400" />
                     <span>{showContact ? 'Ẩn thông tin liên hệ' : 'Xem thông tin liên hệ (Đã bảo vệ)'}</span>
-                  </button>
+                  </Button>
+                )}
+
+                {contactError && !showContact && !isMyPost && !isOfficeKept && (
+                  <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {contactError}
+                  </p>
                 )}
 
                 {/* Show contact information if toggled */}
-                {showContact && !isMyPost && !isOfficeKept && (
+                {showContact && fullContact && !isMyPost && !isOfficeKept && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2 animate-fadeIn">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Phone className="w-3.5 h-3.5 text-[#741216]" />
-                      <span>SĐT: <strong className="text-gray-900">{maskPhone(reporter.phone)}</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Mail className="w-3.5 h-3.5 text-[#741216]" />
-                      <span>Email: <strong className="text-gray-900">{maskEmail(reporter.email)}</strong></span>
-                    </div>
+                    {fullContact.phone && (
+                      <div className="flex min-w-0 items-center gap-2 text-gray-700">
+                        <Phone className="h-3.5 w-3.5 shrink-0 text-[#741216]" aria-hidden="true" />
+                        <span className="min-w-0">SĐT: <a className="break-all font-bold text-[#741216] hover:underline" href={`tel:${fullContact.phone.replace(/[^\d+]/g, '')}`}>{fullContact.phone}</a></span>
+                      </div>
+                    )}
+                    {fullContact.email && (
+                      <div className="flex min-w-0 items-center gap-2 text-gray-700">
+                        <Mail className="h-3.5 w-3.5 shrink-0 text-[#741216]" aria-hidden="true" />
+                        <span className="min-w-0">Email: <a className="break-all font-bold text-[#741216] hover:underline" href={`mailto:${fullContact.email}`}>{fullContact.email}</a></span>
+                      </div>
+                    )}
                     <p className="text-[10px] text-gray-500 italic pt-1 border-t border-gray-200">
-                      🛡️ Nhằm phòng ngừa giả mạo, khuyến nghị trao đổi qua hệ thống Chat UniFind để bảo đảm an toàn.
+                      Nhằm phòng ngừa giả mạo, khuyến nghị trao đổi qua hệ thống Chat UniFind để bảo đảm an toàn.
                     </p>
                   </div>
                 )}
