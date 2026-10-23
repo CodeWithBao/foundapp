@@ -2,11 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   X, Send, Image as ImageIcon, ShieldAlert, Flag, Ban, Check, CheckCheck, 
-  Lock, MapPin, AlertCircle, Info, ChevronRight, CornerDownLeft, ArrowDown
+  Lock, MapPin, AlertCircle, Info, ChevronRight, CornerDownLeft, ArrowDown, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Avatar from '../common/Avatar';
 import CategoryIcon from '../common/CategoryIcon';
+import LoadingSkeleton from '../common/LoadingSkeleton';
 import chatService from '../../services/chatService';
 import apiClient from '../../services/apiClient';
 import { formatDate, getItemOwnerId, isSameEntityId } from '../../utils';
@@ -17,6 +18,44 @@ const QUICK_CHIPS = [
   'Mình có thể hẹn gặp ở sảnh giảng đường để đối chiếu nhận lại không?',
   'Cảm ơn bạn rất nhiều vì đã nhặt được đồ!'
 ];
+
+function createClientMessageId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function mergeMessages(serverMessages = [], localMessages = []) {
+  const serverIds = new Set(serverMessages.map(message => String(message.id)));
+  const matchedServerIndexes = new Set();
+  const transient = localMessages.filter(message => {
+    if (!['sending', 'failed', 'uncertain'].includes(message.deliveryStatus)) return false;
+    if (serverIds.has(String(message.id))) return false;
+    if (message.deliveryStatus === 'failed') return true;
+
+    const localTime = new Date(message.createdAt).getTime();
+    const matchIndex = serverMessages.findIndex((serverMessage, index) => {
+      if (matchedServerIndexes.has(index)) return false;
+      const serverTime = new Date(serverMessage.createdAt).getTime();
+      return String(serverMessage.senderId) === String(message.senderId)
+        && String(serverMessage.text || '') === String(message.text || '')
+        && String(serverMessage.image || '') === String(message.image || '')
+        && Number.isFinite(localTime)
+        && Number.isFinite(serverTime)
+        && Math.abs(serverTime - localTime) <= 60000;
+    });
+
+    if (matchIndex >= 0) {
+      matchedServerIndexes.add(matchIndex);
+      return false;
+    }
+    return true;
+  });
+
+  return [...serverMessages, ...transient].sort((a, b) =>
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}
 
 export default function ItemChatModal({ 
   isOpen, 
@@ -31,7 +70,10 @@ export default function ItemChatModal({
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-  const [isSending, setIsSending] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [connectionState, setConnectionState] = useState('connected');
+  const [reloadKey, setReloadKey] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByMe, setIsBlockedByMe] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -47,6 +89,8 @@ export default function ItemChatModal({
   const previousMessageIdsRef = useRef(new Set());
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
+  const chatRequestRunningRef = useRef(false);
+  const loadedSessionRef = useRef('');
 
   const itemId = item?.id;
   const isReturned = item?.status === 'RETURNED' || conversation?.itemStatus === 'RETURNED';
@@ -107,7 +151,21 @@ export default function ItemChatModal({
     }
 
     let isMounted = true;
-    const loadChat = async () => {
+    const sessionKey = `${itemId}:${currentUser.id}:${recipient.id}`;
+    const isNewSession = loadedSessionRef.current !== sessionKey;
+    if (isNewSession) {
+      setInitialLoading(true);
+      setLoadError('');
+      setConversation(null);
+      setMessages([]);
+      previousMessageIdsRef.current = new Set();
+      nearBottomRef.current = true;
+      setShowNewMessages(false);
+    }
+
+    const loadChat = async ({ silent = false } = {}) => {
+      if (chatRequestRunningRef.current) return;
+      chatRequestRunningRef.current = true;
       try {
         const conv = await chatService.getConversation(
           itemId, 
@@ -121,30 +179,40 @@ export default function ItemChatModal({
           const incomingNewMessage = nextMessages.some(message =>
             !previousMessageIdsRef.current.has(String(message.id)) &&
             String(message.senderId) !== String(currentUser.id));
-          setMessages(nextMessages);
+          setMessages(previous => mergeMessages(nextMessages, previous));
+          loadedSessionRef.current = sessionKey;
           previousMessageIdsRef.current = new Set(nextMessages.map(message => String(message.id)));
           setIsBlocked(Boolean(conv.blocked));
           setIsBlockedByMe(Boolean(conv.blockedByMe));
+          setInitialLoading(false);
+          setLoadError('');
+          setConnectionState('connected');
 
           if (document.visibilityState === 'visible' && nearBottomRef.current) {
-            await chatService.markAsRead(conv.id, currentUser.id);
+            chatService.markAsRead(conv.id, currentUser.id).catch(() => {});
           } else if (incomingNewMessage) {
             setShowNewMessages(true);
           }
         }
       } catch (err) {
         if (isMounted) {
-          toast.error(err.message || 'Không thể mở cuộc trò chuyện.');
-          onClose();
+          if (!silent && loadedSessionRef.current !== sessionKey) {
+            setInitialLoading(false);
+            setLoadError(err.message || 'Không thể mở cuộc trò chuyện.');
+          } else {
+            setConnectionState('reconnecting');
+          }
         }
+      } finally {
+        chatRequestRunningRef.current = false;
       }
     };
 
     loadChat();
-    const timer = window.setInterval(loadChat, 3000);
+    const timer = window.setInterval(() => loadChat({ silent: true }), 3000);
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') loadChat();
+      if (document.visibilityState === 'visible') loadChat({ silent: true });
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
@@ -153,7 +221,7 @@ export default function ItemChatModal({
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose, isSelfChat]);
+  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose, isSelfChat, reloadKey]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -166,7 +234,43 @@ export default function ItemChatModal({
 
   if (!isOpen || !item) return null;
 
-  const handleSend = async (e) => {
+  const deliverMessage = async pendingMessage => {
+    if (!conversation?.id) return;
+    try {
+      const { message } = await chatService.sendMessage({
+        conversationId: conversation.id,
+        itemId,
+        sender: currentUser,
+        recipientId: recipient.id,
+        text: pendingMessage.text,
+        image: pendingMessage.image,
+        itemData: item,
+        clientMessageId: pendingMessage.clientId,
+      });
+
+      setMessages(previous => {
+        const withoutPendingOrDuplicate = previous.filter(current =>
+          current.clientId !== pendingMessage.clientId
+          && String(current.id) !== String(message.id));
+        return [...withoutPendingOrDuplicate, {
+          ...message,
+          clientId: pendingMessage.clientId,
+          deliveryStatus: 'sent',
+        }].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      });
+      setConversation(previous => previous ? { ...previous, updatedAt: message.createdAt } : previous);
+      setConnectionState('connected');
+    } catch (err) {
+      const deliveryStatus = err.isUncertain ? 'uncertain' : 'failed';
+      setMessages(previous => previous.map(current =>
+        current.clientId === pendingMessage.clientId
+          ? { ...current, deliveryStatus, deliveryError: err.message || 'Không thể gửi tin nhắn.' }
+          : current));
+      if (err.isUncertain) setConnectionState('reconnecting');
+    }
+  };
+
+  const handleSend = (e) => {
     e?.preventDefault();
     if (!inputText.trim() && !selectedImage) return;
     if (!currentUser?.id || !recipient?.id) {
@@ -186,27 +290,33 @@ export default function ItemChatModal({
       return;
     }
 
-    setIsSending(true);
-    try {
-      const { message } = await chatService.sendMessage({
-        conversationId: conversation?.id,
-        itemId,
-        sender: currentUser,
-        recipientId: recipient.id,
-        text: inputText,
-        image: selectedImage,
-        itemData: item,
-      });
+    if (!conversation?.id) return;
+    const clientId = createClientMessageId();
+    const pendingMessage = {
+      id: `pending-${clientId}`,
+      clientId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar || currentUser.avatar_url,
+      text: inputText.trim(),
+      image: selectedImage,
+      read: false,
+      createdAt: new Date().toISOString(),
+      deliveryStatus: 'sending',
+    };
 
-      setMessages(prev => [...prev, message]);
-      setConversation(prev => prev ? { ...prev, updatedAt: message.createdAt } : prev);
-      setInputText('');
-      setSelectedImage(null);
-    } catch (err) {
-      toast.error(err.message || 'Không thể gửi tin nhắn.');
-    } finally {
-      setIsSending(false);
-    }
+    setMessages(previous => [...previous, pendingMessage]);
+    setInputText('');
+    setSelectedImage(null);
+    deliverMessage(pendingMessage);
+  };
+
+  const retryMessage = message => {
+    setMessages(previous => previous.map(current =>
+      current.clientId === message.clientId
+        ? { ...current, deliveryStatus: 'sending', deliveryError: '' }
+        : current));
+    deliverMessage({ ...message, deliveryStatus: 'sending', deliveryError: '' });
   };
 
   const handleImagePick = (e) => {
@@ -279,7 +389,7 @@ export default function ItemChatModal({
 
   return createPortal(
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn motion-reduce:animate-none"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         role="dialog"
         aria-modal="true"
@@ -287,7 +397,7 @@ export default function ItemChatModal({
         onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl h-full max-h-[100dvh] sm:h-[min(92dvh,780px)] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn"
+        className="w-full max-w-2xl h-full max-h-[100dvh] sm:h-[min(92dvh,780px)] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn motion-reduce:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
@@ -306,8 +416,10 @@ export default function ItemChatModal({
                   {recipient.role || (isFound ? 'Người nhặt được' : 'Người đăng')}
                 </span>
               </div>
-              <p className="hidden min-[390px]:block text-xs text-white/75 truncate">
-                Đại học Công nghệ Đồng Nai • Trò chuyện bảo mật
+              <p className="hidden min-[390px]:block text-xs text-white/75 truncate" aria-live="polite">
+                {connectionState === 'reconnecting'
+                  ? 'Mất kết nối • đang thử lại…'
+                  : 'Đại học Công nghệ Đồng Nai • Trò chuyện bảo mật'}
               </p>
             </div>
           </div>
@@ -450,7 +562,26 @@ export default function ItemChatModal({
           onScroll={handleMessagesScroll}
           className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 bg-[#FAF9F6]"
         >
-          {messages.length === 0 ? (
+          {initialLoading ? (
+            <LoadingSkeleton type="messages" count={5} className="h-full" />
+          ) : loadError && messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6" role="alert">
+              <AlertCircle className="h-8 w-8 text-red-500" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-gray-800">Không thể tải cuộc trò chuyện</p>
+              <p className="mt-1 max-w-sm text-xs leading-relaxed text-gray-500">{loadError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setInitialLoading(true);
+                  setLoadError('');
+                  setReloadKey(value => value + 1);
+                }}
+                className="mt-4 rounded-xl bg-[#741216] px-4 py-2 text-xs font-semibold text-white hover:bg-[#8b161b]"
+              >
+                Thử tải lại
+              </button>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
               <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#741216] flex items-center justify-center mb-3">
                 <CornerDownLeft className="w-6 h-6" />
@@ -491,7 +622,7 @@ export default function ItemChatModal({
 
                 return (
                   <div 
-                    key={msg.id || `${msg.senderId}-${msg.createdAt}-${idx}`}
+                    key={msg.clientId || msg.id || `${msg.senderId}-${msg.createdAt}-${idx}`}
                     className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
                   >
                     {!isMe && (
@@ -537,7 +668,16 @@ export default function ItemChatModal({
                           isMe ? 'text-white/70' : 'text-gray-400'
                         }`}>
                           <span>{formatDate(msg.createdAt)}</span>
-                          {isMe && (
+                          {isMe && msg.deliveryStatus === 'sending' && (
+                            <Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                          )}
+                          {isMe && msg.deliveryStatus === 'failed' && (
+                            <span className="font-semibold text-amber-200">Gửi lỗi</span>
+                          )}
+                          {isMe && msg.deliveryStatus === 'uncertain' && (
+                            <span className="font-semibold text-amber-200">Đang xác minh</span>
+                          )}
+                          {isMe && (!msg.deliveryStatus || msg.deliveryStatus === 'sent') && (
                             msg.read ? (
                               <CheckCheck className="w-3 h-3 text-sky-300" title="Đã xem" />
                             ) : (
@@ -546,6 +686,20 @@ export default function ItemChatModal({
                           )}
                         </div>
                       </div>
+                      {msg.deliveryStatus === 'failed' && (
+                        <button
+                          type="button"
+                          onClick={() => retryMessage(msg)}
+                          className="px-1 text-[11px] font-semibold text-[#741216] underline underline-offset-2"
+                        >
+                          Thử gửi lại
+                        </button>
+                      )}
+                      {msg.deliveryStatus === 'uncertain' && (
+                        <p className="px-1 text-[11px] text-amber-700" role="status">
+                          Không tự gửi lại để tránh trùng tin.
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -634,12 +788,12 @@ export default function ItemChatModal({
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Nhập tin nhắn trao đổi về đồ vật..."
                 className="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs sm:px-3.5 sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741216]/20 focus:border-[#741216] transition"
-                disabled={isSending || !currentUser?.id || !recipient?.id}
+                disabled={initialLoading || !conversation?.id || !currentUser?.id || !recipient?.id}
               />
 
               <button
                 type="submit"
-                disabled={isSending || !currentUser?.id || !recipient?.id || (!inputText.trim() && !selectedImage)}
+                disabled={initialLoading || !conversation?.id || !currentUser?.id || !recipient?.id || (!inputText.trim() && !selectedImage)}
                 className="w-11 h-11 shrink-0 rounded-xl bg-[#741216] text-white hover:bg-[#8b161b] disabled:opacity-40 disabled:hover:bg-[#741216] transition flex items-center justify-center shadow-xs"
                 aria-label="Gửi tin nhắn"
               >

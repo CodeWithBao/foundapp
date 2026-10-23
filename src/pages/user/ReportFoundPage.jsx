@@ -54,10 +54,12 @@ export default function ReportFoundPage() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitUncertain, setSubmitUncertain] = useState(false);
   const submittingRef = useRef(false);
   const submitRequestId = useRef(null);
   const imageDraftRef = useRef([]);
   const reportCreatedRef = useRef(false);
+  const submissionUncertainRef = useRef(false);
 
   useEffect(() => {
     imageDraftRef.current = form.images;
@@ -65,7 +67,7 @@ export default function ReportFoundPage() {
 
   useEffect(() => () => {
     imageDraftRef.current.forEach(image => URL.revokeObjectURL(image.previewUrl));
-    if (!reportCreatedRef.current) {
+    if (!reportCreatedRef.current && !submissionUncertainRef.current) {
       imageDraftRef.current.forEach(image => {
         if (image.uploadedUrl) itemService.deleteUploadedImage(image.uploadedUrl).catch(() => {});
       });
@@ -98,11 +100,47 @@ export default function ReportFoundPage() {
   };
   const handlePrev = () => setCurrentStep(p => p - 1);
 
+  const finishSubmission = createdItem => {
+    reportCreatedRef.current = true;
+    submissionUncertainRef.current = false;
+    setSubmitUncertain(false);
+    toast.success('Gửi báo cáo nhặt được đồ thành công!');
+    navigate('/my-posts', {
+      state: {
+        createdItemId: createdItem?.id,
+        createdItemType: 'FOUND',
+      },
+    });
+  };
+
+  const checkSubmissionStatus = async ({ automatic = false } = {}) => {
+    if (!submitRequestId.current || submittingRef.current) return false;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setSubmitUncertain(true);
+    submissionUncertainRef.current = true;
+    try {
+      const createdItem = await itemService.getItemByClientRequestId(submitRequestId.current);
+      finishSubmission(createdItem);
+      return true;
+    } catch (error) {
+      if (!automatic) {
+        toast.warning(error.status === 404
+          ? 'Chưa tìm thấy bài đăng. Yêu cầu vẫn được giữ để kiểm tra lại an toàn.'
+          : 'Chưa thể xác minh trạng thái bài đăng. Dữ liệu biểu mẫu vẫn được giữ nguyên.');
+      }
+      return false;
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     // Chặn double-click trước khi bắt đầu request; request id giúp backend
     // nhận diện cùng một lần gửi nếu client retry hoặc có nhiều tab/request.
-    if (submittingRef.current) return;
+    if (submittingRef.current || submitUncertain) return;
     if (!validateStep(4)) return;
     submitRequestId.current ||= crypto.randomUUID();
     submittingRef.current = true;
@@ -114,7 +152,7 @@ export default function ReportFoundPage() {
           images: current.images.map(image => image.id === id ? { ...image, ...patch } : image),
         }));
       });
-      await itemService.createItem({
+      const createdItem = await itemService.createItem({
         title: form.title.trim(),
         category: form.category,
         date: form.date,
@@ -132,14 +170,18 @@ export default function ReportFoundPage() {
         userName: user.name,
         clientRequestId: submitRequestId.current,
       });
-      reportCreatedRef.current = true;
-      toast.success('Gửi báo cáo nhặt được đồ thành công!');
-      navigate('/my-posts');
+      finishSubmission(createdItem);
     } catch (err) {
-      submittingRef.current = false;
-      submitRequestId.current = null;
-      toast.error(err.message || 'Có lỗi xảy ra khi tạo báo cáo');
+      if (err.isUncertain) {
+        submissionUncertainRef.current = true;
+        setSubmitUncertain(true);
+        toast.warning('Kết nối bị gián đoạn. Hệ thống đang kiểm tra xem bài đã được đăng hay chưa.');
+        window.setTimeout(() => checkSubmissionStatus({ automatic: true }), 1200);
+      } else {
+        toast.error(err.message || 'Có lỗi xảy ra khi tạo báo cáo');
+      }
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -480,6 +522,16 @@ export default function ReportFoundPage() {
               )}
             </div>
 
+            {submitUncertain && (
+              <div className="mx-6 mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 sm:mx-8" role="status" aria-live="polite">
+                <p className="font-semibold">Chưa xác minh được trạng thái đăng bài</p>
+                <p className="mt-1 text-xs leading-relaxed">Không gửi yêu cầu mới để tránh trùng bài. Biểu mẫu và ảnh đã chọn vẫn được giữ nguyên.</p>
+                <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => checkSubmissionStatus()} loading={submitting} loadingText="Đang kiểm tra…">
+                  Kiểm tra trạng thái
+                </Button>
+              </div>
+            )}
+
             {/* Navigation buttons */}
             <div className="px-6 sm:px-8 py-4 bg-[#F2EFE9] border-t border-[#E0E2E6] flex justify-between items-center">
               {currentStep > 1 ? (
@@ -497,8 +549,16 @@ export default function ReportFoundPage() {
                   Tiếp theo
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} loading={submitting} className="btn-primary" size="sm">
-                  <Send className="w-4 h-4 mr-1.5" /> Gửi báo cáo
+                <Button
+                  onClick={handleSubmit}
+                  loading={submitting}
+                  loadingText={submitUncertain ? 'Đang kiểm tra…' : 'Đang đăng bài…'}
+                  disabled={submitUncertain}
+                  icon={Send}
+                  className="btn-primary min-h-11 min-w-[8.5rem]"
+                  size="sm"
+                >
+                  Gửi báo cáo
                 </Button>
               )}
             </div>

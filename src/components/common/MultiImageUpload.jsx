@@ -541,6 +541,11 @@ export default function MultiImageUpload({ value = [], onChange, label = 'Hình 
                 {onRetryImage && <button type="button" onClick={() => onRetryImage(image.id)} className="mt-1 min-h-8 rounded-lg bg-white px-2 font-semibold text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">Thử lại</button>}
               </div>
             )}
+            {image.status === 'uncertain' && (
+              <div className="absolute inset-x-2 bottom-2 rounded-xl border border-amber-200 bg-amber-900/95 p-2 text-[11px] leading-4 text-white shadow-lg backdrop-blur-md" role="alert">
+                <p>{image.error}</p>
+              </div>
+            )}
 
             <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
               <div className="flex gap-1">

@@ -115,6 +115,13 @@ const authService = {
       }
     );
   },
+
+  async changePassword(oldPassword, newPassword) {
+    return apiClient.post('/auth/change-password', {
+      old_password: oldPassword,
+      new_password: newPassword,
+    }, { timeout: 12000 });
+  },
 };
 
 export default authService;

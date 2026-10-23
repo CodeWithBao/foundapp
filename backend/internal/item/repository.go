@@ -10,6 +10,7 @@ import (
 type ItemRepository interface {
 	Create(item *models.Item) error
 	FindByID(id uint) (*models.Item, error)
+	FindByUserAndClientRequestID(userID uint, clientRequestID string) (*models.Item, error)
 	FindAll(filter ItemFilterDTO) ([]models.Item, int64, error)
 	FindByUserID(userID uint) ([]models.Item, error)
 	Update(item *models.Item) error
@@ -33,6 +34,14 @@ func preloadItem(query *gorm.DB) *gorm.DB {
 func (r *itemRepository) FindByID(id uint) (*models.Item, error) {
 	var item models.Item
 	if err := preloadItem(r.db).First(&item, id).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *itemRepository) FindByUserAndClientRequestID(userID uint, clientRequestID string) (*models.Item, error) {
+	var item models.Item
+	if err := preloadItem(r.db).Where("user_id = ? AND client_request_id = ?", userID, clientRequestID).First(&item).Error; err != nil {
 		return nil, err
 	}
 	return &item, nil

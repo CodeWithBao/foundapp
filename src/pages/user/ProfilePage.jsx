@@ -14,6 +14,8 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import AvatarCropModal from '../../components/common/AvatarCropModal';
+import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+import authService from '../../services/authService';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
@@ -31,6 +33,7 @@ export default function ProfilePage() {
     views: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   // Filter tabs for "Bài đăng của tôi"
   const [postFilterTab, setPostFilterTab] = useState('ALL'); // ALL, ACTIVE, RETURNED, HIDDEN
@@ -85,9 +88,11 @@ export default function ProfilePage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const items = await itemService.getItems({ userId: user?.id });
-      const myItems = items.filter(i => i.userId === user?.id);
-      const claims = await claimService.getClaims({ claimantId: user?.id });
+      setLoadError('');
+      const [myItems, claims] = await Promise.all([
+        itemService.getItemsByUser(user?.id),
+        claimService.getClaims({ claimantId: user?.id }),
+      ]);
       const returnedItems = myItems.filter(i => ['RETURNED', 'RESOLVED', 'CLOSED'].includes(i.status));
 
       if (myItems.length > 0) {
@@ -105,8 +110,7 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error(err);
-      setUserPosts([]);
-      setStats({ posts: 0, claims: 0, returned: 0, thanks: 0, views: 0 });
+      setLoadError(err.message || 'Không thể tải dữ liệu hồ sơ.');
     } finally {
       setLoading(false);
     }
@@ -222,12 +226,12 @@ export default function ProfilePage() {
     }
     setPwdSaving(true);
     try {
-      await new Promise(r => setTimeout(r, 500));
+      await authService.changePassword(pwdForm.oldPassword, pwdForm.newPassword);
       toast.success('Đổi mật khẩu thành công!');
       setPwdForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
       setIsPasswordModalOpen(false);
     } catch (err) {
-      toast.error('Lỗi đổi mật khẩu');
+      toast.error(err.message || 'Lỗi đổi mật khẩu');
     } finally {
       setPwdSaving(false);
     }
@@ -239,6 +243,16 @@ export default function ProfilePage() {
   const faculty = user?.faculty || 'Công nghệ thông tin';
   const academicYear = '2023 - 2027';
   const dob = '12/06/2005';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F3] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <LoadingSkeleton type="profile" count={4} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F6F3]">
@@ -279,6 +293,13 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
+
+      {loadError && (
+        <div className="relative z-30 mx-auto mt-4 flex max-w-7xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8" role="alert">
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{loadError}</p>
+          <Button type="button" variant="outline" size="sm" onClick={loadData}>Thử tải lại</Button>
+        </div>
+      )}
 
       {/* MAIN CONTENT LAYOUT (2 Columns) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 sm:-mt-16 md:-mt-20 relative z-20 pb-16">
@@ -1115,6 +1136,7 @@ export default function ProfilePage() {
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
         title="Đổi mật khẩu tài khoản"
+        closeDisabled={pwdSaving}
       >
         <form onSubmit={handleSavePassword} className="space-y-4">
           <Input
@@ -1149,6 +1171,7 @@ export default function ProfilePage() {
               type="button"
               variant="secondary"
               onClick={() => setIsPasswordModalOpen(false)}
+              disabled={pwdSaving}
             >
               Hủy
             </Button>

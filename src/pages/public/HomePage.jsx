@@ -357,9 +357,7 @@ export default function HomePage() {
 
               {/* Grid of items */}
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <LoadingSkeleton type="card" count={4} />
-                </div>
+                <LoadingSkeleton type="card" count={4} className="lg:grid-cols-2" />
               ) : filteredItems.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {filteredItems.slice(0, 4).map(item => (

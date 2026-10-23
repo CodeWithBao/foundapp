@@ -11,8 +11,8 @@ import { useRealtime } from '../../context/RealtimeContext';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const {
-    unreadMessages,
-    unreadNotifications,
+    unreadMessagesCount: unreadMessages,
+    unreadNotificationsCount: unreadNotifications,
     unreadMessagesLabel,
     unreadNotificationsLabel,
   } = useRealtime();

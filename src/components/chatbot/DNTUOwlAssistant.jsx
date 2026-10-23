@@ -79,6 +79,7 @@ export default function DNTUOwlAssistant() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMessagesPage = location.pathname === '/messages';
 
   const [open, setOpen] = useState(false);
   const [sleeping, setSleeping] = useState(false);
@@ -289,7 +290,6 @@ export default function DNTUOwlAssistant() {
         const latestId = String(incoming[0].id);
         if (localStorage.getItem('dntu_owl_last_match') !== latestId) {
           localStorage.setItem('dntu_owl_last_match', latestId);
-          setOpen(true);
         }
       }
     } catch (error) {
@@ -318,6 +318,38 @@ export default function DNTUOwlAssistant() {
     if (position) localStorage.setItem('dntu_owl_position', JSON.stringify(position));
   }, [position]);
 
+  useEffect(() => {
+    const clampPositionToViewport = () => {
+      setPosition(current => {
+        if (!current) return current;
+        const compact = window.innerWidth <= 640;
+        const size = compact ? 104 : 132;
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const bottomClearance = compact ? 76 : 8;
+        const composerTop = isMessagesPage
+          ? document.querySelector('.chat-composer')?.getBoundingClientRect().top
+          : null;
+        const maxTop = Math.min(
+          viewportHeight - size - bottomClearance,
+          typeof composerTop === 'number' ? composerTop - size - 12 : Number.POSITIVE_INFINITY,
+        );
+        const next = {
+          left: Math.max(8, Math.min(window.innerWidth - size - 8, current.left)),
+          top: Math.max(72, Math.min(maxTop, current.top)),
+        };
+        return next.left === current.left && next.top === current.top ? current : next;
+      });
+    };
+
+    clampPositionToViewport();
+    window.addEventListener('resize', clampPositionToViewport);
+    window.visualViewport?.addEventListener('resize', clampPositionToViewport);
+    return () => {
+      window.removeEventListener('resize', clampPositionToViewport);
+      window.visualViewport?.removeEventListener('resize', clampPositionToViewport);
+    };
+  }, [isMessagesPage]);
+
   const onPointerDown = (event) => {
     const box = event.currentTarget.parentElement.getBoundingClientRect();
     drag.current = {
@@ -336,9 +368,16 @@ export default function DNTUOwlAssistant() {
     const widget = event.currentTarget.parentElement.getBoundingClientRect();
     const safeWidth = widget.width || 132;
     const safeHeight = widget.height || 132;
+    const composerTop = isMessagesPage
+      ? document.querySelector('.chat-composer')?.getBoundingClientRect().top
+      : null;
+    const maxTop = Math.min(
+      window.innerHeight - safeHeight - 8,
+      typeof composerTop === 'number' ? composerTop - safeHeight - 12 : Number.POSITIVE_INFINITY,
+    );
     const next = {
       left: Math.max(8, Math.min(window.innerWidth - safeWidth - 8, event.clientX - drag.current.offsetX)),
-      top: Math.max(72, Math.min(window.innerHeight - safeHeight - 8, event.clientY - drag.current.offsetY)),
+      top: Math.max(72, Math.min(maxTop, event.clientY - drag.current.offsetY)),
     };
     if (Math.abs(event.clientX - drag.current.startX) + Math.abs(event.clientY - drag.current.startY) > 5) {
       drag.current.moved = true;
@@ -565,22 +604,25 @@ export default function DNTUOwlAssistant() {
   const isSearching = ['/report-lost', '/report-found', '/search'].includes(location.pathname);
   const stateIcon = matches.length ? 'found' : sleeping ? 'sleeping' : isSearching ? 'searching' : mascotState;
   const isCampusMap = location.pathname === '/campus' || location.pathname.startsWith('/campus/');
+  const isCompactWorkRoute = ['/report-lost', '/report-found', '/my-posts'].includes(location.pathname);
   const style = !isCampusMap && position ? { left: position.left, top: position.top, right: 'auto', bottom: 'auto' } : undefined;
   const panelStyle = !isCampusMap && position && position.left < 360 ? { left: 0, right: 'auto' } : undefined;
 
   return (
-    <aside className={`dntu-owl-widget dntu-owl-${stateIcon} ${isCampusMap ? 'dntu-owl-widget--campus' : ''}`} style={style} aria-live="polite">
+    <aside className={`dntu-owl-widget dntu-owl-${stateIcon} ${isCampusMap ? 'dntu-owl-widget--campus' : ''} ${isCompactWorkRoute ? 'dntu-owl-widget--work-route' : ''} ${isMessagesPage ? 'dntu-owl-widget--messages' : ''}`} style={style} aria-live="polite">
       {open && (
         <section className="dntu-owl-panel animate-scaleIn flex flex-col" style={panelStyle}>
           {/* HEADER */}
           <header className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#981B1E] via-[#851619] to-[#6d1114] text-white select-none shrink-0 shadow-md">
             <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <img
-                  src="/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.png"
-                  alt="Cú DNTU"
-                  className="w-8 h-8 rounded-full border border-white/30 bg-white/10 p-0.5 object-cover"
-                />
+              <div className="relative shrink-0">
+                <div className="dntu-owl-header-avatar grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/30 bg-white/10">
+                  <img
+                    src="/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.png"
+                    alt="Cú DNTU"
+                    className="dntu-owl-header-avatar-image h-[74%] w-[74%] scale-[1.4] object-contain object-center"
+                  />
+                </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#981B1E] rounded-full animate-pulse" />
               </div>
               <div>
@@ -805,15 +847,17 @@ export default function DNTUOwlAssistant() {
                       }`}
                     >
                       {msg.sender !== 'user' && (
-                        <img
-                          src={
-                            msg.sender === 'agent'
-                              ? '/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.png'
-                              : '/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.svg'
-                          }
-                          alt=""
-                          className="w-6 h-6 rounded-full shrink-0 mt-1"
-                        />
+                        <span className="dntu-owl-message-avatar mt-1 grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-stone-200 bg-white">
+                          <img
+                            src={
+                              msg.sender === 'agent'
+                                ? '/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.png'
+                                : '/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.svg'
+                            }
+                            alt=""
+                            className="dntu-owl-message-avatar-image h-[78%] w-[78%] scale-[1.28] object-contain object-center"
+                          />
+                        </span>
                       )}
 
                       <div
@@ -995,11 +1039,13 @@ export default function DNTUOwlAssistant() {
                 {/* TYPING INDICATOR */}
                 {isTyping && (
                   <div className="flex items-center gap-2 pl-1 animate-fadeIn">
-                    <img
-                      src="/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.svg"
-                      alt=""
-                      className="w-6 h-6 rounded-full"
-                    />
+                    <span className="dntu-owl-message-avatar grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-stone-200 bg-white">
+                      <img
+                        src="/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/icons/ui/avatar-owl.svg"
+                        alt=""
+                        className="dntu-owl-message-avatar-image h-[78%] w-[78%] scale-[1.28] object-contain object-center"
+                      />
+                    </span>
                     <div className="dntu-bubble-bot px-3 py-2 flex items-center gap-1.5">
                       <span className="dntu-typing-dot" />
                       <span className="dntu-typing-dot" />

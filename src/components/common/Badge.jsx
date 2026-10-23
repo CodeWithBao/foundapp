@@ -24,7 +24,7 @@ const dotClasses = {
 
 export default function Badge({ children, variant = 'default', showDot = false, className = '' }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide ${variantClasses[variant] || variantClasses.default} ${className}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide ${variantClasses[variant] || variantClasses.default} ${className}`}>
       {showDot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClasses[variant] || dotClasses.default}`} />}
       {children}
     </span>

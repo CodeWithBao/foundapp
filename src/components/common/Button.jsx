@@ -20,6 +20,7 @@ export default function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  loadingText,
   disabled = false,
   className = '',
   icon: Icon,
@@ -32,14 +33,18 @@ export default function Button({
     <button
       className={`inline-flex items-center justify-center gap-2 font-semibold tracking-wide ${base} ${sizeClass} ${className}`}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <>
+          <Loader2 className="w-4 h-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          {loadingText ? <span>{loadingText}</span> : children}
+        </>
       ) : Icon ? (
-        <Icon className="w-4 h-4" />
+        <Icon className="w-4 h-4" aria-hidden="true" />
       ) : null}
-      {children}
+      {!loading && children}
     </button>
   );
 }

@@ -32,25 +32,23 @@ export default function LoginPage() {
 
   const handleAuthSuccess = (user) => {
     setSuccessMessage(`Đăng nhập thành công. Xin chào, ${user.name}!`);
-    setTimeout(() => {
-      const returnPath = getSafeReturnPath();
-      if (returnPath) {
-        navigate(returnPath, {
-          replace: true,
-          state: fromLocation.state || (location.state?.resumeAction ? { resumeAction: location.state.resumeAction } : null),
-        });
-      } else if (user.role === ROLES.ADMIN) {
-        navigate('/admin');
-      } else if (user.role === ROLES.STAFF) {
-        navigate('/staff');
-      } else {
-        navigate('/');
-      }
-    }, 700);
+    const returnPath = getSafeReturnPath();
+    if (returnPath) {
+      navigate(returnPath, {
+        replace: true,
+        state: fromLocation.state || (location.state?.resumeAction ? { resumeAction: location.state.resumeAction } : null),
+      });
+    } else if (user.role === ROLES.ADMIN) {
+      navigate('/admin');
+    } else if (user.role === ROLES.STAFF) {
+      navigate('/staff');
+    } else {
+      navigate('/');
+    }
   };
 
   const handleGoogleCallback = async (response) => {
-    if (!response?.credential) return;
+    if (!response?.credential || loading) return;
     setLoading(true);
     setError('');
     setSuccessMessage('');
@@ -100,6 +98,7 @@ export default function LoginPage() {
   }, []);
 
   const handleLoginSubmit = async (emailToLogin, passwordToLogin) => {
+    if (loading) return;
     setLoading(true);
     setError('');
     setSuccessMessage('');
@@ -134,6 +133,7 @@ export default function LoginPage() {
   };
 
   const handleQuickLogin = (email, roleName) => {
+    if (loading) return;
     setAccountInput(email);
     setPassword('123456');
     toast.info(`Đang đăng nhập nhanh bằng tài khoản ${roleName}...`);
@@ -141,6 +141,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleBtnClick = () => {
+    if (loading) return;
     if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt();
     } else {

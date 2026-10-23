@@ -24,6 +24,7 @@ const (
 
 type Item struct {
 	ID                     uint           `gorm:"primaryKey" json:"id"`
+	ClientRequestID        *string        `gorm:"type:varchar(64);uniqueIndex:idx_items_user_client_request" json:"-"`
 	Title                  string         `gorm:"type:varchar(255);not null" json:"title"`
 	Type                   ItemType       `gorm:"type:varchar(20);not null" json:"type"`
 	CategoryID             uint           `gorm:"not null;index" json:"category_id"`
@@ -39,7 +40,7 @@ type Item struct {
 	CustodyStatus          string         `gorm:"type:varchar(50)" json:"custody_status"`
 	Status                 ItemStatus     `gorm:"type:varchar(30);default:'LOST'" json:"status"`
 	Views                  int            `gorm:"default:0" json:"views"`
-	UserID                 uint           `gorm:"not null;index" json:"user_id"`
+	UserID                 uint           `gorm:"not null;index;uniqueIndex:idx_items_user_client_request" json:"user_id"`
 	IsLocked               bool           `gorm:"default:false" json:"is_locked"`
 	IsHidden               bool           `gorm:"default:false" json:"is_hidden"`
 	CreatedAt              time.Time      `json:"created_at"`

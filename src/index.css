@@ -32,6 +32,16 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --footer-bg: #300609;
+  --footer-bg-deep: #230407;
+  --footer-card: #491217;
+  --footer-card-hover: #602027;
+  --footer-gold: #f5bf4f;
+  --footer-white: #fff8f4;
+  --footer-muted: #dec5c5;
+  --footer-border: rgba(231, 132, 116, 0.24);
+  --footer-radius: 16px;
+  --footer-max-width: 1360px;
 }
 
 @layer base {
@@ -482,6 +492,9 @@
   user-select: none;
   touch-action: none;
 }
+.dntu-owl-widget--messages:not([style]) {
+  bottom: 124px;
+}
 .dntu-owl-widget--campus {
   right: 20px;
   bottom: 96px;
@@ -662,9 +675,15 @@
 @keyframes owlSleep { 0%,100% { transform: translateY(0) rotate(-1deg) scale(1); opacity: .9; } 50% { transform: translateY(3px) rotate(1deg) scale(.98); opacity: .78; } }
 @keyframes owlPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
 
+@media (max-width: 767px) {
+  .dntu-owl-widget--messages:not([style]) { bottom: calc(11.5rem + env(safe-area-inset-bottom)); }
+}
+
 @media (max-width: 640px) {
   .dntu-campus-backdrop { --dntu-campus-bg: url('/DNTU_Web_Asset_Kit/backgrounds/dntu-campus-clean-640.webp'); }
   .dntu-owl-widget { right: 12px; bottom: 82px; width: 104px; height: 104px; }
+  .dntu-owl-widget--messages:not([style]) { bottom: calc(10.5rem + env(safe-area-inset-bottom)); }
+  .dntu-owl-widget--work-route { display: none; }
   .dntu-owl-mascot { width: 104px; height: 104px; }
   .dntu-owl-panel { bottom: 112px; width: min(360px, calc(100vw - 20px)); }
   .dntu-owl-widget--campus { right: 8px; bottom: 184px; width: 64px; height: 64px; }

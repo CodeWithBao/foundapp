@@ -79,7 +79,13 @@ const itemService = {
 						error: undefined,
 					});
 				} catch (error) {
-					updateImage(image.id, { status: 'error', progress: 0, error: error.message });
+					updateImage(image.id, {
+						status: error.isUncertain ? 'uncertain' : 'error',
+						progress: 0,
+						error: error.isUncertain
+							? 'Chưa xác minh được ảnh đã lưu hay chưa. Không tự tải lại để tránh tạo bản trùng.'
+							: error.message,
+					});
 				}
 			}
 		};
@@ -198,76 +204,65 @@ const itemService = {
   },
 
   async createItem(data) {
-    return withFallback(
-      async () => {
-        // Resolve category_id and location_id
-        let categoryId = Number(data.category_id || data.categoryId) || 0;
-        let locationId = Number(data.location_id || data.locationId) || 0;
+    // Creating a post must never silently fall back to browser data: after a
+    // timeout the backend may already have committed the idempotent request.
+    let categoryId = Number(data.category_id || data.categoryId) || 0;
+    let locationId = Number(data.location_id || data.locationId) || 0;
 
-        if (!categoryId || !locationId) {
-          const [catsRes, locsRes] = await Promise.all([
-            apiClient.get('/categories').catch(() => []),
-            apiClient.get('/locations').catch(() => []),
-          ]);
-          const cats = Array.isArray(catsRes) ? catsRes : catsRes?.categories || [];
-          const locs = Array.isArray(locsRes) ? locsRes : locsRes?.locations || [];
+    if (!categoryId || !locationId) {
+      const [catsRes, locsRes] = await Promise.all([
+        apiClient.get('/categories').catch(() => []),
+        apiClient.get('/locations').catch(() => []),
+      ]);
+      const cats = Array.isArray(catsRes) ? catsRes : catsRes?.categories || [];
+      const locs = Array.isArray(locsRes) ? locsRes : locsRes?.locations || [];
 
-          if (!categoryId && data.category) {
-            const found = cats.find(c => c.name === data.category || c.id === data.category || String(c.id) === String(data.category));
-            categoryId = found?.id ? Number(found.id) : (cats[0]?.id ? Number(cats[0].id) : 1);
-          }
-          if (!locationId && data.location) {
-            const requestedMapKey = resolveLocationMapKey(data.location);
-            const found = locs.find(l =>
-              l.name === data.location ||
-              l.id === data.location ||
-              String(l.id) === String(data.location) ||
-              (requestedMapKey && resolveLocationMapKey(l) === requestedMapKey)
-            );
-            locationId = found?.id ? Number(found.id) : (locs[0]?.id ? Number(locs[0].id) : 1);
-          }
-        }
-
-        const imageFingerprint = data.imageFingerprint || await createImageFingerprint(data.images?.[0]);
-        const apiPayload = {
-          title: data.title,
-          type: data.type || 'LOST',
-          category_id: categoryId || 1,
-          location_id: locationId || 1,
-          date: data.date || '',
-          time: data.time || '',
-          description: data.description || '',
-          color: data.color || '',
-          brand: data.brand || '',
-          distinct_features: data.distinct_features || data.feature || '',
-          image_fingerprint: imageFingerprint,
-          current_storage_location: data.current_storage_location || data.storageLocation || '',
-          custody_status: data.custody_status || data.holdingStatus || '',
-          images: data.images || []
-        };
-
-        return normalizeItem(await apiClient.post('/items', apiPayload));
-      },
-      async () => {
-        await delay(400);
-        const items = storageService.get(STORAGE_KEYS.ITEMS) || [];
-        const id = 'P' + String(items.length + 1).padStart(3, '0');
-        const newItem = {
-          id,
-          ...data,
-          status: data.type,
-          images: data.images?.length ? data.images : [],
-          imageFingerprint: data.imageFingerprint || await createImageFingerprint(data.images?.[0]),
-          views: 0,
-          createdAt: new Date().toISOString(),
-        };
-        items.push(newItem);
-        storageService.set(STORAGE_KEYS.ITEMS, items);
-        // Audit log
-        this._addAuditLog(data.userId, `User created ${data.type} Report "${data.title}"`, 'Item', id, 'CREATE');
-        return newItem;
+      if (!categoryId && data.category) {
+        const found = cats.find(c => c.name === data.category || c.id === data.category || String(c.id) === String(data.category));
+        categoryId = found?.id ? Number(found.id) : (cats[0]?.id ? Number(cats[0].id) : 1);
       }
-    );
+      if (!locationId && data.location) {
+        const requestedMapKey = resolveLocationMapKey(data.location);
+        const found = locs.find(l =>
+          l.name === data.location ||
+          l.id === data.location ||
+          String(l.id) === String(data.location) ||
+          (requestedMapKey && resolveLocationMapKey(l) === requestedMapKey)
+        );
+        locationId = found?.id ? Number(found.id) : (locs[0]?.id ? Number(locs[0].id) : 1);
+      }
+    }
+
+    const imageFingerprint = data.imageFingerprint || await createImageFingerprint(data.images?.[0]);
+    const apiPayload = {
+      client_request_id: data.clientRequestId || data.client_request_id || '',
+      title: data.title,
+      type: data.type || 'LOST',
+      category_id: categoryId || 1,
+      location_id: locationId || 1,
+      date: data.date || '',
+      time: data.time || '',
+      description: data.description || '',
+      color: data.color || '',
+      brand: data.brand || '',
+      distinct_features: data.distinct_features || data.feature || '',
+      image_fingerprint: imageFingerprint,
+      current_storage_location: data.current_storage_location || data.storageLocation || '',
+      custody_status: data.custody_status || data.holdingStatus || '',
+      images: data.images || []
+    };
+
+    return normalizeItem(await apiClient.post('/items', apiPayload));
+  },
+
+  async getItemByClientRequestId(clientRequestId) {
+    const value = String(clientRequestId || '').trim();
+    if (!value) throw new Error('Thiếu mã yêu cầu tạo bài');
+    return normalizeItem(await apiClient.get(`/items/request/${encodeURIComponent(value)}`, { timeout: 12000 }));
+  },
+
+  async getItemContact(id) {
+    return apiClient.get(`/items/${id}/contact`);
   },
 
   async updateItem(id, data) {

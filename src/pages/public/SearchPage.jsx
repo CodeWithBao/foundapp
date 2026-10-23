@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate, useNavigationType } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, PackageSearch, LayoutGrid, List,
-  RotateCcw, ChevronLeft, ChevronRight, X
+  RotateCcw, ChevronLeft, ChevronRight, X, Loader2
 } from 'lucide-react';
 import itemService from '../../services/itemService';
 import adminService from '../../services/adminService';
@@ -43,6 +43,8 @@ export default function SearchPage() {
   
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [viewMode, setViewMode] = useState(initialSnapshot?.extra?.viewMode || 'grid'); // 'grid' | 'list'
   
   const initialPage = initialSnapshot?.extra?.page || parseInt(searchParams.get('page')) || 1;
@@ -67,6 +69,8 @@ export default function SearchPage() {
   const debouncedSearch = useDebounce(filters.search, 300);
 
   const [locations, setLocations] = useState(mockLocations);
+  const requestSequenceRef = useRef(0);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     let live = true;
@@ -79,17 +83,26 @@ export default function SearchPage() {
   }, []);
 
   const fetchItems = useCallback(async () => {
-    setLoading(true);
+    const requestSequence = ++requestSequenceRef.current;
+    if (hasLoadedRef.current) setRefreshing(true);
+    else setLoading(true);
+    setLoadError('');
     try {
       const data = await itemService.getItems({
         ...filters,
         search: debouncedSearch,
       });
+      if (requestSequence !== requestSequenceRef.current) return;
       setItems(data);
     } catch (err) {
+      if (requestSequence !== requestSequenceRef.current) return;
       console.error(err);
+      setLoadError(err.message || 'Không thể tải kết quả tìm kiếm.');
     } finally {
+      if (requestSequence !== requestSequenceRef.current) return;
+      hasLoadedRef.current = true;
       setLoading(false);
+      setRefreshing(false);
     }
   }, [debouncedSearch, filters.type, filters.category, filters.location, filters.sort]);
 
@@ -311,9 +324,10 @@ export default function SearchPage() {
                   )}
                   <button
                     type="submit"
+                    disabled={refreshing}
                     className="bg-[#741216] text-white px-4 sm:px-7 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm hover:bg-[#8e171c] transition-colors shadow-sm shrink-0"
                   >
-                    Tìm kiếm
+                    {refreshing ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />Đang tìm</span> : 'Tìm kiếm'}
                   </button>
                 </form>
               </div>
@@ -498,10 +512,12 @@ export default function SearchPage() {
             <button
               type="button"
               onClick={fetchItems}
+              disabled={refreshing}
+              aria-busy={refreshing || undefined}
               className="w-full bg-[#741216] text-white py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-[#8b161b] transition shadow-xs"
             >
-              <Search className="w-4 h-4" />
-              <span>Áp dụng bộ lọc</span>
+              {refreshing ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Search className="w-4 h-4" />}
+              <span>{refreshing ? 'Đang cập nhật…' : 'Áp dụng bộ lọc'}</span>
             </button>
           </aside>
 
@@ -510,7 +526,10 @@ export default function SearchPage() {
             {/* Header: Title, count, sorting & layout toggle */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-200">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Kết quả tìm kiếm</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  Kết quả tìm kiếm
+                  {refreshing && <Loader2 className="h-4 w-4 animate-spin text-[#741216] motion-reduce:animate-none" aria-label="Đang cập nhật kết quả" />}
+                </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Hiển thị {filteredItems.length === 0 ? 0 : (page - 1) * perPage + 1} - {Math.min(page * perPage, filteredItems.length)} trong {filteredItems.length} kết quả
                 </p>
@@ -557,10 +576,20 @@ export default function SearchPage() {
             </div>
 
             {/* Results Grid / List */}
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
-                <LoadingSkeleton type="card" count={8} />
+            {loadError && (
+              <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+                <span>{loadError}</span>
+                <button type="button" onClick={fetchItems} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-3 font-semibold hover:bg-red-100">
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" /> Thử lại
+                </button>
               </div>
+            )}
+            {loading ? (
+              <LoadingSkeleton
+                type={viewMode === 'list' ? 'list' : 'card'}
+                count={8}
+                className={viewMode === 'list' ? '' : 'xl:grid-cols-3 2xl:grid-cols-4 gap-5'}
+              />
             ) : filteredItems.length === 0 ? (
               <EmptyState
                 icon={PackageSearch}

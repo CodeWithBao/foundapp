@@ -13,8 +13,8 @@ function capBadge(value) {
 
 export function RealtimeProvider({ children }) {
   const { user } = useAuth();
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [conversations, setConversations] = useState([]);
   const runningRef = useRef(false);
   const requestVersionRef = useRef(0);
@@ -35,8 +35,8 @@ export function RealtimeProvider({ children }) {
         String(requestUserId) !== String(userId)
       ) return;
       setConversations(chatRows);
-      setUnreadMessages(chatRows.reduce((total, row) => total + Number(row.unreadCount || 0), 0));
-      setUnreadNotifications(notificationRows.filter(row => !row.read && row.type !== 'chat_message').length);
+      setUnreadMessagesCount(chatRows.reduce((total, row) => total + Number(row.unreadCount || 0), 0));
+      setUnreadNotificationsCount(notificationRows.filter(row => !row.read && row.type !== 'chat_message').length);
     } catch {
       // Giữ số gần nhất khi mất mạng; lần reconnect/focus kế tiếp sẽ đồng bộ lại từ backend.
     } finally {
@@ -46,8 +46,8 @@ export function RealtimeProvider({ children }) {
 
   useEffect(() => {
     requestVersionRef.current += 1;
-    setUnreadMessages(0);
-    setUnreadNotifications(0);
+    setUnreadMessagesCount(0);
+    setUnreadNotificationsCount(0);
     setConversations([]);
     runningRef.current = false;
     if (!userId) return undefined;
@@ -91,10 +91,13 @@ export function RealtimeProvider({ children }) {
 
   return (
     <RealtimeContext.Provider value={{
-      unreadMessages,
-      unreadNotifications,
-      unreadMessagesLabel: capBadge(unreadMessages),
-      unreadNotificationsLabel: capBadge(unreadNotifications),
+      unreadMessagesCount,
+      unreadNotificationsCount,
+      // Giữ alias cũ để không làm thay đổi các layout đang hoạt động.
+      unreadMessages: unreadMessagesCount,
+      unreadNotifications: unreadNotificationsCount,
+      unreadMessagesLabel: capBadge(unreadMessagesCount),
+      unreadNotificationsLabel: capBadge(unreadNotificationsCount),
       conversations,
       refreshCounts,
     }}>
