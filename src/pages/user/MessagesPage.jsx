@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { ArrowDown, ArrowLeft, Check, CheckCheck, Image as ImageIcon, Loader2, MessageCircle, Search, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import { useRealtime } from '../../context/RealtimeContext';
 
 const POLL_INTERVAL = 5000;
+const MESSAGE_BATCH_SIZE = 30;
 
 function createClientMessageId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -63,6 +64,7 @@ function conversationTime(value) {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { assistantOpen = false, isMobile = false } = useOutletContext() || {};
   const { conversations: realtimeConversations } = useRealtime();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
@@ -72,11 +74,15 @@ export default function MessagesPage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeLoading, setActiveLoading] = useState(false);
+  const [activeError, setActiveError] = useState('');
   const [connectionState, setConnectionState] = useState('connected');
   const [showNewMessages, setShowNewMessages] = useState(false);
+  const [visibleMessageCount, setVisibleMessageCount] = useState(MESSAGE_BATCH_SIZE);
   const fileInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const composerInputRef = useRef(null);
+  const composerRef = useRef(null);
   const messagesViewportRef = useRef(null);
+  const prependAnchorRef = useRef(null);
   const nearBottomRef = useRef(true);
   const previousMessageIdsRef = useRef(new Set());
   const activeUserIdRef = useRef(user?.id);
@@ -112,6 +118,7 @@ export default function MessagesPage() {
     const requestUserId = user.id;
     try {
       if (!silent) setActiveLoading(true);
+      if (!silent) setActiveError('');
       const conversation = await chatService.getConversationById(selectedId);
       if (String(activeUserIdRef.current) !== String(requestUserId)) return;
       const newIncoming = (conversation.messages || []).some(message =>
@@ -129,7 +136,11 @@ export default function MessagesPage() {
         ? { ...row, ...conversation, messages: row.messages, unreadCount: canMarkRead ? 0 : conversation.unreadCount }
         : row));
     } catch (err) {
-      if (!silent) toast.error(err.message || 'Không thể tải cuộc trò chuyện.');
+      if (!silent) {
+        const message = err.message || 'Không thể tải cuộc trò chuyện.';
+        setActiveError(message);
+        toast.error(message);
+      }
       else setConnectionState('reconnecting');
     } finally {
       activeRequestRunningRef.current = false;
@@ -156,6 +167,49 @@ export default function MessagesPage() {
   }, [refreshActive]);
 
   useEffect(() => {
+    setVisibleMessageCount(MESSAGE_BATCH_SIZE);
+    prependAnchorRef.current = null;
+  }, [activeConversation?.id]);
+
+  useLayoutEffect(() => {
+    const anchor = prependAnchorRef.current;
+    const viewport = messagesViewportRef.current;
+    if (!anchor || !viewport) return;
+    viewport.scrollTop = anchor.scrollTop + (viewport.scrollHeight - anchor.scrollHeight);
+    prependAnchorRef.current = null;
+  }, [visibleMessageCount]);
+
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return undefined;
+
+    const root = document.documentElement;
+    let frame = 0;
+    const updateComposerTop = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        root.style.setProperty('--messages-composer-top', `${composer.getBoundingClientRect().top}px`);
+      });
+    };
+    const resizeObserver = new ResizeObserver(updateComposerTop);
+
+    updateComposerTop();
+    resizeObserver.observe(composer);
+    window.addEventListener('resize', updateComposerTop, { passive: true });
+    window.visualViewport?.addEventListener('resize', updateComposerTop, { passive: true });
+    window.visualViewport?.addEventListener('scroll', updateComposerTop, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateComposerTop);
+      window.visualViewport?.removeEventListener('resize', updateComposerTop);
+      window.visualViewport?.removeEventListener('scroll', updateComposerTop);
+      root.style.removeProperty('--messages-composer-top');
+    };
+  }, [activeConversation?.id, activeLoading, assistantOpen, isMobile]);
+
+  useEffect(() => {
     const timer = window.setInterval(async () => {
       await refreshList({ silent: true });
       if (selectedId) await refreshActive({ silent: true });
@@ -177,9 +231,24 @@ export default function MessagesPage() {
     return () => window.cancelAnimationFrame(frame);
   }, [activeConversation?.id, activeConversation?.messages?.length, activeLoading]);
 
+  const allMessages = activeConversation?.messages || [];
+  const visibleMessages = allMessages.slice(-visibleMessageCount);
+  const hasOlderMessages = visibleMessageCount < allMessages.length;
+
+  const loadOlderMessages = () => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport || !hasOlderMessages || prependAnchorRef.current) return;
+    prependAnchorRef.current = {
+      scrollHeight: viewport.scrollHeight,
+      scrollTop: viewport.scrollTop,
+    };
+    setVisibleMessageCount(count => Math.min(count + MESSAGE_BATCH_SIZE, allMessages.length));
+  };
+
   const handleMessagesScroll = () => {
     const viewport = messagesViewportRef.current;
     if (!viewport) return;
+    if (viewport.scrollTop <= 32) loadOlderMessages();
     const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
     const wasNearBottom = nearBottomRef.current;
     nearBottomRef.current = distance < 96;
@@ -294,6 +363,7 @@ export default function MessagesPage() {
       messages: [...(prev.messages || []), pendingMessage],
     }));
     setInputText('');
+    if (composerInputRef.current) composerInputRef.current.style.height = 'auto';
     setSelectedImage(null);
     deliverMessage(pendingMessage);
   };
@@ -311,9 +381,9 @@ export default function MessagesPage() {
   const isReadOnly = activeConversation?.itemStatus === 'RETURNED' || activeConversation?.itemStatus === 'CLOSED';
 
   return (
-    <div className="messages-page h-full min-h-0 overflow-hidden bg-[#F8F6F3] py-3 sm:py-4">
+    <div className={`messages-page ${selectedId ? 'messages-page--active' : ''} h-full min-h-0 overflow-hidden bg-[#F8F6F3] py-3 sm:py-4`}>
       <div className="mx-auto flex h-full min-h-0 max-w-7xl flex-col px-3 sm:px-6 lg:px-8">
-        <div className="mb-3 shrink-0 sm:mb-4">
+        <div className={`${selectedId ? 'hidden md:block' : 'block'} mb-3 shrink-0 sm:mb-4`}>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
             <MessageCircle className="w-6 h-6 text-[#8F1822]" /> Tin nhắn
           </h1>
@@ -372,6 +442,15 @@ export default function MessagesPage() {
           <section className={`${selectedId ? 'flex' : 'hidden md:flex'} chat-panel min-h-0 min-w-0 flex-col overflow-hidden bg-[#FAF9F6]`}>
             {activeLoading ? (
               <LoadingSkeleton type="messages" count={6} className="flex-1" />
+            ) : activeError ? (
+              <div className="h-full flex flex-col items-center justify-center p-8 text-center text-gray-500" role="alert">
+                <MessageCircle className="w-12 h-12 text-gray-300 mb-4" />
+                <h2 className="font-bold text-gray-800">Không thể tải cuộc trò chuyện</h2>
+                <p className="mt-1 max-w-sm text-sm">{activeError}</p>
+                <button type="button" onClick={() => refreshActive()} className="mt-4 min-h-11 rounded-xl bg-[#8F1822] px-4 text-sm font-semibold text-white">
+                  Thử tải lại
+                </button>
+              </div>
             ) : !activeConversation ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center text-gray-500">
                 <MessageCircle className="w-14 h-14 text-gray-300 mb-4" />
@@ -399,9 +478,14 @@ export default function MessagesPage() {
                 </div>
 
                 <div ref={messagesViewportRef} onScroll={handleMessagesScroll} className="chat-messages relative min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 sm:p-5">
-                  {(activeConversation.messages || []).length === 0 ? (
+                  {hasOlderMessages && (
+                    <button type="button" onClick={loadOlderMessages} className="mx-auto flex min-h-10 items-center rounded-full border border-[#DED7D0] bg-white px-3 text-xs font-semibold text-[#8F1822] shadow-sm">
+                      Tải tin nhắn cũ hơn
+                    </button>
+                  )}
+                  {allMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-sm text-gray-400 text-center px-8">Chưa có tin nhắn trong cuộc trò chuyện này.</div>
-                  ) : activeConversation.messages.map(message => {
+                  ) : visibleMessages.map(message => {
                     const isMe = String(message.senderId) === String(user.id);
                     return (
                       <div key={message.clientId || message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -427,7 +511,6 @@ export default function MessagesPage() {
                       </div>
                     );
                   })}
-                  <div ref={messagesEndRef} />
                   {showNewMessages && (
                     <button type="button" onClick={scrollToLatest} className="sticky bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-[#8F1822] px-3.5 py-2 text-xs font-semibold text-white shadow-lg">
                       <ArrowDown className="w-4 h-4" /> Tin nhắn mới
@@ -443,7 +526,11 @@ export default function MessagesPage() {
                   </div>
                 )}
 
-                <footer className="chat-composer shrink-0 border-t border-[#E5DED8] bg-white px-2.5 pb-2.5 pt-2 sm:p-3">
+                <footer
+                  ref={composerRef}
+                  data-main-chat-composer
+                  className={`${assistantOpen && isMobile ? 'hidden' : 'block'} chat-composer shrink-0 border-t border-[#E5DED8] bg-white px-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-2 sm:p-3`}
+                >
                   {isReadOnly || activeConversation.blocked ? (
                     <div className="rounded-xl bg-gray-100 p-3 text-center text-xs font-medium text-gray-500">
                       {activeConversation.blocked ? 'Cuộc trò chuyện đang bị chặn.' : 'Vật phẩm đã đóng hoặc trao trả; cuộc trò chuyện ở chế độ chỉ đọc.'}
@@ -459,17 +546,22 @@ export default function MessagesPage() {
                           <ImageIcon className="w-5 h-5" />
                         </button>
                         <textarea
+                          ref={composerInputRef}
                           value={inputText}
-                          onChange={event => setInputText(event.target.value)}
+                          onChange={event => {
+                            setInputText(event.target.value);
+                            event.currentTarget.style.height = 'auto';
+                            event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 112)}px`;
+                          }}
                           onKeyDown={event => {
-                            if (event.key === 'Enter' && !event.shiftKey) {
+                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
                               event.preventDefault();
                               handleSend(event);
                             }
                           }}
                           rows={1}
                           maxLength={2000}
-                          className="min-w-0 min-h-11 max-h-28 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-3.5 py-3 text-sm outline-none focus:border-[#8F1822] focus:ring-2 focus:ring-[#8F1822]/10"
+                          className="min-w-0 min-h-11 max-h-28 flex-1 resize-none overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-3.5 py-3 text-sm outline-none focus:border-[#8F1822] focus:ring-2 focus:ring-[#8F1822]/10"
                           placeholder="Nhập tin nhắn..."
                           aria-label="Nội dung tin nhắn. Nhấn Enter để gửi, Shift và Enter để xuống dòng"
                         />

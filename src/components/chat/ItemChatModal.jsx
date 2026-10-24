@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import { 
   X, Send, Image as ImageIcon, ShieldAlert, Flag, Ban, Check, CheckCheck, 
   Lock, MapPin, AlertCircle, Info, ChevronRight, CornerDownLeft, ArrowDown, Loader2
@@ -91,6 +92,7 @@ export default function ItemChatModal({
   const menuRef = useRef(null);
   const chatRequestRunningRef = useRef(false);
   const loadedSessionRef = useRef('');
+  useBodyScrollLock(isOpen);
 
   const itemId = item?.id;
   const isReturned = item?.status === 'RETURNED' || conversation?.itemStatus === 'RETURNED';
@@ -118,17 +120,9 @@ export default function ItemChatModal({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showMenu]);
 
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
-
   const scrollToLatest = useCallback((behavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+    const viewport = messagesViewportRef.current;
+    if (viewport) viewport.scrollTo({ top: viewport.scrollHeight, behavior });
     nearBottomRef.current = true;
     setShowNewMessages(false);
   }, []);
@@ -389,15 +383,20 @@ export default function ItemChatModal({
 
   return createPortal(
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn motion-reduce:animate-none"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn motion-reduce:animate-none"
+        style={{
+          zIndex: 'var(--layer-modal)',
+          top: 'var(--visual-viewport-top, 0px)',
+          height: 'var(--visual-viewport-height, 100dvh)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
         role="dialog"
         aria-modal="true"
         aria-label={`Trò chuyện với ${recipient.name}`}
         onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl h-full max-h-[100dvh] sm:h-[min(92dvh,780px)] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn motion-reduce:animate-none"
+        className="w-full max-w-2xl h-full max-h-full sm:h-[min(92dvh,780px)] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[#E8E2DD] animate-scaleIn motion-reduce:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
