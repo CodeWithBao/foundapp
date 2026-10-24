@@ -353,10 +353,10 @@ export default function ItemDetailPage() {
   const campusPhoto = campusLocation?.image_url || '/campus/places/aerial.webp';
 
   return (
-    <div className="bg-[#F8F6F3] min-h-screen pb-20 font-sans">
+    <div className="bg-[#F8F6F3] min-h-screen pb-8 sm:pb-12 font-sans">
       {/* Top Breadcrumb Navigation bar according to mockup 05_item_detail */}
       <div className="bg-white border-b border-[#E8E2DD]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col min-[430px]:flex-row min-[430px]:items-center justify-between gap-3 text-xs sm:text-sm">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-gray-600">
             <Link to="/" className="hover:text-[#741216] transition-colors flex items-center">
@@ -373,7 +373,7 @@ export default function ItemDetailPage() {
           </nav>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 min-[430px]:w-auto min-[430px]:justify-end">
             <button
               type="button"
               onClick={handleBack}
@@ -394,7 +394,7 @@ export default function ItemDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* Top 3-block layout: Gallery (Left) | Info (Center) | Poster & CTA (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
@@ -701,7 +701,7 @@ export default function ItemDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           
           {/* Detailed Description Card */}
-          <div className="bg-white rounded-2xl border border-[#E8E2DD] p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-white rounded-2xl border border-[#E8E2DD] p-4 sm:p-6 shadow-2xs flex flex-col justify-between relative overflow-hidden">
             <div>
               <div className="flex items-center gap-2 pb-3 mb-3 border-b border-gray-100">
                 <FileText className="w-4 h-4 text-[#741216]" />
@@ -722,7 +722,7 @@ export default function ItemDetailPage() {
           </div>
 
           {/* Location Map Preview Card */}
-          <div className="bg-white rounded-2xl border border-[#E8E2DD] p-6 shadow-2xs space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E8E2DD] p-4 sm:p-6 shadow-2xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#741216]" />
@@ -763,7 +763,7 @@ export default function ItemDetailPage() {
 
         {/* Bottom Section: Related Items & Promo Banner */}
         <div className="pt-4 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-[#741216]" />
               <h2 className="text-lg font-bold text-gray-900">Có thể bạn cũng quan tâm</h2>
@@ -866,14 +866,14 @@ export default function ItemDetailPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
-            <Button variant="ghost" onClick={() => setShowClaimModal(false)}>
+          <div className="flex flex-col-reverse gap-2 pt-3 border-t border-gray-100 min-[360px]:flex-row min-[360px]:justify-end min-[360px]:gap-3">
+            <Button variant="ghost" className="min-h-11 w-full min-[360px]:w-auto" onClick={() => setShowClaimModal(false)}>
               Hủy bỏ
             </Button>
             <Button 
               onClick={handleClaimSubmit} 
               loading={submittingClaim}
-              className="bg-[#741216] hover:bg-[#8e171c] text-white"
+              className="min-h-11 w-full bg-[#741216] hover:bg-[#8e171c] text-white min-[360px]:w-auto"
             >
               Gửi yêu cầu
             </Button>
@@ -898,13 +898,13 @@ export default function ItemDetailPage() {
             onChange={e => setFoundNote(e.target.value)}
             rows={4}
           />
-          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
-            <Button variant="ghost" onClick={() => setShowFoundModal(false)}>
+          <div className="flex flex-col-reverse gap-2 pt-3 border-t border-gray-100 min-[360px]:flex-row min-[360px]:justify-end min-[360px]:gap-3">
+            <Button variant="ghost" className="min-h-11 w-full min-[360px]:w-auto" onClick={() => setShowFoundModal(false)}>
               Hủy
             </Button>
             <Button 
               onClick={handleReportFoundSubmit}
-              className="bg-amber-600 hover:bg-amber-700 text-white"
+              className="min-h-11 w-full bg-amber-600 hover:bg-amber-700 text-white min-[360px]:w-auto"
             >
               Gửi thông tin
             </Button>

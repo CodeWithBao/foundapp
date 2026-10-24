@@ -321,11 +321,11 @@ export default function MyPostsPage() {
               rows={3}
             />
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-cream-200">
-              <Button type="button" variant="ghost" onClick={() => setEditItem(null)} disabled={updating}>
+            <div className="flex flex-col-reverse gap-2 pt-4 border-t border-cream-200 min-[360px]:flex-row min-[360px]:justify-end min-[360px]:gap-3">
+              <Button type="button" variant="ghost" className="min-h-11 w-full min-[360px]:w-auto" onClick={() => setEditItem(null)} disabled={updating}>
                 Hủy bỏ
               </Button>
-              <Button type="submit" loading={updating} className="btn-primary">
+              <Button type="submit" loading={updating} className="btn-primary min-h-11 w-full min-[360px]:w-auto">
                 <Save className="w-4 h-4 mr-1.5" /> Lưu thay đổi
               </Button>
             </div>

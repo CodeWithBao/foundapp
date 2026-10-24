@@ -229,7 +229,7 @@ export default function ReportFoundPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
       <button
         onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-xs font-mono font-medium text-[#5B6574] hover:text-[#AD222B] mb-5 transition-colors group"
@@ -298,7 +298,7 @@ export default function ReportFoundPage() {
         {/* Right: Step Content Form */}
         <div className="flex-1">
           <div className="surface overflow-hidden">
-            <div className="p-6 sm:p-8">
+            <div className="p-4 min-[390px]:p-5 sm:p-8">
               {/* Step 1: Thông tin cơ bản + Lựa chọn giữ/giao */}
               {currentStep === 1 && (
                 <div className="space-y-6 animate-fadeIn">
@@ -533,7 +533,7 @@ export default function ReportFoundPage() {
             )}
 
             {/* Navigation buttons */}
-            <div className="px-6 sm:px-8 py-4 bg-[#F2EFE9] border-t border-[#E0E2E6] flex justify-between items-center">
+            <div className="px-4 min-[390px]:px-5 sm:px-8 py-4 bg-[#F2EFE9] border-t border-[#E0E2E6] flex flex-wrap justify-between items-center gap-3">
               {currentStep > 1 ? (
                 <Button variant="secondary" onClick={handlePrev} size="sm">
                   Quay lại
