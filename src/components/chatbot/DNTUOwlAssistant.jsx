@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Send,
@@ -26,6 +27,7 @@ import notificationService from '../../services/notificationService';
 import itemService from '../../services/itemService';
 import ticketService from '../../services/ticketService';
 import chatbotService from '../../services/chatbotService';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 const POLL_INTERVAL = 30000;
 const SLEEP_AFTER = 60000;
@@ -75,13 +77,12 @@ const INITIAL_MESSAGES = [
   },
 ];
 
-export default function DNTUOwlAssistant() {
+export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile = false }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMessagesPage = location.pathname === '/messages';
 
-  const [open, setOpen] = useState(false);
   const [sleeping, setSleeping] = useState(false);
   const [mascotState, setMascotState] = useState('welcome');
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
@@ -114,9 +115,15 @@ export default function DNTUOwlAssistant() {
   const drag = useRef(null);
   const inactivityTimer = useRef(null);
   const messagesEndRef = useRef(null);
+  const messagesViewportRef = useRef(null);
+  const nearBottomRef = useRef(true);
   const inputRef = useRef(null);
+  const launcherRef = useRef(null);
+  const panelRef = useRef(null);
+  const qrModalItemRef = useRef(qrModalItem);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
+  qrModalItemRef.current = qrModalItem;
 
   const playSound = (name) => {
     if (soundMuted) return;
@@ -207,16 +214,75 @@ export default function DNTUOwlAssistant() {
     }, SLEEP_AFTER);
   }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const setOpen = useCallback(next => {
+    onOpenChange?.(next);
+  }, [onOpenChange]);
+
+  useBodyScrollLock(open && isMobile);
+
+  const scrollToBottom = (behavior = 'smooth') => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+    nearBottomRef.current = true;
   };
 
   useEffect(() => {
-    if (open) {
-      scrollToBottom();
-      setTimeout(() => inputRef.current?.focus(), 150);
-    }
-  }, [open, messages, isTyping, activeTab]);
+    if (!open || !nearBottomRef.current) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      scrollToBottom(messages.length <= 1 ? 'auto' : 'smooth');
+      if (!isMobile) inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, messages.length, isTyping, activeTab, isMobile]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousFocus = document.activeElement;
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        if (qrModalItemRef.current) setQrModalItem(null);
+        else setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !isMobile || qrModalItemRef.current) return;
+
+      const focusable = Array.from(panelRef.current?.querySelectorAll(
+        'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      ) || []).filter(element => element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    };
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      if (isMobile) {
+        panelRef.current?.querySelector('button')?.focus({ preventScroll: true });
+      }
+    });
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.requestAnimationFrame(() => {
+        const focusTarget = previousFocus?.isConnected
+          ? previousFocus
+          : document.querySelector('.dntu-owl-mascot');
+        focusTarget?.focus?.({ preventScroll: true });
+      });
+    };
+  }, [isMobile, open, setOpen]);
 
   // Đồng bộ ticket đang mở của user
   useEffect(() => {
@@ -323,19 +389,21 @@ export default function DNTUOwlAssistant() {
       setPosition(current => {
         if (!current) return current;
         const compact = window.innerWidth <= 640;
-        const size = compact ? 104 : 132;
-        const viewportHeight = window.visualViewport?.height || window.innerHeight;
-        const bottomClearance = compact ? 76 : 8;
+        const size = compact ? 80 : 132;
+        const viewport = window.visualViewport;
+        const viewportHeight = viewport?.height || window.innerHeight;
+        const viewportTop = viewport?.offsetTop || 0;
+        const bottomClearance = compact ? 64 : 8;
         const composerTop = isMessagesPage
           ? document.querySelector('.chat-composer')?.getBoundingClientRect().top
           : null;
         const maxTop = Math.min(
-          viewportHeight - size - bottomClearance,
+          viewportTop + viewportHeight - size - bottomClearance,
           typeof composerTop === 'number' ? composerTop - size - 12 : Number.POSITIVE_INFINITY,
         );
         const next = {
           left: Math.max(8, Math.min(window.innerWidth - size - 8, current.left)),
-          top: Math.max(72, Math.min(maxTop, current.top)),
+          top: Math.max(viewportTop + 8, Math.min(maxTop, current.top)),
         };
         return next.left === current.left && next.top === current.top ? current : next;
       });
@@ -344,9 +412,11 @@ export default function DNTUOwlAssistant() {
     clampPositionToViewport();
     window.addEventListener('resize', clampPositionToViewport);
     window.visualViewport?.addEventListener('resize', clampPositionToViewport);
+    window.visualViewport?.addEventListener('scroll', clampPositionToViewport);
     return () => {
       window.removeEventListener('resize', clampPositionToViewport);
       window.visualViewport?.removeEventListener('resize', clampPositionToViewport);
+      window.visualViewport?.removeEventListener('scroll', clampPositionToViewport);
     };
   }, [isMessagesPage]);
 
@@ -368,16 +438,18 @@ export default function DNTUOwlAssistant() {
     const widget = event.currentTarget.parentElement.getBoundingClientRect();
     const safeWidth = widget.width || 132;
     const safeHeight = widget.height || 132;
+    const viewport = window.visualViewport;
+    const viewportTop = viewport?.offsetTop || 0;
     const composerTop = isMessagesPage
       ? document.querySelector('.chat-composer')?.getBoundingClientRect().top
       : null;
     const maxTop = Math.min(
-      window.innerHeight - safeHeight - 8,
+      viewportTop + (viewport?.height || window.innerHeight) - safeHeight - 8,
       typeof composerTop === 'number' ? composerTop - safeHeight - 12 : Number.POSITIVE_INFINITY,
     );
     const next = {
       left: Math.max(8, Math.min(window.innerWidth - safeWidth - 8, event.clientX - drag.current.offsetX)),
-      top: Math.max(72, Math.min(maxTop, event.clientY - drag.current.offsetY)),
+      top: Math.max(viewportTop + 8, Math.min(maxTop, event.clientY - drag.current.offsetY)),
     };
     if (Math.abs(event.clientX - drag.current.startX) + Math.abs(event.clientY - drag.current.startY) > 5) {
       drag.current.moved = true;
@@ -507,6 +579,7 @@ export default function DNTUOwlAssistant() {
     const text = inputMessage.trim() || (attachedImage ? 'Tôi gửi hình ảnh này nhờ Cú DNTU hỗ trợ kiểm tra đồ thất lạc' : '');
     const currentAttachedImage = attachedImage;
     setInputMessage('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     setAttachedImage(null);
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
@@ -608,10 +681,15 @@ export default function DNTUOwlAssistant() {
   const style = !isCampusMap && position ? { left: position.left, top: position.top, right: 'auto', bottom: 'auto' } : undefined;
   const panelStyle = !isCampusMap && position && position.left < 360 ? { left: 0, right: 'auto' } : undefined;
 
-  return (
-    <aside className={`dntu-owl-widget dntu-owl-${stateIcon} ${isCampusMap ? 'dntu-owl-widget--campus' : ''} ${isCompactWorkRoute ? 'dntu-owl-widget--work-route' : ''} ${isMessagesPage ? 'dntu-owl-widget--messages' : ''}`} style={style} aria-live="polite">
-      {open && (
-        <section className="dntu-owl-panel animate-scaleIn flex flex-col" style={panelStyle}>
+  const assistantPanel = open ? (
+    <section
+      ref={panelRef}
+      className="dntu-owl-panel animate-scaleIn flex flex-col"
+      style={isMobile ? undefined : panelStyle}
+      role="dialog"
+      aria-modal={isMobile ? 'true' : undefined}
+      aria-label="Trợ lý Cú DNTU"
+    >
           {/* HEADER */}
           <header className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#981B1E] via-[#851619] to-[#6d1114] text-white select-none shrink-0 shadow-md">
             <div className="flex items-center gap-2.5">
@@ -755,7 +833,15 @@ export default function DNTUOwlAssistant() {
           )}
 
           {/* MAIN BODY AREA */}
-          <div className="flex-1 overflow-y-auto p-3.5 space-y-3 dntu-chat-messages bg-white">
+          <div
+            ref={messagesViewportRef}
+            onScroll={event => {
+              const viewport = event.currentTarget;
+              nearBottomRef.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 96;
+            }}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 space-y-3 dntu-chat-messages bg-white"
+            aria-live="polite"
+          >
             {/* VIEW 1: CATEGORY GRID (13 DANH MỤC TỪ ASSET KIT) */}
             {activeTab === 'categories' && (
               <div className="animate-fadeIn space-y-2.5 pb-2">
@@ -1124,13 +1210,24 @@ export default function DNTUOwlAssistant() {
                 <Paperclip size={16} />
               </button>
 
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={(e) => {
+                  setInputMessage(e.target.value);
+                  e.currentTarget.style.height = 'auto';
+                  e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 96)}px`;
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    handleSendMessage(event);
+                  }
+                }}
+                rows={1}
                 placeholder={isListening ? "Đang lắng nghe giọng nói của bạn..." : "Nhập tên đồ vật cần tìm hoặc câu hỏi..."}
-                className="flex-1 bg-transparent text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none"
+                className="min-h-8 max-h-24 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none"
+                aria-label="Nội dung trò chuyện với Trợ lý Cú DNTU"
               />
 
               {/* NÚT GHI ÂM GIỌNG NÓI TỪ ASSET KIT */}
@@ -1187,37 +1284,46 @@ export default function DNTUOwlAssistant() {
             </div>
           </form>
         </section>
-      )}
+  ) : null;
+
+  return (
+    <aside className={`dntu-owl-widget dntu-owl-${stateIcon} ${isCampusMap ? 'dntu-owl-widget--campus' : ''} ${isCompactWorkRoute ? 'dntu-owl-widget--work-route' : ''} ${isMessagesPage ? 'dntu-owl-widget--messages' : ''}`} style={style} aria-live="polite">
+      {open && (isMobile
+        ? createPortal(<div className="dntu-assistant-overlay">{assistantPanel}</div>, document.body)
+        : assistantPanel)}
 
       {/* MATCH NOTIFICATION BADGE */}
-      {matches.length > 0 && (
+      {!open && matches.length > 0 && (
         <span className="dntu-owl-unread" title={`${matches.length} kết quả nghi vấn!`}>
           {Math.min(matches.length, 9)}
         </span>
       )}
 
       {/* DRAGGABLE / CLICKABLE LAUNCHER MASCOT */}
-      <button
-        type="button"
-        className="dntu-owl-mascot"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        aria-label={open ? 'Thu nhỏ Trợ lý Cú DNTU' : 'Mở Trợ lý Cú DNTU'}
-        title="Bấm để mở chat · Kéo để di chuyển"
-      >
-        <img
-          src={`/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/mascot/animated/${
-            matches.length ? 'found' : sleeping ? 'sleeping' : 'welcome'
-          }.webp`}
-          alt="Cú DNTU"
-          draggable="false"
-        />
-      </button>
+      {!open && (
+        <button
+          ref={launcherRef}
+          type="button"
+          className="dntu-owl-mascot"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          aria-label="Mở Trợ lý Cú DNTU"
+          title="Bấm để mở chat · Kéo để di chuyển"
+        >
+          <img
+            src={`/DNTU_Chatbot_Asset_Kit/DNTU_Chatbot_Asset_Kit/mascot/animated/${
+              matches.length ? 'found' : sleeping ? 'sleeping' : 'welcome'
+            }.webp`}
+            alt="Cú DNTU"
+            draggable="false"
+          />
+        </button>
+      )}
 
       {/* DIALOG XÁC MINH QR TỪ ASSET KIT */}
-      {qrModalItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+      {qrModalItem && createPortal((
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn" style={{ zIndex: 'var(--layer-popover)' }}>
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 space-y-4 text-center relative animate-scaleUp">
             <button
               type="button"
@@ -1269,7 +1375,7 @@ export default function DNTUOwlAssistant() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </aside>
   );
 }

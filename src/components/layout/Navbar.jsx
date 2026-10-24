@@ -8,7 +8,7 @@ import Button from '../common/Button';
 import { ROLES } from '../../constants';
 import { useRealtime } from '../../context/RealtimeContext';
 
-export default function Navbar() {
+export default function Navbar({ compactMobile = false }) {
   const { user, logout } = useAuth();
   const {
     unreadMessagesCount: unreadMessages,
@@ -75,7 +75,7 @@ export default function Navbar() {
   return (
     <header data-sticky-header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-hairline shadow-navbar">
       {/* Top DNTU Branding Announcement Banner */}
-      <div className="bg-[#8F1822] text-white py-1.5 px-4 text-[11px] font-medium border-b border-white/10">
+      <div data-compact-mobile-banner={compactMobile || undefined} className={`${compactMobile ? 'hidden md:block ' : ''}bg-[#8F1822] text-white py-1.5 px-4 text-[11px] font-medium border-b border-white/10`}>
         <div className="page-container flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <span className="inline-flex min-w-0 items-center gap-1.5 text-white/95 font-semibold">
@@ -93,7 +93,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1760px] mx-auto px-[clamp(16px,3vw,40px)] h-[4.5rem] flex items-center justify-between gap-2 2xl:gap-4 min-w-0">
+      <div data-compact-mobile-row={compactMobile || undefined} className={`w-full max-w-[1760px] mx-auto px-[clamp(16px,3vw,40px)] ${compactMobile ? 'h-14 md:h-[4.5rem]' : 'h-16 sm:h-[4.5rem]'} flex items-center justify-between gap-2 2xl:gap-4 min-w-0`}>
         {/* LEFT: Logo */}
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <DNTULogo size="md" compactOnMobile />
@@ -318,7 +318,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="absolute left-0 right-0 top-full xl:hidden bg-white border-b border-hairline px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-2 animate-fadeIn shadow-lg max-h-[calc(100dvh-6.5rem)] overflow-y-auto overscroll-contain">
+        <div className="absolute left-0 right-0 top-full xl:hidden bg-white border-b border-hairline px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-2 animate-fadeIn shadow-lg max-h-[calc(var(--visual-viewport-height,100dvh)-3.5rem)] overflow-y-auto overscroll-contain">
           {/* Mobile Search Bar */}
           <form
             onSubmit={(e) => {

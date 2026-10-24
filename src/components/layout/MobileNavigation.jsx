@@ -37,8 +37,11 @@ export default function MobileNavigation() {
 
           {/* Bottom Sheet Card placed precisely above bottom bar */}
           <div
-            className="relative z-10 max-h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom))] w-full overflow-y-auto overscroll-contain rounded-t-2xl border-x border-t border-hairline bg-white p-4 shadow-landing-lg space-y-4 animate-slideUp sm:p-5"
-            style={{ marginBottom: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
+            className="relative z-10 w-full overflow-y-auto overscroll-contain rounded-t-2xl border-x border-t border-hairline bg-white p-4 shadow-landing-lg space-y-4 animate-slideUp sm:p-5"
+            style={{
+              maxHeight: 'calc(var(--visual-viewport-height, 100dvh) - var(--mobile-nav-height) - env(safe-area-inset-bottom) - 0.5rem)',
+              marginBottom: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom))',
+            }}
           >
             <div className="flex items-start justify-between border-b pb-3 border-hairline/80">
               <div>
@@ -81,8 +84,8 @@ export default function MobileNavigation() {
 
       {/* Bottom Bar */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 flex w-full max-w-full items-center border-t border-hairline bg-white/95 px-1 shadow-lg backdrop-blur-md md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.375rem', minHeight: 'calc(3.75rem + env(safe-area-inset-bottom))' }}
+        className="mobile-navigation fixed inset-x-0 bottom-0 flex w-full max-w-full items-center border-t border-hairline bg-white/95 px-1 shadow-lg backdrop-blur-md md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingTop: '0.25rem', minHeight: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom))' }}
       >
         {/* Home */}
         <NavLink
@@ -114,11 +117,11 @@ export default function MobileNavigation() {
         {/* Plus / Đăng bài center button */}
         <button
           onClick={() => setShowPostMenu((prev) => !prev)}
-          className="min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center -mt-6"
+          className="min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center -mt-4"
           aria-label="Đăng tin"
         >
-          <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center shadow-md ring-4 ring-[#FAF8F2] hover:bg-burgundy-700 transition-transform active:scale-95">
-            <Plus className="w-6 h-6 stroke-[2.5]" />
+          <div className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center shadow-md ring-[3px] ring-[#FAF8F2] hover:bg-burgundy-700 transition-transform active:scale-95">
+            <Plus className="w-5 h-5 stroke-[2.5]" />
           </div>
           <span className="text-[11px] font-bold text-ink mt-0.5">Đăng tin</span>
         </button>

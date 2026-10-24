@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
+import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 const sizeMap = {
   sm: 'max-w-sm',
@@ -10,16 +10,23 @@ const sizeMap = {
 };
 
 export function Modal({ isOpen, onClose, title, children, size = 'md', closeDisabled = false }) {
-  useEffect(() => {
-    if (isOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+    <div
+      className="fixed inset-x-0 flex items-center justify-center p-3 sm:p-4"
+      style={{
+        zIndex: 'var(--layer-modal)',
+        top: 'var(--visual-viewport-top, 0px)',
+        height: 'var(--visual-viewport-height, 100dvh)',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm transition-opacity" onClick={closeDisabled ? undefined : onClose} />
       <div className={`relative bg-white rounded-card-lg shadow-landing-lg border border-hairline w-full ${sizeMap[size]} animate-scaleIn motion-reduce:animate-none max-h-[calc(100dvh-1.5rem)] sm:max-h-[90dvh] flex flex-col overflow-hidden`}>
         <div className="flex min-w-0 items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 border-b border-hairline/80 bg-paper-soft">
