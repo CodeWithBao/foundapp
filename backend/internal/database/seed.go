@@ -1,7 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"unifind-dntu/internal/models"
@@ -11,17 +14,44 @@ import (
 )
 
 func SeedData(db *gorm.DB) {
-	seedUsers(db)
+	localDemo := localDemoSeedEnabled()
+	seedUsers(db, localDemo)
 	seedCategories(db)
 	seedLocations(db)
-	seedItems(db)
+	seedItems(db, localDemo)
+	if localDemo {
+		seedLocalDemoChats(db)
+	}
 	seedClaims(db)
 }
 
-func seedUsers(db *gorm.DB) {
+func localDemoSeedEnabled() bool {
+	driver := strings.ToLower(strings.TrimSpace(os.Getenv("DB_DRIVER")))
+	databaseURL := strings.ToLower(strings.TrimSpace(os.Getenv("DATABASE_URL")))
+	ginMode := strings.ToLower(strings.TrimSpace(os.Getenv("GIN_MODE")))
+	usesPostgres := driver == "postgres" ||
+		strings.HasPrefix(databaseURL, "postgres://") ||
+		strings.HasPrefix(databaseURL, "postgresql://") ||
+		strings.HasPrefix(databaseURL, "host=")
+
+	// Demo records must never be inserted into the release or PostgreSQL database.
+	if ginMode == "release" || usesPostgres {
+		return false
+	}
+
+	if value, exists := os.LookupEnv("SEED_DEMO_DATA"); exists {
+		return value == "1" || strings.EqualFold(value, "true")
+	}
+
+	// InitDB defaults to SQLite when DB_DRIVER is omitted, so local development
+	// also gets a complete demo database without requiring extra configuration.
+	return driver == "" || driver == "sqlite"
+}
+
+func seedUsers(db *gorm.DB, ensureDemoUsers bool) {
 	var count int64
 	db.Model(&models.User{}).Count(&count)
-	if count > 0 {
+	if count > 0 && !ensureDemoUsers {
 		return
 	}
 
@@ -52,8 +82,21 @@ func seedUsers(db *gorm.DB) {
 		},
 	}
 
+	seededCount := 0
 	for _, u := range users {
+		if ensureDemoUsers {
+			var existingCount int64
+			db.Model(&models.User{}).Where("email = ?", u.Email).Count(&existingCount)
+			if existingCount > 0 {
+				continue
+			}
+		}
 		db.Create(&u)
+		seededCount++
+	}
+	if ensureDemoUsers {
+		log.Printf("[Seed] Local demo users checked; %d missing users added.", seededCount)
+		return
 	}
 	log.Println("[Seed] Users seeded successfully.")
 }
@@ -286,10 +329,10 @@ type rawSeedItem struct {
 	CreatedAt        string
 }
 
-func seedItems(db *gorm.DB) {
+func seedItems(db *gorm.DB, ensureDemoItems bool) {
 	var count int64
 	db.Model(&models.Item{}).Count(&count)
-	if count > 0 {
+	if count > 0 && !ensureDemoItems {
 		return
 	}
 
@@ -513,13 +556,28 @@ func seedItems(db *gorm.DB) {
 	}
 
 	var firstUser models.User
-	db.First(&firstUser)
+	if ensureDemoItems {
+		db.Where("email = ?", "user@dntu.edu.vn").First(&firstUser)
+	} else {
+		db.First(&firstUser)
+	}
 	userID := firstUser.ID
 	if userID == 0 {
 		userID = 1
 	}
 
+	seededCount := 0
 	for _, raw := range rawItems {
+		if ensureDemoItems {
+			var existingCount int64
+			db.Model(&models.Item{}).
+				Where("title = ? AND type = ? AND date = ?", raw.Title, raw.Type, raw.Date).
+				Count(&existingCount)
+			if existingCount > 0 {
+				continue
+			}
+		}
+
 		var cat models.Category
 		db.Where("name = ?", raw.Category).First(&cat)
 		var loc models.Location
@@ -569,9 +627,175 @@ func seedItems(db *gorm.DB) {
 		}
 
 		db.Create(&item)
+		seededCount++
 	}
 
-	log.Printf("[Seed] %d items seeded successfully.", len(rawItems))
+	if ensureDemoItems {
+		log.Printf("[Seed] Local demo items checked; %d missing items added.", seededCount)
+		return
+	}
+	log.Printf("[Seed] %d items seeded successfully.", seededCount)
+}
+
+func seedLocalDemoChats(db *gorm.DB) {
+	var owner models.User
+	if err := db.Where("email = ?", "user@dntu.edu.vn").First(&owner).Error; err != nil {
+		log.Printf("[Seed] Local demo chats skipped: owner account unavailable (%v).", err)
+		return
+	}
+
+	var recipients []models.User
+	if err := db.Where("email IN ?", []string{"staff@dntu.edu.vn", "admin@dntu.edu.vn"}).Order("id ASC").Find(&recipients).Error; err != nil || len(recipients) == 0 {
+		log.Printf("[Seed] Local demo chats skipped: recipient accounts unavailable (%v).", err)
+		return
+	}
+
+	var items []models.Item
+	if err := db.Where("user_id = ?", owner.ID).Order("id ASC").Limit(4).Find(&items).Error; err != nil || len(items) == 0 {
+		log.Printf("[Seed] Local demo chats skipped: demo items unavailable (%v).", err)
+		return
+	}
+
+	createdConversations := 0
+	createdMessages := 0
+	for index, item := range items {
+		recipient := recipients[index%len(recipients)]
+		participantA, participantB := owner.ID, recipient.ID
+		if participantA > participantB {
+			participantA, participantB = participantB, participantA
+		}
+
+		baseTime := time.Now().UTC().Add(-time.Duration(len(items)-index) * time.Hour)
+		conversation := models.ChatConversation{}
+		result := db.Where(
+			"item_id = ? AND participant_a = ? AND participant_b = ?",
+			item.ID,
+			participantA,
+			participantB,
+		).FirstOrCreate(&conversation, models.ChatConversation{
+			ItemID:        item.ID,
+			ParticipantA:  participantA,
+			ParticipantB:  participantB,
+			LastMessageAt: baseTime.Add(10 * time.Minute),
+			CreatedAt:     baseTime,
+			UpdatedAt:     baseTime.Add(10 * time.Minute),
+		})
+		if result.Error != nil {
+			log.Printf("[Seed] Local demo conversation for item %d failed: %v", item.ID, result.Error)
+			continue
+		}
+		if result.RowsAffected > 0 {
+			createdConversations++
+		}
+
+		messages := localDemoMessages(conversation.ID, owner.ID, recipient.ID, item.Title, index, baseTime)
+		var messageCount int64
+		if err := db.Model(&models.ChatMessage{}).
+			Where("conversation_id = ?", conversation.ID).
+			Count(&messageCount).Error; err != nil {
+			log.Printf("[Seed] Local demo message count for conversation %d failed: %v", conversation.ID, err)
+			continue
+		}
+
+		for _, message := range messages {
+			if messageCount >= int64(len(messages)) {
+				break
+			}
+
+			var existingCount int64
+			if err := db.Model(&models.ChatMessage{}).
+				Where("conversation_id = ? AND text = ?", conversation.ID, message.Text).
+				Count(&existingCount).Error; err != nil {
+				log.Printf("[Seed] Local demo message lookup for conversation %d failed: %v", conversation.ID, err)
+				continue
+			}
+			if existingCount > 0 {
+				continue
+			}
+
+			if err := db.Create(&message).Error; err != nil {
+				log.Printf("[Seed] Local demo message for conversation %d failed: %v", conversation.ID, err)
+				continue
+			}
+			messageCount++
+			createdMessages++
+		}
+
+		lastMessageAt := messages[len(messages)-1].CreatedAt
+		if conversation.LastMessageAt.Before(lastMessageAt) {
+			db.Model(&conversation).Updates(map[string]any{
+				"last_message_at": lastMessageAt,
+				"updated_at":      lastMessageAt,
+			})
+		}
+	}
+
+	log.Printf(
+		"[Seed] Local demo chats checked; %d conversations and %d messages added.",
+		createdConversations,
+		createdMessages,
+	)
+}
+
+func localDemoMessages(conversationID, ownerID, recipientID uint, itemTitle string, conversationIndex int, baseTime time.Time) []models.ChatMessage {
+	messageCount := 4
+	if conversationIndex == 0 {
+		// Keep one conversation longer than the frontend batch size so local QA can
+		// verify "load older", prepend offset preservation, and smart auto-scroll.
+		messageCount = 35
+	}
+
+	incomingCopies := []string{
+		"Chào bạn, mình muốn trao đổi thêm về vật phẩm này.",
+		"Mình nhớ có một chi tiết khá giống mô tả trong bài đăng.",
+		"Bạn kiểm tra giúp mình thời gian và vị trí được không?",
+		"Mình có thể bổ sung thêm đặc điểm nhận dạng nếu cần.",
+		"Thông tin này có khớp với vật phẩm của bạn không?",
+	}
+	outgoingCopies := []string{
+		"Chào bạn, cảm ơn bạn đã liên hệ.",
+		"Bạn mô tả thêm đặc điểm nhận dạng giúp mình nhé.",
+		"Mình đang kiểm tra lại thông tin trong bài đăng.",
+		"Hai bên có thể hẹn tại khu vực bảo vệ để xác minh an toàn.",
+		"Mình đã nhận được thông tin, cảm ơn bạn.",
+	}
+
+	messages := make([]models.ChatMessage, 0, messageCount)
+	for messageIndex := 0; messageIndex < messageCount; messageIndex++ {
+		incoming := messageIndex%2 == 0 || messageIndex == messageCount-1
+		senderID := ownerID
+		copyText := outgoingCopies[(messageIndex/2)%len(outgoingCopies)]
+		if incoming {
+			senderID = recipientID
+			copyText = incomingCopies[(messageIndex/2)%len(incomingCopies)]
+		}
+
+		createdAt := baseTime.Add(time.Duration(messageIndex) * time.Minute)
+		message := models.ChatMessage{
+			ConversationID: conversationID,
+			SenderID:       senderID,
+			Text: fmt.Sprintf(
+				"Tin nhắn mẫu %02d · %s · %s",
+				messageIndex+1,
+				itemTitle,
+				copyText,
+			),
+			CreatedAt: createdAt,
+			UpdatedAt: createdAt,
+		}
+
+		if conversationIndex == 0 && messageIndex == 7 {
+			message.ImageURL = "/mascot/found.png"
+		}
+		if messageIndex < messageCount-1 {
+			readAt := createdAt.Add(30 * time.Second)
+			message.ReadAt = &readAt
+		}
+
+		messages = append(messages, message)
+	}
+
+	return messages
 }
 
 func seedClaims(db *gorm.DB) {
