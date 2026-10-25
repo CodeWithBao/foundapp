@@ -1,0 +1,26 @@
+[
+  {
+    "id": "claim_verification",
+    "label": "Xác minh nhận lại đồ",
+    "targetQueue": "lost-found-verification",
+    "requiredFields": ["caseId", "userId"]
+  },
+  {
+    "id": "case_complaint",
+    "label": "Khiếu nại hồ sơ",
+    "targetQueue": "lost-found-review",
+    "requiredFields": ["caseId", "description"]
+  },
+  {
+    "id": "account_permission",
+    "label": "Tài khoản hoặc phân quyền",
+    "targetQueue": "account-support",
+    "requiredFields": ["userId", "description"]
+  },
+  {
+    "id": "other",
+    "label": "Yêu cầu khác",
+    "targetQueue": "general-support",
+    "requiredFields": ["description"]
+  }
+]

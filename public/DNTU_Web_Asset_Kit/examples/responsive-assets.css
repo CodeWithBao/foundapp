@@ -1,0 +1,93 @@
+/* DNTU Web Asset Kit — responsive examples */
+
+:root {
+  --dntu-burgundy: #981b1e;
+  --dntu-burgundy-dark: #741216;
+  --dntu-cream: #fcfaf7;
+}
+
+/* Header campus watermark */
+.dntu-header {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+.dntu-header::after {
+  content: "";
+  position: absolute;
+  inset: 0 10% 0 42%;
+  background:
+    url("../watermarks/dntu-campus-watermark-burgundy.svg")
+    center / contain no-repeat;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dntu-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo scales automatically without distortion */
+.dntu-logo {
+  width: clamp(150px, 17vw, 220px);
+  height: auto;
+  object-fit: contain;
+}
+
+/* Campus background using responsive WebP variants */
+.dntu-campus-hero {
+  min-height: clamp(220px, 34vw, 520px);
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(55, 8, 10, 0.52),
+      rgba(55, 8, 10, 0.08)
+    ),
+    image-set(
+      url("../backgrounds/dntu-campus-wide-640.webp") 1x,
+      url("../backgrounds/dntu-campus-wide-1280.webp") 2x
+    );
+  background-size: cover;
+  background-position: center;
+}
+
+/* Sidebar decorative campus art */
+.dntu-sidebar-campus {
+  width: 100%;
+  aspect-ratio: 205 / 97;
+  background:
+    url("../watermarks/dntu-campus-lineart-white.svg")
+    bottom center / 100% auto no-repeat;
+  opacity: 0.55;
+}
+
+/* Responsive layout adjustments */
+@media (max-width: 768px) {
+  .dntu-header::after {
+    inset: 0 -10% 0 28%;
+    opacity: 0.45;
+  }
+
+  .dntu-logo {
+    width: 148px;
+  }
+
+  .dntu-campus-hero {
+    background-position: 48% center;
+  }
+}
+
+@media (max-width: 480px) {
+  .dntu-header::after {
+    inset: 0 -28% 0 18%;
+    opacity: 0.28;
+  }
+
+  .dntu-campus-hero {
+    min-height: 260px;
+    background-position: center;
+  }
+}

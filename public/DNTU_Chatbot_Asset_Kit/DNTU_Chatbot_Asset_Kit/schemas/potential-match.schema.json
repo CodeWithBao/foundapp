@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DNTU Lost & Found Potential Match",
+  "type": "object",
+  "required": ["matchId", "caseId", "candidateItemId", "itemName", "matchScore"],
+  "properties": {
+    "matchId": { "type": "string", "minLength": 1 },
+    "caseId": { "type": "string", "pattern": "^LF-[0-9]{4,}$" },
+    "candidateItemId": { "type": "string", "minLength": 1 },
+    "itemName": { "type": "string", "minLength": 1 },
+    "candidateTitle": { "type": "string" },
+    "location": { "type": "string" },
+    "matchScore": { "type": "number", "minimum": 0, "maximum": 100 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["pending_review", "confirmed", "rejected", "expired"] }
+  },
+  "additionalProperties": true
+}

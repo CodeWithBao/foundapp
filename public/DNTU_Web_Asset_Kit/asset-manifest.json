@@ -1,0 +1,42 @@
+{
+  "name": "DNTU_Web_Asset_Kit CLEAN",
+  "version": "clean-1.0",
+  "guarantee": [
+    "No notification bell embedded in campus assets",
+    "No TM/avatar embedded in campus assets",
+    "No user name embedded in campus assets",
+    "No dropdown/chevron embedded in campus assets",
+    "No header screenshot used as a web asset"
+  ],
+  "branding": [
+    "dntu-symbol-burgundy.png",
+    "dntu-symbol-burgundy@4x.png",
+    "dntu-symbol-white.png",
+    "dntu-symbol-white@4x.png",
+    "unifind-dntu-logo-burgundy.png",
+    "unifind-dntu-logo-burgundy.svg",
+    "unifind-dntu-logo-white.png",
+    "unifind-dntu-logo-white.svg"
+  ],
+  "watermarks": [
+    "dntu-campus-clean.png",
+    "dntu-campus-lineart-burgundy.png",
+    "dntu-campus-lineart-burgundy.svg",
+    "dntu-campus-lineart-white.png",
+    "dntu-campus-lineart-white.svg",
+    "dntu-campus-watermark-burgundy.png",
+    "dntu-campus-watermark-burgundy.svg",
+    "dntu-campus-watermark-white.png",
+    "dntu-campus-watermark-white.svg",
+    "dntu-slogan-burgundy.png",
+    "dntu-slogan-white.png"
+  ],
+  "backgrounds": [
+    "dntu-campus-clean-1280.webp",
+    "dntu-campus-clean-1600.webp",
+    "dntu-campus-clean-1920.webp",
+    "dntu-campus-clean-480.webp",
+    "dntu-campus-clean-640.webp",
+    "dntu-campus-clean-960.webp"
+  ]
+}

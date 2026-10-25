@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8F1725;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4D0B13;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="url(#bg)" stroke="#D8B26A" stroke-width="3"/>
+  <text x="100" y="75" font-family="Georgia, serif" font-size="32" font-weight="bold" fill="#FFFFFF" text-anchor="middle">DNTU</text>
+  <text x="100" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#D8B26A" text-anchor="middle">UNIVERSITY</text>
+  <line x1="55" y1="115" x2="145" y2="115" stroke="#D8B26A" stroke-width="1" opacity="0.6"/>
+  <text x="100" y="135" font-family="Arial, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">Dong Nai Technology</text>
+  <text x="100" y="148" font-family="Arial, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle" opacity="0.9">University</text>
+</svg>

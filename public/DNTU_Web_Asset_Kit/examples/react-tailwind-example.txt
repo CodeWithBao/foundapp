@@ -1,0 +1,28 @@
+// StaffHeader example
+export function StaffHeader() {
+  return (
+    <header className="relative h-[72px] overflow-hidden border-b border-[#eee7e3] bg-white">
+      <img
+        src="/assets/dntu/watermarks/dntu-campus-watermark-burgundy.svg"
+        alt=""
+        aria-hidden="true"
+        className="
+          pointer-events-none absolute left-[42%] top-0
+          h-full w-[50%] object-contain object-center
+          opacity-80 select-none
+          max-md:left-[28%] max-md:w-[78%] max-md:opacity-45
+        "
+      />
+
+      <div className="relative z-10 flex h-full items-center px-5">
+        <img
+          src="/assets/dntu/branding/unifind-dntu-logo-burgundy.svg"
+          alt="UniFind DNTU"
+          className="h-[48px] w-auto max-sm:h-[40px]"
+        />
+
+        {/* rest of header */}
+      </div>
+    </header>
+  );
+}

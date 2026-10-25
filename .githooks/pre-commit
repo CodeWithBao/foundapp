@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -eu
+
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+# Check every staged path, including tracked Markdown changes and deletions.
+git diff --cached --name-only --diff-filter=ACMRDTUXB | "$HOOK_DIR/check-protected-files.sh"
+
+# Block obvious private keys or tokens even when the filename looks harmless.
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+for file in $staged_files; do
+  [ -f "$file" ] || continue
+  case "$file" in
+    .githooks/*) continue ;;
+  esac
+  if git show ":$file" 2>/dev/null | grep -E -q \
+    'BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[0-9A-Za-z]{30,}|-----BEGIN PGP PRIVATE KEY BLOCK-----'; then
+    echo "[GIT BLOCKED] Noi dung co dau hieu secret/private key: $file" >&2
+    exit 1
+  fi
+done
+
+exit 0

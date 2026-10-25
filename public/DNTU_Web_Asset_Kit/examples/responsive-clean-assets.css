@@ -1,0 +1,26 @@
+/* Responsive, UI-free DNTU campus decorative asset */
+.dntu-campus-clean {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  width: min(520px, 42vw);
+  height: 96px;
+  transform: translateX(-50%);
+  object-fit: contain;
+  opacity: .50;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 900px) {
+  .dntu-campus-clean {
+    width: 390px;
+    opacity: .34;
+  }
+}
+
+@media (max-width: 640px) {
+  .dntu-campus-clean {
+    display: none;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "inactivitySleepMs": 90000,
+  "wakeEvents": ["pointerdown", "pointermove", "keydown", "touchstart", "scroll"],
+  "launcher": {
+    "draggable": true,
+    "keyboardMovePx": 18,
+    "keyboardMoveFastPx": 50,
+    "viewportPaddingPx": 8,
+    "persistPosition": true,
+    "storageKey": "dntu-launcher-position"
+  },
+  "preventSleepWhen": ["human_support_active", "unread_notification", "bot_typing"],
+  "conversationFlow": {
+    "clearOnBack": true,
+    "cancelPendingRepliesOnBack": true,
+    "maxVisibleBubbles": 12,
+    "defaultView": "home-menu"
+  }
+}

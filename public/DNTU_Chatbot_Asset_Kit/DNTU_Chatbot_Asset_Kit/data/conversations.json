@@ -1,0 +1,17 @@
+{
+  "welcome": [
+    "Chào bạn! Mình là Cú DNTU. Bạn cần tìm đồ bị mất hay báo đồ vừa nhặt được?"
+  ],
+  "lost": [
+    "Bạn mô tả món đồ, vị trí và thời gian nhìn thấy lần cuối nhé."
+  ],
+  "found": [
+    "Cảm ơn bạn! Hãy tải ảnh và cho mình biết nơi bạn nhặt được món đồ."
+  ],
+  "not_found": [
+    "Mình chưa thấy kết quả phù hợp. Bạn thử mở rộng thời gian hoặc vị trí nhé."
+  ],
+  "success": [
+    "Đã ghi nhận hồ sơ thành công. Mã của bạn là {caseId}."
+  ]
+}
