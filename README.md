@@ -9,7 +9,7 @@ Hệ thống quản lý, tìm kiếm và hoàn trả tài sản thất lạc dà
 - **Backend Health Check:**
   https://unifind-dntu-backend.onrender.com/health
 
-*(Ghi chú: Thay thế URL chính xác sau khi hoàn tất các bước deploy trên Render và Cloudflare Pages theo hướng dẫn tại [DEPLOY_ONLINE.md](DEPLOY_ONLINE.md)).*
+
 
 ## 🚀 Giới thiệu & Tech Stack
 
