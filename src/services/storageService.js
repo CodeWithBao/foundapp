@@ -10,6 +10,8 @@ import { mockAuditLogs } from '../data/auditLogs';
 
 const storageService = {
   get(key) {
+    // Production retains the API session cache, never browser demo records.
+    if (import.meta.env.PROD && Object.values(STORAGE_KEYS).includes(key) && key !== STORAGE_KEYS.CURRENT_USER) return null;
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : null;
@@ -31,6 +33,7 @@ const storageService = {
   },
 
   seed() {
+    if (import.meta.env.PROD) return;
     this.set(STORAGE_KEYS.USERS, mockUsers);
     this.set(STORAGE_KEYS.ITEMS, mockItems);
     this.set(STORAGE_KEYS.CLAIMS, mockClaims);
@@ -43,12 +46,14 @@ const storageService = {
   },
 
   init() {
+    if (import.meta.env.PROD) return;
     if (!this.isInitialized()) {
       this.seed();
     }
   },
 
   reset() {
+    if (import.meta.env.PROD) return;
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
     this.seed();
   },

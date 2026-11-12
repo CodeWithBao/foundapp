@@ -114,7 +114,8 @@ const itemService = {
         list = list.concat(nextList);
       }
       return list;
-    } catch {
+    } catch (error) {
+      if (import.meta.env.PROD) throw error;
       return (storageService.get(STORAGE_KEYS.ITEMS) || []).map(normalizeItem);
     }
   },

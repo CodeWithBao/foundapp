@@ -15,14 +15,14 @@ import (
 
 func SeedData(db *gorm.DB) {
 	localDemo := localDemoSeedEnabled()
-	seedUsers(db, localDemo)
 	seedCategories(db)
 	seedLocations(db)
-	seedItems(db, localDemo)
 	if localDemo {
+		seedUsers(db, true)
+		seedItems(db, true)
 		seedLocalDemoChats(db)
+		seedClaims(db)
 	}
-	seedClaims(db)
 }
 
 func localDemoSeedEnabled() bool {
