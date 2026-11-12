@@ -340,6 +340,32 @@ const itemService = {
     );
   },
 
+  // Homepage only: fixed-size API pages keep offsets correct for 12 + 8.
+  // Deliberately bypass withFallback: an outage is not an empty/mock feed.
+  async getRecentItemsPage({ tab = 'ALL', page = 1, count = 12 } = {}) {
+    const limit = 4;
+    const pages = count / limit;
+    if (!['ALL', 'LOST', 'FOUND'].includes(tab) || !Number.isInteger(page) || page < 1 || ![8, 12].includes(count)) {
+      throw new Error('Phân trang không hợp lệ');
+    }
+    const read = async current => {
+      const query = new URLSearchParams({ page: String(current), limit: String(limit) });
+      if (tab !== 'ALL') query.set('status', tab);
+      const response = await apiClient.get(`/items?${query}`);
+      const rows = Array.isArray(response) ? response : response?.items;
+      if (!Array.isArray(rows)) throw new Error('Dữ liệu tin đăng không hợp lệ');
+      return { rows, total: !Array.isArray(response) && typeof response.total === 'number' ? response.total : null };
+    };
+    const results = await Promise.all(Array.from({ length: pages }, (_, index) => read(page + index)));
+    const rows = results.flatMap(result => result.rows);
+    const total = results[0].total;
+    const nextPage = page + pages;
+    const hasMore = total !== null
+      ? (nextPage - 1) * limit < total
+      : rows.length === count && (await read(nextPage)).rows.length > 0;
+    return { items: rows.map(normalizeItem), nextPage, hasMore, total };
+  },
+
   async getRecentItems(limit = 8) {
     return withFallback(
       async () => {

@@ -112,6 +112,11 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
   const [attachedImage, setAttachedImage] = useState(null);
   const [qrModalItem, setQrModalItem] = useState(null);
 
+  const sessionGeneration = useRef(0);
+  const endingRef = useRef(false);
+  const creatingRef = useRef(false);
+  const sendingRef = useRef(false);
+  const [endingSession, setEndingSession] = useState(false);
   const drag = useRef(null);
   const inactivityTimer = useRef(null);
   const messagesEndRef = useRef(null);
@@ -157,25 +162,29 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
       return;
     }
     try {
+      const generation = sessionGeneration.current;
       const recognition = new SpeechRecognition();
+      const isCurrent = () => generation === sessionGeneration.current && recognitionRef.current === recognition;
       recognition.lang = 'vi-VN';
       recognition.interimResults = false;
       recognition.continuous = false;
       recognition.onstart = () => {
+        if (!isCurrent()) return;
         setIsListening(true);
         playSound('open');
       };
       recognition.onresult = (event) => {
+        if (!isCurrent()) return;
         const transcript = event.results?.[0]?.[0]?.transcript;
         if (transcript) {
           setInputMessage((prev) => (prev ? `${prev} ${transcript}` : transcript));
         }
       };
       recognition.onerror = () => {
-        setIsListening(false);
+        if (isCurrent()) setIsListening(false);
       };
       recognition.onend = () => {
-        setIsListening(false);
+        if (isCurrent()) setIsListening(false);
       };
       recognitionRef.current = recognition;
       recognition.start();
@@ -193,8 +202,10 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
       alert('Vui lòng chọn ảnh dung lượng dưới 5MB.');
       return;
     }
+    const generation = sessionGeneration.current;
     const reader = new FileReader();
     reader.onload = (event) => {
+      if (generation !== sessionGeneration.current) return;
       setAttachedImage({
         name: file.name,
         url: event.target.result,
@@ -287,72 +298,80 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
   // Đồng bộ ticket đang mở của user
   useEffect(() => {
     let cancelled = false;
+    handleResetConversation();
+    const generation = sessionGeneration.current;
     setActiveTicket(null);
+    setMatches([]);
     if (user?.id) ticketService.getUserActiveTicket(user.id)
-      .then(existing => { if (!cancelled) setActiveTicket(existing); })
+      .then(existing => {
+        if (cancelled || generation !== sessionGeneration.current) return;
+        setActiveTicket(existing);
+        if (existing) mergeTicketMessages(existing);
+      })
       .catch(error => console.warn('Không thể tải ticket:', error.message));
-    return () => { cancelled = true; };
+    return () => { cancelled = true; sessionGeneration.current += 1; recognitionRef.current?.abort(); };
   }, [user?.id]);
 
   // Lắng nghe realtime phản hồi từ Staff qua ticketService
   useEffect(() => {
-    const unsubscribe = ticketService.subscribe(async (detail) => {
+    let live = true;
+    let syncing = false;
+    let pendingSync = false;
+    const syncTicket = async (detail) => {
+      const generation = sessionGeneration.current;
+      if (!activeTicket || !live || detail.action === 'read') return;
+      if (syncing) { pendingSync = true; return; }
       try {
-      if (!activeTicket) return;
       if (detail.action === 'poll' || detail.ticketId === activeTicket.id) {
+        syncing = true;
         const fresh = await ticketService.getTicketById(activeTicket.id);
+        if (!live || generation !== sessionGeneration.current) return;
+        if (fresh?.status === 'CLOSED') {
+          handleResetConversation();
+          setActiveTicket(null);
+          return;
+        }
         if (fresh) {
           setActiveTicket(fresh);
-          const lastMsg = fresh.messages?.[fresh.messages.length - 1];
-          if (lastMsg && (lastMsg.sender === 'admin' || lastMsg.sender === 'staff')) {
-            setMessages((prev) => {
-              const alreadyHas = prev.some((m) => m.ticketMsgId === lastMsg.id);
-              if (alreadyHas) return prev;
-              playSound('message-in');
-              setMascotState('staff');
-              return [
-                ...prev,
-                {
-                  id: `agent-reply-${lastMsg.id}`,
-                  ticketMsgId: lastMsg.id,
-                  sender: 'agent',
-                  text: `${lastMsg.senderName}: ${lastMsg.text}`,
-                  timestamp: new Date(lastMsg.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                },
-              ];
-            });
-            await ticketService.markAsRead(fresh.id, 'user');
-          }
+          mergeTicketMessages(fresh);
+          if (fresh.unreadByUser) await ticketService.markAsRead(fresh.id, 'user');
         }
       }
       } catch (error) { console.warn('Không thể đồng bộ ticket:', error.message); }
-    });
+      finally {
+        syncing = false;
+        if (pendingSync && live && generation === sessionGeneration.current) {
+          pendingSync = false;
+          void syncTicket({ action: 'poll' });
+        }
+      }
+    };
+    const unsubscribe = ticketService.subscribe(syncTicket);
 
-    return () => unsubscribe();
-  }, [activeTicket]);
+    return () => { live = false; unsubscribe(); };
+  }, [activeTicket?.id]);
 
   const handleEndTicketSession = async () => {
-    if (!activeTicket) return;
-    try { await ticketService.updateStatus(activeTicket.id, 'RESOLVED'); }
-    catch (error) { window.alert(error.message); return; }
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `bot-${Date.now()}`,
-        sender: 'bot',
-        text: `Phiên hỗ trợ Ticket #${activeTicket.id} đã kết thúc. Cú DNTU luôn ở đây đồng hành cùng bạn!`,
-        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      },
-    ]);
-    setActiveTicket(null);
-    setMascotState('welcome');
-    playSound('success');
+    if (!activeTicket || endingRef.current) return;
+    endingRef.current = true;
+    setEndingSession(true);
+    const generation = sessionGeneration.current;
+    try {
+      await ticketService.updateStatus(activeTicket.id, 'CLOSED');
+      if (generation !== sessionGeneration.current) return;
+      handleResetConversation();
+      setActiveTicket(null);
+      playSound('success');
+    } catch (error) { if (generation === sessionGeneration.current) window.alert(error.message); }
+    finally { if (generation === sessionGeneration.current) { endingRef.current = false; setEndingSession(false); } }
   };
 
   const loadMatches = useCallback(async () => {
     if (!user?.id) return setMatches([]);
+    const generation = sessionGeneration.current;
     try {
       const notifications = await notificationService.getByUser(user.id);
+      if (generation !== sessionGeneration.current) return;
       const incoming = notifications.filter((item) => item.type === 'ITEM_MATCHED' && !item.read);
       setMatches(incoming);
       if (incoming.length) {
@@ -479,6 +498,7 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
 
   // Tra cứu theo danh mục
   const handleSelectCategory = async (category) => {
+    const generation = sessionGeneration.current;
     setActiveTab('chat');
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
@@ -499,6 +519,7 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
     try {
       const items = await itemService.getItems({ search: category.label, limit: 3 });
       setTimeout(() => {
+        if (generation !== sessionGeneration.current) return;
         setIsTyping(false);
         setMascotState(items.length ? 'found' : 'welcome');
         playSound(items.length ? 'success' : 'message-in');
@@ -519,6 +540,7 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
         ]);
       }, 900);
     } catch (_) {
+      if (generation !== sessionGeneration.current) return;
       setIsTyping(false);
       setMascotState('welcome');
       setMessages((prev) => [
@@ -536,6 +558,8 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
 
   // Chat với nhân viên - Tự động tạo Ticket cho Admin
   const handleSelectSupportTopic = async (topic) => {
+    if (endingRef.current || creatingRef.current || activeTicket) return;
+    const generation = sessionGeneration.current;
     if (!user?.id) { window.alert('Vui lòng đăng nhập để liên hệ nhân viên hỗ trợ.'); return; }
     setActiveTab('chat');
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -543,6 +567,7 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
 
     // Tạo ticket gửi Nhân viên (Staff)
     let newTicket;
+    creatingRef.current = true;
     try { newTicket = await ticketService.createTicket({
       userId: user?.id || 'guest',
       userName: user?.name || (user?.id ? 'Sinh viên DNTU' : 'Khách vãng lai'),
@@ -550,14 +575,17 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
       userRole: user?.role || 'user',
       topic: topicLabel,
       initialMessage: `Em cần hỗ trợ về chủ đề: "${topicLabel}"`,
-    }); } catch (error) { window.alert(error.message); return; }
+    }); } catch (error) { if (generation === sessionGeneration.current) window.alert(error.message); return; }
+    finally { if (generation === sessionGeneration.current) creatingRef.current = false; }
 
+    if (generation !== sessionGeneration.current) return;
     setActiveTicket(newTicket);
     playSound('message-out');
     setMascotState('staff');
     setIsTyping(true);
 
     setTimeout(() => {
+      if (generation !== sessionGeneration.current) return;
       setIsTyping(false);
       playSound('success');
       setMessages((prev) => [
@@ -581,7 +609,10 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
   // Gửi tin nhắn tự do (hỗ trợ kèm ảnh và voice input)
   const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!inputMessage.trim() && !attachedImage) return;
+    if ((!inputMessage.trim() && !attachedImage) || isTyping || sendingRef.current || creatingRef.current || endingRef.current || (activeTicket && !['OPEN', 'IN_PROGRESS'].includes(activeTicket.status))) return;
+    sendingRef.current = true;
+    setIsTyping(true);
+    const generation = sessionGeneration.current;
 
     const text = inputMessage.trim() || (attachedImage ? 'Tôi gửi hình ảnh này nhờ Cú DNTU hỗ trợ kiểm tra đồ thất lạc' : '');
     const currentAttachedImage = attachedImage;
@@ -611,10 +642,20 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
         sender: 'user',
         senderName: user?.name || 'Sinh viên',
         text: currentAttachedImage ? `${text} [Đính kèm ảnh: ${currentAttachedImage.name}]` : text,
-      }); } catch (error) { setInputMessage(text); window.alert(error.message); return; }
+      }); } catch (error) {
+        if (generation !== sessionGeneration.current) return;
+        sendingRef.current = false;
+        setIsTyping(false);
+        setInputMessage(text);
+        window.alert(error.message);
+        return;
+      }
+      if (generation !== sessionGeneration.current) return;
 
       setIsTyping(true);
       setTimeout(() => {
+        if (generation !== sessionGeneration.current) return;
+        sendingRef.current = false;
         setIsTyping(false);
       }, 500);
       return;
@@ -625,6 +666,8 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
 
     try {
       const response = await chatbotService.sendMessage(text, messages);
+      if (generation !== sessionGeneration.current) return;
+      sendingRef.current = false;
       setIsTyping(false);
 
       if (response.tab) {
@@ -658,6 +701,8 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
         },
       ]);
     } catch (_) {
+      if (generation !== sessionGeneration.current) return;
+      sendingRef.current = false;
       setIsTyping(false);
       setMascotState('welcome');
       playSound('message-in');
@@ -674,7 +719,35 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
     }
   };
 
+  const mergeTicketMessages = (ticket) => {
+    setMessages(prev => {
+      const missing = (ticket.messages || []).filter(message =>
+        ['staff', 'admin'].includes(message.sender) && !prev.some(item => item.ticketMsgId === message.id));
+      if (!missing.length) return prev;
+      return [...prev, ...missing.map(message => ({
+        id: `agent-reply-${message.id}`, ticketMsgId: message.id, sender: 'agent',
+        text: `${message.senderName || 'Nhân viên'}: ${message.text}`,
+        timestamp: new Date(message.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      }))];
+    });
+    setMascotState('staff');
+  };
+
   const handleResetConversation = () => {
+    sessionGeneration.current += 1;
+    endingRef.current = false;
+    creatingRef.current = false;
+    sendingRef.current = false;
+    setEndingSession(false);
+    setSleeping(false);
+    setQrModalItem(null);
+    setInputMessage('');
+    setAttachedImage(null);
+    setFeedback({});
+    setIsTyping(false);
+    recognitionRef.current?.abort();
+    setIsListening(false);
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     setMessages(INITIAL_MESSAGES);
     setActiveTab('chat');
     setMascotState('welcome');
@@ -832,6 +905,7 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
               <button
                 type="button"
                 onClick={handleEndTicketSession}
+                disabled={endingSession}
                 className="text-[11px] font-semibold text-stone-500 hover:text-red-700 hover:underline shrink-0 ml-2"
               >
                 Kết thúc phiên

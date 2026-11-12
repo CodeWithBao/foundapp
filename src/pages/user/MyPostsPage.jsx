@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Eye, MapPin, Tag, CheckCircle2, Edit3, Save } from 'lucide-react';
+import { Plus, Trash2, Eye, MapPin, Tag, CheckCircle2, Edit3, Save, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import itemService from '../../services/itemService';
 import adminService from '../../services/adminService';
@@ -14,13 +14,21 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import Modal, { ConfirmModal } from '../../components/common/Modal';
 import Tabs from '../../components/common/Tabs';
 import { formatDate, isSameEntityId } from '../../utils';
-import { toast } from 'sonner';
+import { toast as baseToast } from 'sonner';
+
+// FRONTEND UI ONLY: brand feedback in this workspace, without global toast changes.
+const toastStyle = { style: { background: '#FFF8F7', borderColor: '#981B1E', color: '#981B1E' } };
+const toast = {
+  success: message => baseToast.success(message, toastStyle),
+  error: message => baseToast.error(message, toastStyle),
+};
 
 export default function MyPostsPage() {
   const { user } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const processedEditIdRef = useRef(null);
+  const mutationRef = useRef(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState(null);
@@ -67,7 +75,8 @@ export default function MyPostsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteId || deleting) return;
+    if (!deleteId || mutationRef.current) return;
+    mutationRef.current = true;
     setDeleting(true);
     setDeleteError('');
     try {
@@ -82,12 +91,14 @@ export default function MyPostsPage() {
       setDeleteError(message);
       toast.error(message);
     } finally {
+      mutationRef.current = false;
       setDeleting(false);
     }
   };
 
   const handleClosePost = async () => {
-    if (!closeItem || closing) return;
+    if (!closeItem || mutationRef.current) return;
+    mutationRef.current = true;
     setClosing(true);
     setCloseError('');
     try {
@@ -103,6 +114,7 @@ export default function MyPostsPage() {
       setCloseError(message);
       toast.error(message);
     } finally {
+      mutationRef.current = false;
       setClosing(false);
     }
   };
@@ -130,10 +142,12 @@ export default function MyPostsPage() {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+    if (mutationRef.current || !editItem) return;
     if (!editForm.title.trim()) {
       toast.error('Tên vật phẩm không được để trống');
       return;
     }
+    mutationRef.current = true;
     setUpdating(true);
     try {
       const updated = await itemService.updateItem(editItem.id, editForm);
@@ -143,6 +157,7 @@ export default function MyPostsPage() {
     } catch (err) {
       toast.error(err.message || 'Lỗi khi lưu bài đăng');
     } finally {
+      mutationRef.current = false;
       setUpdating(false);
     }
   };
@@ -232,12 +247,12 @@ export default function MyPostsPage() {
                   </div>
 
                   {/* Actions: Chỉnh sửa, Đóng bài, Xóa, Xem chi tiết */}
-                  <div className="grid w-full min-w-0 grid-cols-2 gap-2 border-t border-[#E0E2E6] pt-3 min-[430px]:grid-cols-4 sm:col-span-2 lg:col-span-1 lg:flex lg:w-auto lg:items-center lg:justify-end lg:border-t-0 lg:pt-0">
+                  <div className="flex w-full min-w-0 items-center gap-2 border-t border-[#E0E2E6] pt-3 sm:col-span-2 lg:col-span-1 lg:w-auto lg:justify-end lg:border-t-0 lg:pt-0">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleOpenEdit(item)}
-                      className="min-h-11 w-full text-[#5B6574] hover:text-[#AD222B] lg:w-auto"
+                      className="hidden min-h-11 text-[#5B6574] hover:text-[#AD222B] lg:inline-flex"
                     >
                       <Edit3 className="w-4 h-4 mr-1" /> Sửa
                     </Button>
@@ -247,7 +262,7 @@ export default function MyPostsPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => setCloseItem(item)}
-                        className="min-h-11 w-full whitespace-nowrap border-emerald-300 text-xs font-medium text-emerald-700 hover:bg-emerald-50 lg:w-auto"
+                        className="min-h-11 flex-1 whitespace-nowrap border-emerald-300 text-xs font-medium text-emerald-700 hover:bg-emerald-50 lg:flex-none"
                       >
                         <CheckCircle2 className="w-4 h-4 mr-1.5" />
                         {item.type === 'LOST' ? 'Đã tìm thấy' : 'Đã trả lại'}
@@ -263,12 +278,21 @@ export default function MyPostsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="min-h-11 w-full text-red-600 hover:bg-red-50 lg:w-auto"
+                      className="hidden min-h-11 text-red-600 hover:bg-red-50 lg:inline-flex"
                       onClick={() => setDeleteId(item.id)}
                       aria-label={`Xóa bài ${item.title}`}
                     >
                       <Trash2 className="w-4 h-4" /> <span className="lg:sr-only">Xóa</span>
                     </Button>
+                    <details className="relative ml-auto shrink-0 lg:hidden">
+                      <summary aria-label={`Thao tác khác cho bài ${item.title}`} className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-lg border border-hairline text-ink-muted [&::-webkit-details-marker]:hidden">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </summary>
+                      <div className="absolute bottom-full right-0 z-10 mb-2 w-40 rounded-xl border border-hairline bg-white p-1 shadow-lg">
+                        <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm hover:bg-stone-50" onClick={event => { event.currentTarget.closest('details').open = false; handleOpenEdit(item); }}><Edit3 size={16} /> Chỉnh sửa</button>
+                        <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm text-red-600 hover:bg-red-50" onClick={event => { event.currentTarget.closest('details').open = false; setDeleteId(item.id); }}><Trash2 size={16} /> Xóa bài</button>
+                      </div>
+                    </details>
                   </div>
                 </div>
               </article>

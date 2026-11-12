@@ -1,6 +1,11 @@
 import apiClient from './apiClient';
 
-const notify = (ticketId, action) => window.dispatchEvent(new CustomEvent('unifind:tickets_updated', { detail: { ticketId, action } }));
+const SYNC_KEY = 'unifind:ticket-sync';
+const notify = (ticketId, action) => {
+  const detail = { ticketId, action };
+  window.dispatchEvent(new CustomEvent('unifind:tickets_updated', { detail }));
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...detail, nonce: `${Date.now()}-${Math.random()}` })); } catch { /* Storage may be unavailable. Polling remains enabled. */ }
+};
 const path = id => `/tickets/${encodeURIComponent(id)}`;
 const ticketService = {
   async getTickets(filters = {}) {
@@ -29,14 +34,29 @@ const ticketService = {
     notify(id, 'status');
     return ticket;
   },
-  async markAsRead(id) { await apiClient.put(`${path(id)}/read`, {}); },
+  async markAsRead(id) {
+    await apiClient.put(`${path(id)}/read`, {});
+    notify(id, 'read');
+  },
   async getUnreadCountForStaff() { return (await this.getTickets()).filter(t => t.unreadByStaff).length; },
   async getUnreadCountForAdmin() { return (await this.getTickets()).filter(t => t.unreadByAdmin).length; },
   subscribe(callback) {
     const listener = event => callback(event.detail);
+    const storageListener = event => {
+      if (event.key !== SYNC_KEY || !event.newValue) return;
+      try {
+        const detail = JSON.parse(event.newValue);
+        if (detail && ['string', 'number'].includes(typeof detail.ticketId) && ['create', 'new_message', 'status', 'read'].includes(detail.action)) callback(detail);
+      } catch { /* Ignore unrelated or invalid storage payloads. */ }
+    };
     window.addEventListener('unifind:tickets_updated', listener);
+    window.addEventListener('storage', storageListener);
     const timer = setInterval(() => callback({ action: 'poll' }), 15000);
-    return () => { window.removeEventListener('unifind:tickets_updated', listener); clearInterval(timer); };
+    return () => {
+      window.removeEventListener('unifind:tickets_updated', listener);
+      window.removeEventListener('storage', storageListener);
+      clearInterval(timer);
+    };
   },
 };
 export default ticketService;

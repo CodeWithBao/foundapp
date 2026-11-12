@@ -6,57 +6,65 @@ import {
 } from 'lucide-react';
 import ItemCard from '../../components/common/ItemCard';
 import CategoryIcon from '../../components/common/CategoryIcon';
-import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+import './HomePage.css';
 import itemService from '../../services/itemService';
 import scrollRestorationService from '../../services/scrollRestorationService';
 import { subscribeStatistics } from '../../services/siteStatistics';
 
 export default function HomePage() {
-  const [items, setItems] = useState([]);
-  const [activeTab, setActiveTab] = useState('ALL');
-  const [loading, setLoading] = useState(true);
+  const navType = useNavigationType();
+  const [initialSnapshot] = useState(() => navType === 'POP' ? scrollRestorationService.getSnapshot('/') : null);
+  const [activeTab, setActiveTab] = useState(initialSnapshot?.extra?.activeTab || 'ALL');
+  const [feeds, setFeeds] = useState(initialSnapshot?.extra?.feeds || {});
+  const feedsRef = useRef(feeds);
+  const pendingRef = useRef(new Set());
+  const mountedRef = useRef(false);
+  const feed = feeds[activeTab];
+  const items = feed?.items || [];
+  const loading = !feed || feed.loading;
   const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState({ total: 0, returned: 0, lost: 0, found: 0 });
   const [liveStats, setLiveStats] = useState(null);
   useEffect(() => subscribeStatistics(setLiveStats), []);
   const formatMetric = value => Number.isFinite(value) ? value.toLocaleString('vi-VN') : '--';
   const navigate = useNavigate();
-  const navType = useNavigationType();
-  const shouldRestoreRef = useRef(false);
+  const shouldRestoreRef = useRef(Boolean(initialSnapshot));
 
-  useEffect(() => {
-    if (navType === 'POP') {
-      const snap = scrollRestorationService.getSnapshot('/');
-      if (snap) {
-        shouldRestoreRef.current = true;
-        if (snap.extra?.activeTab) {
-          setActiveTab(snap.extra.activeTab);
-        }
-      }
-    } else {
-      scrollRestorationService.clearSnapshot();
-    }
-  }, [navType]);
-
-  useEffect(() => {
-    Promise.all([
-      itemService.getRecentItems(12),
-      itemService.getItems({ status: 'RETURNED' }),
-      itemService.getItems({}),
-    ]).then(([recent, returned, all]) => {
-      setItems(recent);
-      setStats({
-        total: all.length,
-        returned: all.filter(i => i.status === 'RETURNED').length,
-        lost: all.filter(i => i.status === 'LOST').length,
-        found: all.filter(i => i.status === 'FOUND').length,
+  // FRONTEND UI ONLY: independent tab caches; responses never replace another tab.
+  const loadFeed = async (tab, more = false) => {
+    const previous = feedsRef.current[tab];
+    if (pendingRef.current.has(tab) || (more && !previous?.hasMore)) return;
+    pendingRef.current.add(tab);
+    const update = value => {
+      feedsRef.current = { ...feedsRef.current, [tab]: value };
+      if (mountedRef.current) setFeeds(feedsRef.current);
+    };
+    update({ ...previous, loading: true, error: null });
+    try {
+      const result = await itemService.getRecentItemsPage({ tab, page: more ? previous.nextPage : 1, count: more ? 8 : 12 });
+      const seen = new Set();
+      const nextItems = [...(more ? previous.items : []), ...result.items].filter(item => {
+        const key = String(item.id);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
-      setLoading(false);
-    }).catch(err => {
-      console.error(err);
-      setLoading(false);
-    });
-  }, []);
+      update({ ...result, items: nextItems, loading: false, loaded: true, error: null });
+    } catch {
+      update({ ...previous, loading: false, error: 'Không thể tải tin đăng. Vui lòng thử lại.', retryMore: more });
+    } finally {
+      pendingRef.current.delete(tab);
+    }
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    if (!initialSnapshot) scrollRestorationService.clearSnapshot();
+    return () => { mountedRef.current = false; };
+  }, [initialSnapshot]);
+
+  useEffect(() => {
+    if (!feedsRef.current[activeTab]?.loaded) loadFeed(activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     if (!loading && shouldRestoreRef.current) {
@@ -93,6 +101,7 @@ export default function HomePage() {
       cardTop,
       extra: {
         activeTab,
+        feeds: Object.fromEntries(Object.entries(feedsRef.current).filter(([, value]) => value.loaded).map(([key, value]) => [key, { ...value, loading: false, error: null }])),
       }
     });
 
@@ -113,6 +122,7 @@ export default function HomePage() {
       scrollY: window.scrollY || document.documentElement.scrollTop || 0,
       extra: {
         activeTab,
+        feeds: Object.fromEntries(Object.entries(feedsRef.current).filter(([, value]) => value.loaded).map(([key, value]) => [key, { ...value, loading: false, error: null }])),
       },
     });
   };
@@ -127,10 +137,12 @@ export default function HomePage() {
     { name: 'Khác', query: 'Khác' },
   ];
 
-  const filteredItems = items.filter(item => {
-    if (activeTab === 'ALL') return true;
-    return (item.status || item.type) === activeTab;
-  });
+  const skeletons = count => Array.from({ length: count }, (_, index) => (
+    <div key={`loading-${index}`} className="home-card-skeleton motion-reduce:animate-none animate-pulse" aria-hidden="true">
+      <div className="home-skeleton-cover" />
+      <div className="home-skeleton-body"><div /><div /><div /><div /></div>
+    </div>
+  ));
 
   return (
     <div className="bg-[#F8F6F3] min-h-screen">
@@ -299,10 +311,10 @@ export default function HomePage() {
 
       {/* Main 2-Column Content Section matching 01_home.png */}
       <section className="page-container py-10 md:py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+        <div className="flex flex-col gap-8 lg:gap-10">
           
           {/* LEFT COLUMN: Categories + Recent Items (8 cols) */}
-          <div className="lg:col-span-8 space-y-10">
+          <div className="min-w-0 space-y-10">
             {/* Section: Tìm kiếm theo danh mục */}
             <div>
               <h2 className="font-serif font-bold text-xl text-ink mb-4">Tìm kiếm theo danh mục</h2>
@@ -325,7 +337,7 @@ export default function HomePage() {
             </div>
 
             {/* Section: Tin đăng mới nhất */}
-            <div>
+            <div className="home-recent" aria-label="Tin đăng mới nhất" aria-busy={loading}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="font-serif font-bold text-xl text-ink">Tin đăng mới nhất</h2>
@@ -338,6 +350,8 @@ export default function HomePage() {
                     ].map(tab => (
                       <button
                         key={tab.key}
+                        type="button"
+                        aria-pressed={activeTab === tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`px-3.5 py-1 text-xs rounded-full font-semibold transition-all ${
                           activeTab === tab.key
@@ -355,35 +369,41 @@ export default function HomePage() {
                   to="/search"
                   className="inline-flex items-center gap-1 text-xs font-bold text-accent hover:text-burgundy-800 transition-colors"
                 >
-                  <span>Xem thêm</span>
+                  <span>Xem tất cả</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
               {/* Grid of items */}
-              {loading ? (
-                <LoadingSkeleton type="card" count={4} className="lg:grid-cols-2" />
-              ) : filteredItems.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {filteredItems.slice(0, 4).map(item => (
-                    <ItemCard
-                      key={item.id}
-                      item={item}
-                      onClick={handleItemClick}
-                    />
-                  ))}
+              <div className="home-recent-grid">
+                {items.map(item => <ItemCard key={item.id} item={item} onClick={handleItemClick} />)}
+                {loading && skeletons(items.length ? 8 : 12)}
+              </div>
+              {feed?.error && (
+                <div role="alert" className="mt-4 rounded-xl border border-hairline bg-white p-4 text-sm">
+                  <p>{feed.error}</p>
+                  <button type="button" className="mt-2 min-h-11 font-bold text-accent" onClick={() => loadFeed(activeTab, feed.retryMore)}>Thử lại</button>
                 </div>
-              ) : (
+              )}
+              {!loading && !feed?.error && items.length === 0 && (
                 <div className="bg-white rounded-2xl p-10 text-center border border-hairline">
                   <Package className="w-10 h-10 text-ink-muted mx-auto mb-2" />
                   <p className="text-ink-slate font-medium text-sm">Chưa có bài đăng nào trong mục này.</p>
                 </div>
               )}
+              {feed?.hasMore && !feed.error && (
+                <div className="home-load-more flex justify-center mt-6">
+                  <button type="button" disabled={loading} onClick={() => loadFeed(activeTab, true)} className="min-h-11 rounded-full border border-accent bg-white px-8 py-3 text-sm font-bold text-accent disabled:opacity-60">
+                    {loading ? 'Đang tải thêm…' : 'Xem thêm 8 tin'}
+                  </button>
+                </div>
+              )}
+              <p className="sr-only" role="status">{loading ? 'Đang tải tin đăng' : `Đã hiển thị ${items.length} tin đăng`}</p>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Feature Promo Banners (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Existing promos below the full-width listings. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Banner 1: Thẻ sinh viên DNTU */}
             <div className="relative rounded-2xl overflow-hidden bg-white border border-hairline shadow-card group">
               <div className="relative h-44 overflow-hidden bg-paper-panel">

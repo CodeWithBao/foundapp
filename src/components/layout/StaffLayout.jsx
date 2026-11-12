@@ -9,7 +9,14 @@ import { useRealtime } from '../../context/RealtimeContext';
 import notificationService from '../../services/notificationService';
 import ticketService from '../../services/ticketService';
 import { formatRelative } from '../../utils';
-import { toast } from 'sonner';
+import { toast as baseToast } from 'sonner';
+
+// FRONTEND UI ONLY: brand feedback in this workspace, without global toast changes.
+const toastStyle = { style: { background: '#FFF8F7', borderColor: '#981B1E', color: '#981B1E' } };
+const toast = {
+  success: message => baseToast.success(message, toastStyle),
+  error: message => baseToast.error(message, toastStyle),
+};
 
 const menuItems = [
   {
@@ -415,7 +422,7 @@ export default function StaffLayout() {
                       )}
                     </div>
 
-                    <div className="max-h-[360px] overflow-y-auto divide-y divide-[#E8E2DD]/50">
+                    <div className="max-h-[min(360px,calc(100dvh-160px))] overflow-y-auto overscroll-contain divide-y divide-[#E8E2DD]/50">
                       {notifications.length > 0 ? (
                         notifications.slice(0, 8).map((notif) => (
                           <button

@@ -31,20 +31,21 @@ export default function Button({
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-semibold tracking-wide ${base} ${sizeClass} ${className}`}
+      className={`relative inline-flex items-center justify-center gap-2 font-semibold tracking-wide ${base} ${sizeClass} ${className}`}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? (
-        <>
+      <span className={`inline-flex items-center justify-center gap-2 ${loading ? 'invisible' : ''}`} aria-hidden={loading || undefined}>
+        {Icon ? <Icon className="w-4 h-4 shrink-0" aria-hidden="true" /> : null}
+        {children}
+      </span>
+      {loading && (
+        <span className="absolute inset-0 flex items-center justify-center gap-2 px-2" role="status" aria-label={loadingText || 'Đang xử lý'}>
           <Loader2 className="w-4 h-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-          {loadingText ? <span>{loadingText}</span> : children}
-        </>
-      ) : Icon ? (
-        <Icon className="w-4 h-4" aria-hidden="true" />
-      ) : null}
-      {!loading && children}
+          {loadingText && <span className="text-xs leading-tight">{loadingText}</span>}
+        </span>
+      )}
     </button>
   );
 }

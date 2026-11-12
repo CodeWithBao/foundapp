@@ -482,7 +482,7 @@ export default function ReportLostPage() {
               )}
 
               {currentStep < 4 ? (
-                <Button onClick={handleNext} className="btn-primary" size="sm">
+                <Button onClick={handleNext} size="sm">
                   Tiếp theo
                 </Button>
               ) : (
@@ -492,7 +492,7 @@ export default function ReportLostPage() {
                   loadingText={submitUncertain ? 'Đang kiểm tra…' : 'Đang đăng bài…'}
                   disabled={submitUncertain}
                   icon={Send}
-                  className="btn-primary min-h-11 min-w-[8.5rem]"
+                  className="min-h-11 min-w-[8.5rem]"
                   size="sm"
                 >
                   Gửi báo cáo

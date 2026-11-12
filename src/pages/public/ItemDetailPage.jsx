@@ -713,12 +713,6 @@ export default function ItemDetailPage() {
               </p>
             </div>
 
-            {/* Handwritten script on bottom right of description */}
-            <div className="pt-6 text-right">
-              <span className="font-['Caveat'] text-2xl text-[#741216] leading-none">
-                Mất đồ nhưng lòng tốt vẫn còn đây ♡
-              </span>
-            </div>
           </div>
 
           {/* Location Map Preview Card */}

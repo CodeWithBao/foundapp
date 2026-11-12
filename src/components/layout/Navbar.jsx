@@ -7,6 +7,7 @@ import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import { ROLES } from '../../constants';
 import { useRealtime } from '../../context/RealtimeContext';
+import './Navbar.css';
 
 export default function Navbar({ compactMobile = false }) {
   const { user, logout } = useAuth();
@@ -22,6 +23,33 @@ export default function Navbar({ compactMobile = false }) {
   const [navSearch, setNavSearch] = useState('');
   const [navCategory, setNavCategory] = useState('all');
   const dropdownRef = useRef(null);
+  // FRONTEND UI ONLY: desktop search presentation; routing stays in handleNavSearch.
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const searchToggleRef = useRef(null);
+
+  useEffect(() => {
+    if (!desktopSearchOpen) return;
+    searchInputRef.current?.focus();
+    const closeOutside = (event) => {
+      if (!searchRef.current?.contains(event.target) && !searchToggleRef.current?.contains(event.target)) {
+        setDesktopSearchOpen(false);
+      }
+    };
+    const closeEscape = (event) => {
+      if (event.key === 'Escape') {
+        setDesktopSearchOpen(false);
+        searchToggleRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, [desktopSearchOpen]);
 
   const handleNavSearch = (e) => {
     e.preventDefault();
@@ -73,7 +101,7 @@ export default function Navbar({ compactMobile = false }) {
   };
 
   return (
-    <header data-sticky-header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-hairline shadow-navbar">
+    <header data-sticky-header className="unifind-user-header sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-hairline shadow-navbar">
       {/* Top DNTU Branding Announcement Banner */}
       <div data-compact-mobile-banner={compactMobile || undefined} className={`${compactMobile ? 'hidden md:block ' : ''}bg-[#8F1822] text-white py-1.5 px-4 text-[11px] font-medium border-b border-white/10`}>
         <div className="page-container flex items-center justify-between gap-3">
@@ -93,14 +121,15 @@ export default function Navbar({ compactMobile = false }) {
         </div>
       </div>
 
-      <div data-compact-mobile-row={compactMobile || undefined} className={`w-full max-w-[1760px] mx-auto px-[clamp(16px,3vw,40px)] ${compactMobile ? 'h-14 md:h-[4.5rem]' : 'h-16 sm:h-[4.5rem]'} flex items-center justify-between gap-2 2xl:gap-4 min-w-0`}>
+      <div data-compact-mobile-row={compactMobile || undefined} className={`unifind-header-row w-full max-w-[1760px] mx-auto px-[clamp(16px,3vw,40px)] ${compactMobile ? 'h-14 md:h-[4.5rem]' : 'h-16 sm:h-[4.5rem]'} flex items-center justify-between gap-2 2xl:gap-4 min-w-0`}>
         {/* LEFT: Logo */}
-        <Link to="/" className="flex items-center gap-2 group shrink-0">
+        <Link to="/" className="unifind-header-brand flex items-center gap-2 group shrink-0">
           <DNTULogo size="md" compactOnMobile />
         </Link>
 
-        {/* CENTER: Desktop Nav Links */}
-        <nav className="hidden xl:flex shrink-0 items-center gap-0.5 2xl:gap-2">
+        {/* CENTER: navigation and inline search share one desktop grid slot. */}
+        <div className={`unifind-header-center${desktopSearchOpen ? ' is-search-open' : ''}`}>
+        <nav aria-label="Điều hướng chính" aria-hidden={desktopSearchOpen || undefined} inert={desktopSearchOpen} className="unifind-header-nav hidden xl:flex shrink-0 items-center gap-0.5 2xl:gap-2">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -118,12 +147,16 @@ export default function Navbar({ compactMobile = false }) {
           ))}
         </nav>
 
-        {/* RIGHT: Search + User / Auth actions */}
-        <div className="hidden xl:flex items-center gap-2 2xl:ml-4 2xl:gap-3 shrink-0">
           {/* Interactive Search Input with Filter Dropdown */}
           <form
-            onSubmit={handleNavSearch}
-            className="hidden min-[1800px]:flex min-w-0 items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
+            ref={searchRef}
+            id="unifind-desktop-search"
+            hidden={!desktopSearchOpen}
+            onSubmit={(event) => {
+              handleNavSearch(event);
+              if (navSearch.trim() || navCategory !== 'all') setDesktopSearchOpen(false);
+            }}
+            className="unifind-header-search min-w-0 items-center bg-[#F5F2EB] border border-[#E4DDD5] rounded-full pl-3 pr-1 py-1 shadow-2xs"
           >
             <div className="relative flex items-center shrink-0">
               <select
@@ -150,13 +183,15 @@ export default function Navbar({ compactMobile = false }) {
                 type="text"
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
-                placeholder="Tìm đồ thất lạc..."
+                ref={searchInputRef}
+                aria-label="Tìm vật phẩm, mã bài đăng, địa điểm"
+                placeholder="Tìm vật phẩm, mã bài đăng, địa điểm..."
                 className="min-w-0 flex-1 bg-transparent px-1 text-xs text-ink placeholder:text-ink-muted/80 focus:outline-none"
               />
               {navSearch && (
                 <button
                   type="button"
-                  onClick={() => setNavSearch('')}
+                  onClick={() => { setNavSearch(''); searchInputRef.current?.focus(); }}
                   className="p-0.5 text-ink-muted hover:text-ink transition-colors mr-1"
                   aria-label="Xóa từ khóa"
                 >
@@ -173,15 +208,22 @@ export default function Navbar({ compactMobile = false }) {
               <Search className="w-3.5 h-3.5" />
             </button>
           </form>
+        </div>
 
-          <Link
-            to="/search"
-            className="min-[1800px]:hidden inline-flex w-9 h-9 items-center justify-center rounded-full border border-[#E4DDD5] bg-[#F5F2EB] text-ink-slate hover:text-accent hover:border-accent transition-colors"
-            aria-label="Mở trang tìm kiếm"
+        {/* RIGHT: Search + User / Auth actions */}
+        <div className="unifind-header-actions hidden xl:flex items-center gap-2 2xl:ml-4 2xl:gap-3 shrink-0">
+          <button
+            ref={searchToggleRef}
+            type="button"
+            onClick={() => setDesktopSearchOpen(!desktopSearchOpen)}
+            className="unifind-search-toggle inline-flex items-center justify-center rounded-full border border-hairline bg-paper-soft text-ink-slate"
+            aria-label={desktopSearchOpen ? 'Đóng tìm kiếm' : 'Mở tìm kiếm'}
+            aria-expanded={desktopSearchOpen}
+            aria-controls="unifind-desktop-search"
             title="Tìm kiếm vật phẩm"
           >
-            <Search className="w-4 h-4" />
-          </Link>
+            {desktopSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </button>
 
           {user ? (
             <>
@@ -211,6 +253,8 @@ export default function Navbar({ compactMobile = false }) {
               {/* User Dropdown */}
               <div className="relative" ref={dropdownRef}>
                 <button
+                  aria-label="Menu tài khoản"
+                  aria-expanded={userDropdownOpen}
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full border border-hairline bg-white hover:bg-paper-panel transition-all shadow-sm"
                 >

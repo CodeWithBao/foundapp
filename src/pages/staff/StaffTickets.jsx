@@ -2,11 +2,18 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   MessageSquare, Search, Filter, Clock, CheckCircle2, AlertCircle,
   Send, User, Tag, RotateCcw, Headphones, ArrowRight, ShieldCheck,
-  Check, X
+  Check, X, ArrowLeft
 } from 'lucide-react';
 import ticketService from '../../services/ticketService';
 import { useAuth } from '../../context/AuthContext';
-import { toast } from 'sonner';
+import { toast as baseToast } from 'sonner';
+
+// FRONTEND UI ONLY: brand feedback in this workspace, without global toast changes.
+const toastStyle = { style: { background: '#FFF8F7', borderColor: '#981B1E', color: '#981B1E' } };
+const toast = {
+  success: message => baseToast.success(message, toastStyle),
+  error: message => baseToast.error(message, toastStyle),
+};
 
 const STATUS_CONFIG = {
   OPEN: {
@@ -40,25 +47,31 @@ export default function StaffTickets() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [staffReply, setStaffReply] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDetail, setShowDetail] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const mutationRef = useRef(false);
+  const loadVersion = useRef(0);
 
   const messagesEndRef = useRef(null);
   const replyInputRef = useRef(null);
 
   // Load danh sách tickets
   const loadTickets = async () => {
+    const version = ++loadVersion.current;
     try {
-      const data = await ticketService.getTickets({
-        status: statusFilter,
-        search,
-      });
+      const all = await ticketService.getTickets();
+      const query = search.trim().toLowerCase();
+      const data = all.filter(t => (statusFilter === 'all' || t.status === statusFilter) && (!query || [t.id, t.userName, t.userEmail, t.topic, ...(t.messages || []).map(m => m.text)].some(value => String(value || '').toLowerCase().includes(query))));
+      if (version !== loadVersion.current) return;
       setTickets(data);
-      setAllTickets(await ticketService.getTickets());
+      setAllTickets(all);
 
       // Nếu đang chọn một ticket, cập nhật lại dữ liệu mới nhất của ticket đó
       if (selectedTicketId) {
         const stillExists = data.some((t) => t.id === selectedTicketId);
-        if (!stillExists && data.length > 0) {
-          setSelectedTicketId(data[0].id);
+        if (!stillExists) {
+          setSelectedTicketId(data[0]?.id || null);
+          setShowDetail(false);
         }
       } else if (data.length > 0) {
         setSelectedTicketId(data[0].id);
@@ -66,7 +79,7 @@ export default function StaffTickets() {
     } catch (err) {
       toast.error(err.message || 'Không thể tải tickets');
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
   };
 
@@ -96,8 +109,8 @@ export default function StaffTickets() {
     if (selectedTicketId) {
       ticketService.markAsRead(selectedTicketId, 'staff').catch(err => toast.error(err.message));
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        replyInputRef.current?.focus();
+        const viewport = messagesEndRef.current?.parentElement;
+        if (viewport) viewport.scrollTop = viewport.scrollHeight;
       }, 100);
     }
   }, [selectedTicketId, selectedTicket?.messages?.length]);
@@ -117,7 +130,9 @@ export default function StaffTickets() {
   // Gửi tin nhắn trả lời từ Nhân viên Staff
   const handleSendReply = async (e) => {
     e?.preventDefault();
-    if (!staffReply.trim() || !selectedTicket) return;
+    if (!staffReply.trim() || !selectedTicket || mutationRef.current || !['OPEN', 'IN_PROGRESS'].includes(selectedTicket.status)) return;
+    mutationRef.current = true;
+    setBusy(true);
 
     const replyText = staffReply.trim();
     setStaffReply('');
@@ -134,22 +149,26 @@ export default function StaffTickets() {
       toast.success('Đã gửi phản hồi đến sinh viên!');
     }
     } catch (err) { setStaffReply(replyText); toast.error(err.message); }
+    finally { mutationRef.current = false; setBusy(false); }
   };
 
   // Thay đổi trạng thái Ticket
   const handleChangeStatus = async (newStatus) => {
-    if (!selectedTicket) return;
+    if (!selectedTicket || mutationRef.current) return;
+    mutationRef.current = true;
+    setBusy(true);
     try {
       await ticketService.updateStatus(selectedTicket.id, newStatus);
       await loadTickets();
       toast.success(`Đã cập nhật trạng thái ticket: ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
     } catch (err) { toast.error(err.message); }
+    finally { mutationRef.current = false; setBusy(false); }
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${showDetail ? 'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-[72px] max-lg:z-20 max-lg:bg-white max-lg:p-2 max-lg:space-y-0' : ''}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className={`${showDetail ? 'max-lg:hidden' : ''} flex flex-col sm:flex-row sm:items-center justify-between gap-4`}>
         <div>
           <h1 className="text-2xl font-bold text-[#18181B] flex items-center gap-2">
             <Headphones className="w-7 h-7 text-[#981B1E]" />
@@ -170,7 +189,7 @@ export default function StaffTickets() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className={`${showDetail ? 'max-lg:hidden' : ''} grid grid-cols-2 sm:grid-cols-4 gap-4`}>
         <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs">
           <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tổng ticket</div>
           <div className="text-2xl font-bold text-stone-900 mt-1">{stats.total}</div>
@@ -200,9 +219,9 @@ export default function StaffTickets() {
       </div>
 
       {/* Main Split Content: Left List + Right Chat Drawer */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col lg:flex-row h-[calc(100dvh-12rem)] min-h-[480px] max-h-[720px]">
+      <div className={`bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col lg:flex-row ${showDetail ? 'h-full' : 'h-[calc(100dvh-10rem)]'} min-h-0 lg:h-[min(720px,calc(100dvh-8rem))]`}>
         {/* LEFT COLUMN: TICKET LIST */}
-        <div className="w-full lg:w-96 border-b lg:border-b-0 lg:border-r border-stone-200 flex flex-col min-h-0 h-1/2 lg:h-full bg-stone-50/50">
+        <div className={`${showDetail ? 'hidden' : 'flex'} w-full lg:w-[340px] lg:shrink-0 lg:flex border-r border-stone-200 flex-col min-h-0 h-full bg-stone-50/50`}>
           {/* Search & Filter */}
           <div className="p-3.5 border-b border-stone-200 space-y-2 bg-white">
             <div className="relative">
@@ -222,6 +241,7 @@ export default function StaffTickets() {
                 { id: 'OPEN', label: 'Chờ tiếp nhận' },
                 { id: 'IN_PROGRESS', label: 'Đang xử lý' },
                 { id: 'RESOLVED', label: 'Đã giải quyết' },
+                { id: 'CLOSED', label: 'Đã đóng' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -255,7 +275,7 @@ export default function StaffTickets() {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => setSelectedTicketId(t.id)}
+                    onClick={() => { setSelectedTicketId(t.id); setShowDetail(true); setStaffReply(''); }}
                     className={`w-full text-left p-3.5 transition-all flex flex-col gap-1.5 relative ${
                       isSelected
                         ? 'bg-red-50/60 border-l-4 border-[#981B1E]'
@@ -264,7 +284,7 @@ export default function StaffTickets() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs font-bold text-[#981B1E]">
-                        #{t.id}
+                        #{String(t.id).slice(0, 8)}
                       </span>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 ${statusCfg.bg}`}
@@ -306,14 +326,15 @@ export default function StaffTickets() {
 
         {/* RIGHT COLUMN: TICKET DETAIL & CHAT */}
         {selectedTicket ? (
-          <div className="flex-1 min-h-0 flex flex-col h-1/2 lg:h-full bg-white">
+          <div className={`${showDetail ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 min-h-0 flex-col h-full bg-white`}>
+            <button type="button" onClick={() => setShowDetail(false)} className="lg:hidden flex shrink-0 items-center gap-2 min-h-11 px-4 text-sm text-[#981B1E]"><ArrowLeft size={16} /> Danh sách ticket</button>
             {/* Ticket Header & Status Manager */}
             <div className="p-4 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50/40">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-base font-bold text-[#981B1E]">
+              <div className="space-y-1 min-w-0 break-words">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" title="Bấm để sao chép mã đầy đủ" onClick={async () => { try { await navigator.clipboard.writeText(String(selectedTicket.id)); toast.success('Đã sao chép mã ticket'); } catch { toast.error('Không thể sao chép mã'); } }} className="min-h-11 min-w-0 text-left font-mono text-xs break-all font-bold text-[#981B1E] cursor-copy">
                     #{selectedTicket.id}
-                  </span>
+                  </button>
                   <span
                     className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${
                       STATUS_CONFIG[selectedTicket.status]?.bg
@@ -343,8 +364,8 @@ export default function StaffTickets() {
               <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                 {selectedTicket.status === 'OPEN' && (
                   <button
-                    onClick={() => handleChangeStatus('IN_PROGRESS')}
-                    className="text-xs px-3 py-1.5 font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-2xs transition-colors flex items-center gap-1"
+                    disabled={busy} onClick={() => handleChangeStatus('IN_PROGRESS')}
+                    className="min-h-11 text-xs px-3 py-1.5 font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-2xs transition-colors flex items-center gap-1"
                   >
                     <Clock size={13} /> Tiếp nhận xử lý
                   </button>
@@ -352,24 +373,24 @@ export default function StaffTickets() {
 
                 {selectedTicket.status !== 'RESOLVED' && selectedTicket.status !== 'CLOSED' && (
                   <button
-                    onClick={() => handleChangeStatus('RESOLVED')}
-                    className="text-xs px-3 py-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-2xs transition-colors flex items-center gap-1"
+                    disabled={busy} onClick={() => handleChangeStatus('RESOLVED')}
+                    className="min-h-11 text-xs px-3 py-1.5 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-2xs transition-colors flex items-center gap-1"
                   >
                     <Check size={13} /> Đã giải quyết
                   </button>
                 )}
 
-                {selectedTicket.status !== 'CLOSED' ? (
+                {['OPEN', 'IN_PROGRESS'].includes(selectedTicket.status) ? (
                   <button
-                    onClick={() => handleChangeStatus('CLOSED')}
-                    className="text-xs px-3 py-1.5 font-semibold bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl transition-colors flex items-center gap-1"
+                    disabled={busy} onClick={() => handleChangeStatus('CLOSED')}
+                    className="min-h-11 text-xs px-3 py-1.5 font-semibold bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl transition-colors flex items-center gap-1"
                   >
                     <X size={13} /> Đóng ticket
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleChangeStatus('IN_PROGRESS')}
-                    className="text-xs px-3 py-1.5 font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors flex items-center gap-1"
+                    disabled={busy} onClick={() => handleChangeStatus('IN_PROGRESS')}
+                    className="min-h-11 text-xs px-3 py-1.5 font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors flex items-center gap-1"
                   >
                     <RotateCcw size={13} /> Mở lại ticket
                   </button>
@@ -378,7 +399,7 @@ export default function StaffTickets() {
             </div>
 
             {/* Conversation Stream */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF8F5]/60">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3 bg-[#FAF8F5]/60">
               {selectedTicket.messages?.map((msg) => {
                 const isUser = msg.sender === 'user';
                 const isStaff = msg.sender === 'staff' || msg.sender === 'admin';
@@ -434,17 +455,19 @@ export default function StaffTickets() {
                 value={staffReply}
                 onChange={(e) => setStaffReply(e.target.value)}
                 placeholder="Nhập nội dung phản hồi gửi đến sinh viên (Enter để gửi)..."
-                disabled={selectedTicket.status === 'CLOSED'}
-                className="flex-1 text-xs px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#981B1E] focus:border-[#981B1E] disabled:opacity-50"
+                disabled={busy || !['OPEN', 'IN_PROGRESS'].includes(selectedTicket.status)}
+                className="flex-1 min-w-0 min-h-11 text-base px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#981B1E] focus:border-[#981B1E] disabled:opacity-50"
               />
 
               <button
                 type="submit"
-                disabled={!staffReply.trim() || selectedTicket.status === 'CLOSED'}
+                aria-label="Gửi phản hồi"
+                aria-busy={busy || undefined}
+                disabled={busy || !staffReply.trim() || !['OPEN', 'IN_PROGRESS'].includes(selectedTicket.status)}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#981B1E] hover:bg-[#801619] disabled:opacity-40 disabled:hover:bg-[#981B1E] text-white text-xs font-bold rounded-xl shadow-2xs transition-colors shrink-0"
               >
                 <Send size={13} />
-                <span>Gửi phản hồi</span>
+                <span className="hidden sm:inline">Gửi phản hồi</span>
               </button>
             </form>
           </div>
