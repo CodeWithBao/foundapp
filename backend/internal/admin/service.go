@@ -34,6 +34,15 @@ func (s *adminService) GetUsers(page, limit int, search string) ([]models.User, 
 }
 
 func (s *adminService) UpdateUserStatus(adminID uint, targetUserID uint, status string, role string, ip string) error {
+	if status != "ACTIVE" && status != "BANNED" {
+		return fmt.Errorf("invalid user status")
+	}
+	if role != "" && role != string(models.RoleUser) && role != string(models.RoleStaff) && role != string(models.RoleAdmin) {
+		return fmt.Errorf("invalid user role")
+	}
+	if adminID == targetUserID && (status != "ACTIVE" || (role != "" && role != string(models.RoleAdmin))) {
+		return fmt.Errorf("cannot disable or demote your own account")
+	}
 	if err := s.repo.UpdateUserStatus(targetUserID, status, role); err != nil {
 		return err
 	}

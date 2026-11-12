@@ -8,6 +8,7 @@ import DNTULogo from '../../components/common/DNTULogo';
 import { toast } from 'sonner';
 import { ROLES, STORAGE_KEYS } from '../../constants';
 import storageService from '../../services/storageService';
+import { portalPath } from '../../routes/portalPaths';
 
 export default function LoginPage() {
   const { login, googleLogin } = useAuth();
@@ -34,7 +35,7 @@ export default function LoginPage() {
     setSuccessMessage(`Đăng nhập thành công. Xin chào, ${user.name}!`);
     const returnPath = getSafeReturnPath();
     if (returnPath) {
-      navigate(returnPath, {
+      navigate(portalPath(user.role, returnPath), {
         replace: true,
         state: fromLocation.state || (location.state?.resumeAction ? { resumeAction: location.state.resumeAction } : null),
       });

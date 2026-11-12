@@ -27,6 +27,9 @@ type ConversationView struct {
 	ItemLocation  string            `json:"item_location"`
 	Recipient     UserView          `json:"recipient"`
 	Blocked       bool              `json:"blocked"`
+	Pinned        bool              `json:"pinned"`
+	ManualUnread  bool              `json:"manual_unread"`
+	Archived      bool              `json:"archived"`
 	BlockedByMe   bool              `json:"blocked_by_me"`
 	UnreadCount   int               `json:"unread_count"`
 	LastMessageAt time.Time         `json:"last_message_at"`
@@ -44,24 +47,35 @@ type UserView struct {
 }
 
 type MessageView struct {
-	ID             uint      `json:"id"`
-	ConversationID uint      `json:"conversation_id"`
-	SenderID       uint      `json:"sender_id"`
-	SenderName     string    `json:"sender_name"`
-	SenderAvatar   string    `json:"sender_avatar"`
-	Text           string    `json:"text"`
-	Image          string    `json:"image"`
-	Read           bool      `json:"read"`
-	CreatedAt      time.Time `json:"created_at"`
+	ClientMessageID *string    `json:"client_message_id"`
+	ReplyToID       *uint      `json:"reply_to_id"`
+	Forwarded       bool       `json:"forwarded"`
+	RecalledAt      *time.Time `json:"recalled_at"`
+	ID              uint       `json:"id"`
+	ConversationID  uint       `json:"conversation_id"`
+	SenderID        uint       `json:"sender_id"`
+	SenderName      string     `json:"sender_name"`
+	SenderAvatar    string     `json:"sender_avatar"`
+	Text            string     `json:"text"`
+	Image           string     `json:"image"`
+	Read            bool       `json:"read"`
+	CreatedAt       time.Time  `json:"created_at"`
 }
 
 type Service interface {
+	SetPinned(userID, conversationID uint, value bool) error
+	SetUnread(userID, conversationID uint, value bool) error
+	Recall(userID, conversationID, messageID uint) error
+	Forward(userID, conversationID uint, dto ForwardMessageDTO) (*MessageView, error)
+	Report(userID, conversationID uint, reason string) (*models.ChatReport, error)
 	GetOrCreateConversation(currentUserID uint, dto CreateConversationDTO) (*ConversationView, error)
 	GetConversations(currentUserID uint) ([]ConversationView, error)
 	GetConversation(currentUserID, conversationID uint) (*ConversationView, error)
 	SendMessage(currentUserID, conversationID uint, dto SendMessageDTO) (*MessageView, error)
 	MarkRead(currentUserID, conversationID uint) error
 	SetBlocked(currentUserID, conversationID uint, blocked bool) error
+	SetArchived(currentUserID, conversationID uint, archived bool) error
+	DeleteConversation(currentUserID, conversationID uint) error
 }
 
 type service struct{ repo Repository }
@@ -122,6 +136,11 @@ func (s *service) GetConversations(currentUserID uint) ([]ConversationView, erro
 		if viewErr != nil {
 			return nil, viewErr
 		}
+		// Opening an item chat prepares a draft; only visible message history
+		// makes it an inbox conversation (including images and recalled messages).
+		if len(view.Messages) == 0 {
+			continue
+		}
 		view.Messages = nil
 		views = append(views, *view)
 	}
@@ -137,9 +156,32 @@ func (s *service) GetConversation(currentUserID, conversationID uint) (*Conversa
 }
 
 func (s *service) SendMessage(currentUserID, conversationID uint, dto SendMessageDTO) (*MessageView, error) {
+	return s.sendMessage(currentUserID, conversationID, dto, nil)
+}
+
+func (s *service) sendMessage(currentUserID, conversationID uint, dto SendMessageDTO, forwardID *uint) (*MessageView, error) {
 	conversation, err := s.authorize(currentUserID, conversationID)
 	if err != nil {
 		return nil, err
+	}
+	clientID := strings.TrimSpace(dto.ClientMessageID)
+	if len(clientID) > 128 {
+		return nil, ErrInvalidChat
+	}
+	if clientID != "" {
+		existing, err := s.repo.FindClientMessage(conversationID, currentUserID, clientID)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			view := messageToView(*existing, existing.Sender)
+			return &view, nil
+		}
+	}
+	if dto.ReplyToID != nil {
+		if _, err := s.visibleMessage(conversation, currentUserID, *dto.ReplyToID); err != nil {
+			return nil, err
+		}
 	}
 	text := strings.TrimSpace(dto.Text)
 	imageURL := strings.TrimSpace(dto.ImageURL)
@@ -176,6 +218,11 @@ func (s *service) SendMessage(currentUserID, conversationID uint, dto SendMessag
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
+	message.ReplyToID = dto.ReplyToID
+	message.ForwardSourceID = forwardID
+	if clientID != "" {
+		message.ClientMessageID = &clientID
+	}
 	snippet := text
 	if snippet == "" {
 		snippet = "[Hình ảnh]"
@@ -201,7 +248,10 @@ func (s *service) MarkRead(currentUserID, conversationID uint) error {
 	if _, err := s.authorize(currentUserID, conversationID); err != nil {
 		return err
 	}
-	return s.repo.MarkMessagesRead(conversationID, currentUserID, time.Now())
+	if err := s.repo.MarkMessagesRead(conversationID, currentUserID, time.Now()); err != nil {
+		return err
+	}
+	return s.repo.SetPreference(conversationID, currentUserID, "manual_unread", false)
 }
 
 func (s *service) SetBlocked(currentUserID, conversationID uint, blocked bool) error {
@@ -209,6 +259,21 @@ func (s *service) SetBlocked(currentUserID, conversationID uint, blocked bool) e
 		return err
 	}
 	return s.repo.SetBlocked(conversationID, currentUserID, blocked)
+}
+
+func (s *service) SetArchived(currentUserID, conversationID uint, archived bool) error {
+	if _, err := s.authorize(currentUserID, conversationID); err != nil {
+		return err
+	}
+	return s.repo.SetConversationState(conversationID, currentUserID, &archived, nil)
+}
+
+func (s *service) DeleteConversation(currentUserID, conversationID uint) error {
+	if _, err := s.authorize(currentUserID, conversationID); err != nil {
+		return err
+	}
+	now := time.Now()
+	return s.repo.SetConversationState(conversationID, currentUserID, nil, &now)
 }
 
 func (s *service) authorize(currentUserID, conversationID uint) (*models.ChatConversation, error) {
@@ -232,6 +297,12 @@ func (s *service) buildConversationView(conversation *models.ChatConversation, c
 		recipient = conversation.UserB
 		blockedByMe = conversation.BlockedByA
 	}
+	archived := conversation.ArchivedByB
+	deletedAt := conversation.DeletedByBAt
+	if conversation.ParticipantA == currentUserID {
+		archived = conversation.ArchivedByA
+		deletedAt = conversation.DeletedByAAt
+	}
 	messages, err := s.repo.FindMessages(conversation.ID)
 	if err != nil {
 		return nil, err
@@ -239,6 +310,9 @@ func (s *service) buildConversationView(conversation *models.ChatConversation, c
 	messageViews := make([]MessageView, 0, len(messages))
 	unreadCount := 0
 	for _, message := range messages {
+		if deletedAt != nil && !message.CreatedAt.After(*deletedAt) {
+			continue
+		}
 		view := messageToView(message, message.Sender)
 		messageViews = append(messageViews, view)
 		if message.SenderID != currentUserID && message.ReadAt == nil {
@@ -256,9 +330,15 @@ func (s *service) buildConversationView(conversation *models.ChatConversation, c
 		ItemLocation: conversation.Item.Location.Name,
 		Recipient:    UserView{ID: recipient.ID, Name: recipient.Name, Avatar: firstNonEmpty(recipient.AvatarURL, recipient.Avatar), Role: recipient.Role},
 		Blocked:      conversation.BlockedByA || conversation.BlockedByB,
-		BlockedByMe:  blockedByMe, UnreadCount: unreadCount,
+		Archived:     archived,
+		Pinned:       conversation.PinnedByB, ManualUnread: conversation.ManualUnreadByB,
+		BlockedByMe: blockedByMe, UnreadCount: unreadCount,
 		LastMessageAt: conversation.LastMessageAt,
 		CreatedAt:     conversation.CreatedAt, UpdatedAt: conversation.UpdatedAt,
+	}
+	if conversation.ParticipantA == currentUserID {
+		view.Pinned = conversation.PinnedByA
+		view.ManualUnread = conversation.ManualUnreadByA
 	}
 	if len(messageViews) > 0 {
 		last := messageViews[len(messageViews)-1]
@@ -271,7 +351,12 @@ func (s *service) buildConversationView(conversation *models.ChatConversation, c
 }
 
 func messageToView(message models.ChatMessage, sender models.User) MessageView {
+	if message.RecalledAt != nil {
+		message.Text = ""
+		message.ImageURL = ""
+	}
 	return MessageView{
+		ClientMessageID: message.ClientMessageID, ReplyToID: message.ReplyToID, Forwarded: message.ForwardSourceID != nil, RecalledAt: message.RecalledAt,
 		ID: message.ID, ConversationID: message.ConversationID,
 		SenderID: message.SenderID, SenderName: sender.Name,
 		SenderAvatar: firstNonEmpty(sender.AvatarURL, sender.Avatar),

@@ -590,7 +590,7 @@ export default function SearchPage() {
                 count={8}
                 className={viewMode === 'list' ? '' : 'xl:grid-cols-3 2xl:grid-cols-4 gap-5'}
               />
-            ) : filteredItems.length === 0 ? (
+            ) : loadError && items.length === 0 ? null : filteredItems.length === 0 ? (
               <EmptyState
                 icon={PackageSearch}
                 title="Không tìm thấy vật phẩm phù hợp"

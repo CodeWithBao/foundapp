@@ -1,6 +1,20 @@
 import { STORAGE_KEYS, CLAIM_STATUS } from '../constants';
 import storageService from './storageService';
-import apiClient, { withFallback } from './apiClient';
+import apiClient from './apiClient';
+import { normalizeItem } from './itemService';
+
+// These flows require persisted API data, including in development.
+const withFallback = api => api();
+const normalizeClaim = c => ({ ...c, itemId: c.item_id, claimantId: c.claimant_id,
+  secretDetails: c.secret_details, evidence: c.secret_details, reviewNote: c.review_note, reviewedBy: c.reviewed_by,
+  createdAt: c.created_at, updatedAt: c.updated_at,
+  item: c.item ? normalizeItem(c.item) : undefined,
+  evidenceImage: c.evidences?.[0]?.image_url || '',
+});
+const normalizeHandover = h => ({ ...h, claimId: h.claim_id, itemId: h.item_id,
+  receiverId: h.recipient_id, staffId: h.staff_id, date: h.handover_date, createdAt: h.created_at,
+  evidenceImages: h.evidence_images?.length ? h.evidence_images : [h.evidence_image].filter(Boolean),
+  evidenceImage: h.evidence_images?.[0] || h.evidence_image || '' });
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
@@ -38,7 +52,7 @@ const claimService = {
 
         const qs = queryParams.toString();
         const res = await apiClient.get(`/claims${qs ? '?' + qs : ''}`);
-        return Array.isArray(res) ? res : res.claims || [];
+        return (Array.isArray(res) ? res : res.claims || []).map(normalizeClaim);
       },
       async () => {
         await delay();
@@ -60,7 +74,7 @@ const claimService = {
   async getClaimById(id) {
     return withFallback(
       async () => {
-        return await apiClient.get(`/claims/${id}`);
+        return normalizeClaim(await apiClient.get(`/claims/${id}`));
       },
       async () => {
         await delay();
@@ -79,7 +93,7 @@ const claimService = {
           item_id: data.itemId,
           reason: data.reason,
           secret_details: data.secretDetails,
-          evidences: data.evidences || [],
+          evidences: data.evidences || (data.evidenceImage ? [data.evidenceImage] : []),
         });
       },
       async () => {
@@ -221,74 +235,22 @@ const claimService = {
   },
 
   async completeHandover(claimId, handoverData) {
-    return withFallback(
-      async () => {
-        return await apiClient.post(`/claims/${claimId}/handover`, {
-          date: handoverData.date || new Date().toISOString(),
-          notes: handoverData.notes || '',
-          evidence_image: handoverData.evidenceImage || handoverData.handoverImage || ''
-        });
-      },
-      async () => {
-        await delay(400);
-        const claims = storageService.get(STORAGE_KEYS.CLAIMS) || [];
-        const idx = claims.findIndex(c => c.id === claimId);
-        if (idx === -1) throw new Error('Không tìm thấy yêu cầu');
-
-        // BR07
-        if (![CLAIM_STATUS.APPROVED, CLAIM_STATUS.READY_FOR_HANDOVER].includes(claims[idx].status)) {
-          throw new Error('Chỉ có thể bàn giao claim đã được chấp nhận.');
-        }
-
-        const evidenceImage = handoverData.evidenceImage || handoverData.handoverImage || claims[idx].evidenceImage || '';
-
-        // Update claim
-        claims[idx] = {
-          ...claims[idx],
-          status: CLAIM_STATUS.COMPLETED,
-          handoverImage: evidenceImage,
-          evidenceImage: evidenceImage,
-          updatedAt: new Date().toISOString()
-        };
-        storageService.set(STORAGE_KEYS.CLAIMS, claims);
-
-        // Update item → RETURNED (BR08)
-        const items = storageService.get(STORAGE_KEYS.ITEMS) || [];
-        const itemIdx = items.findIndex(i => i.id === claims[idx].itemId);
-        if (itemIdx !== -1) {
-          items[itemIdx] = { ...items[itemIdx], status: 'RETURNED' };
-          storageService.set(STORAGE_KEYS.ITEMS, items);
-        }
-
-        // Create handover record
-        const handovers = storageService.get(STORAGE_KEYS.HANDOVERS) || [];
-        const hId = 'H' + String(handovers.length + 1).padStart(3, '0');
-        const record = {
-          id: hId, claimId, itemId: claims[idx].itemId,
-          receiverId: claims[idx].claimantId,
-          staffId: handoverData.staffId,
-          date: handoverData.date || new Date().toISOString(),
-          notes: handoverData.notes || '',
-          evidenceImage: evidenceImage,
-          createdAt: new Date().toISOString(),
-        };
-        handovers.push(record);
-        storageService.set(STORAGE_KEYS.HANDOVERS, handovers);
-
-        const item = items.find(i => i.id === claims[idx].itemId);
-        addNotification(claims[idx].claimantId, 'Đã bàn giao', `"${item?.title}" đã được bàn giao thành công.`, 'handover_complete', claimId);
-        addAuditLog(handoverData.staffId, `Staff completed handover #${hId}`, 'Handover', hId, 'HANDOVER');
-
-        return record;
-      }
-    );
+    const images = handoverData.evidenceImages?.length ? handoverData.evidenceImages : [handoverData.evidenceImage || handoverData.handoverImage].filter(Boolean);
+    return normalizeHandover(await apiClient.post(`/claims/${claimId}/handover`, {
+      recipient_name: handoverData.recipientName || '',
+      recipient_student_id: handoverData.recipientStudentId || '',
+      location: handoverData.location || '',
+      notes: handoverData.notes || '',
+      evidence_images: images,
+      evidence_image: images[0] || '',
+    }));
   },
 
   async getHandovers() {
     return withFallback(
       async () => {
         const res = await apiClient.get('/claims/handovers');
-        return Array.isArray(res) ? res : res.handovers || [];
+        return (Array.isArray(res) ? res : res.handovers || []).map(normalizeHandover);
       },
       async () => {
         await delay();

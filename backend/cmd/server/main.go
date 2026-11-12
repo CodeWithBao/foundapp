@@ -20,6 +20,8 @@ import (
 	"unifind-dntu/internal/patterns/facade"
 	"unifind-dntu/internal/patterns/observer"
 	"unifind-dntu/internal/report"
+	"unifind-dntu/internal/statistics"
+	"unifind-dntu/internal/ticket"
 	"unifind-dntu/internal/upload"
 	"unifind-dntu/internal/user"
 
@@ -117,6 +119,9 @@ func main() {
 
 	apiV1 := r.Group("/api/v1")
 	apiV1.Use(middleware.ProxySecretMiddleware())
+	statisticsHandler := statistics.NewHandler(db)
+	defer statisticsHandler.Close()
+	statisticsHandler.RegisterRoutes(apiV1)
 	authMiddleware := middleware.AuthRequired()
 	requireStaff := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
 	requireStaffOrAdmin := middleware.RequireRole(models.RoleStaff, models.RoleAdmin)
@@ -135,6 +140,7 @@ func main() {
 	claimHandler.RegisterRoutes(apiV1, authMiddleware, requireStaff)
 	matchingHandler.RegisterRoutes(apiV1, authMiddleware)
 	notifHandler.RegisterRoutes(apiV1, authMiddleware)
+	ticket.NewHandler(db).RegisterRoutes(apiV1, authMiddleware)
 	catHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	locHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	adminHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)

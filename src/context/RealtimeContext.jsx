@@ -26,7 +26,7 @@ export function RealtimeProvider({ children }) {
     const requestVersion = requestVersionRef.current;
     runningRef.current = true;
     try {
-      const [chatRows, notificationRows] = await Promise.all([
+      const [chatResult, notificationResult] = await Promise.allSettled([
         chatService.getConversationsForUser(userId),
         notificationService.getByUser(userId),
       ]);
@@ -34,13 +34,18 @@ export function RealtimeProvider({ children }) {
         requestVersion !== requestVersionRef.current ||
         String(requestUserId) !== String(userId)
       ) return;
-      setConversations(chatRows);
-      setUnreadMessagesCount(chatRows.reduce((total, row) => total + Number(row.unreadCount || 0), 0));
-      setUnreadNotificationsCount(notificationRows.filter(row => !row.read && row.type !== 'chat_message').length);
+      if (chatResult.status === 'fulfilled') {
+        const chatRows = chatResult.value;
+        setConversations(chatRows);
+        setUnreadMessagesCount(chatRows.reduce((total, row) => total + Number(row.unreadCount || 0), 0));
+      }
+      if (notificationResult.status === 'fulfilled') {
+        setUnreadNotificationsCount(notificationResult.value.filter(row => !row.read).length);
+      }
     } catch {
       // Giữ số gần nhất khi mất mạng; lần reconnect/focus kế tiếp sẽ đồng bộ lại từ backend.
     } finally {
-      runningRef.current = false;
+      if (requestVersion === requestVersionRef.current) runningRef.current = false;
     }
   }, [userId]);
 

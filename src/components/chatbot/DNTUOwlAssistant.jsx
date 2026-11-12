@@ -286,18 +286,21 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
 
   // Đồng bộ ticket đang mở của user
   useEffect(() => {
-    const existing = ticketService.getUserActiveTicket(user?.id || 'guest');
-    if (existing) {
-      setActiveTicket(existing);
-    }
+    let cancelled = false;
+    setActiveTicket(null);
+    if (user?.id) ticketService.getUserActiveTicket(user.id)
+      .then(existing => { if (!cancelled) setActiveTicket(existing); })
+      .catch(error => console.warn('Không thể tải ticket:', error.message));
+    return () => { cancelled = true; };
   }, [user?.id]);
 
   // Lắng nghe realtime phản hồi từ Staff qua ticketService
   useEffect(() => {
-    const unsubscribe = ticketService.subscribe((detail) => {
+    const unsubscribe = ticketService.subscribe(async (detail) => {
+      try {
       if (!activeTicket) return;
-      if (detail.ticketId === activeTicket.id) {
-        const fresh = ticketService.getTicketById(activeTicket.id);
+      if (detail.action === 'poll' || detail.ticketId === activeTicket.id) {
+        const fresh = await ticketService.getTicketById(activeTicket.id);
         if (fresh) {
           setActiveTicket(fresh);
           const lastMsg = fresh.messages?.[fresh.messages.length - 1];
@@ -318,18 +321,20 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
                 },
               ];
             });
-            ticketService.markAsRead(fresh.id, 'user');
+            await ticketService.markAsRead(fresh.id, 'user');
           }
         }
       }
+      } catch (error) { console.warn('Không thể đồng bộ ticket:', error.message); }
     });
 
     return () => unsubscribe();
   }, [activeTicket]);
 
-  const handleEndTicketSession = () => {
+  const handleEndTicketSession = async () => {
     if (!activeTicket) return;
-    ticketService.updateStatus(activeTicket.id, 'RESOLVED');
+    try { await ticketService.updateStatus(activeTicket.id, 'RESOLVED'); }
+    catch (error) { window.alert(error.message); return; }
     setMessages((prev) => [
       ...prev,
       {
@@ -530,20 +535,22 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
   };
 
   // Chat với nhân viên - Tự động tạo Ticket cho Admin
-  const handleSelectSupportTopic = (topic) => {
+  const handleSelectSupportTopic = async (topic) => {
+    if (!user?.id) { window.alert('Vui lòng đăng nhập để liên hệ nhân viên hỗ trợ.'); return; }
     setActiveTab('chat');
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     const topicLabel = topic.label || topic.title || 'Hỗ trợ trực tiếp từ nhân viên';
 
     // Tạo ticket gửi Nhân viên (Staff)
-    const newTicket = ticketService.createTicket({
+    let newTicket;
+    try { newTicket = await ticketService.createTicket({
       userId: user?.id || 'guest',
       userName: user?.name || (user?.id ? 'Sinh viên DNTU' : 'Khách vãng lai'),
       userEmail: user?.email || '',
       userRole: user?.role || 'user',
       topic: topicLabel,
       initialMessage: `Em cần hỗ trợ về chủ đề: "${topicLabel}"`,
-    });
+    }); } catch (error) { window.alert(error.message); return; }
 
     setActiveTicket(newTicket);
     playSound('message-out');
@@ -600,11 +607,11 @@ export default function DNTUOwlAssistant({ open = false, onOpenChange, isMobile 
     // Tự động đẩy tin nhắn vào Ticket của Admin để hiển thị realtime
     if (activeTicket) {
       setMascotState('staff');
-      ticketService.addMessage(activeTicket.id, {
+      try { await ticketService.addMessage(activeTicket.id, {
         sender: 'user',
         senderName: user?.name || 'Sinh viên',
         text: currentAttachedImage ? `${text} [Đính kèm ảnh: ${currentAttachedImage.name}]` : text,
-      });
+      }); } catch (error) { setInputMessage(text); window.alert(error.message); return; }
 
       setIsTyping(true);
       setTimeout(() => {

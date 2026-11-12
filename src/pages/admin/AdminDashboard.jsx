@@ -20,7 +20,7 @@ import Badge from '../../components/common/Badge';
 import { formatDateTime } from '../../utils';
 
 import claimService from '../../services/claimService';
-import itemService from '../../services/itemService';
+
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -28,24 +28,24 @@ export default function AdminDashboard() {
   const [recentLogs, setRecentLogs] = useState([]);
   const [claimsData, setClaimsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [s, m, logs, claimsRes, itemsRes] = await Promise.all([
+        const [s, logs, claimsRes, itemsRes] = await Promise.all([
           adminService.getStats(),
-          adminService.getMonthlyStats().catch(() => []),
           adminService.getAuditLogs(),
           claimService.getClaims(),
-          itemService.getItems()
+          adminService.getAllItems()
         ]);
         
         setStats(s);
         setClaimsData(claimsRes || []);
 
         let dynamicMonthly = [];
-        if (itemsRes && itemsRes.length > 0) {
+        if (itemsRes) {
           const now = new Date();
           for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -76,10 +76,10 @@ export default function AdminDashboard() {
           ];
         }
 
-        setMonthlyData(m && m.length > 0 && m[0].lost !== undefined ? m.slice(-6) : dynamicMonthly);
+        setMonthlyData(dynamicMonthly);
         setRecentLogs(logs ? logs.slice(0, 5) : []);
       } catch (err) {
-        console.error(err);
+        setError(err.message || 'Không thể tải số liệu từ máy chủ.');
       } finally {
         setLoading(false);
       }
@@ -94,9 +94,9 @@ export default function AdminDashboard() {
 
   claimsData.forEach(c => {
     const st = (c.status || '').toUpperCase();
-    if (['COMPLETED', 'APPROVED', 'HANDOVER_COMPLETED'].includes(st)) {
+    if (['COMPLETED', 'HANDOVER_COMPLETED'].includes(st)) {
       returnedCount++;
-    } else if (['PENDING', 'UNDER_REVIEW'].includes(st)) {
+    } else if (['PENDING', 'UNDER_REVIEW', 'APPROVED', 'READY_FOR_HANDOVER'].includes(st)) {
       pendingCount++;
     } else if (['REJECTED', 'CANCELLED'].includes(st)) {
       rejectedCount++;
@@ -129,6 +129,8 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  if (error) return <div role="alert" className="surface p-6 text-red-700">{error}</div>;
 
   return (
     <div className="space-y-6">

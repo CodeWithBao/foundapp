@@ -159,8 +159,15 @@ func (h *ClaimHandler) Handover(c *gin.Context) {
 	staffIDVal, _ := c.Get("user_id")
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	var dto HandoverClaimDTO
-	_ = c.ShouldBindJSON(&dto)
-	record, err := h.facade.Handover(uint(id), staffIDVal.(uint), dto.RecipientName, dto.RecipientStudentID, dto.Location, dto.Notes)
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	images := append([]string(nil), dto.EvidenceImages...)
+	if dto.EvidenceImage != "" {
+		images = append(images, dto.EvidenceImage)
+	}
+	record, err := h.facade.Handover(uint(id), staffIDVal.(uint), dto.RecipientName, dto.RecipientStudentID, dto.Location, dto.Notes, images...)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

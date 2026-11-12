@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"unifind-dntu/internal/middleware"
 	"unifind-dntu/internal/models"
 	"unifind-dntu/pkg/response"
 
@@ -128,7 +129,44 @@ func (h *Handler) Get(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	// Only images attached to visible posts are public; unlinked uploads may be claim proof.
+	var publicCount int64
+	url := "/api/v1/uploads/" + image.ID
+	if err := h.db.Model(&models.ItemImage{}).Joins("JOIN items ON items.id = item_images.item_id").
+		Where("item_images.image_url = ? AND items.is_hidden = ? AND items.deleted_at IS NULL", url, false).
+		Count(&publicCount).Error; err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	id, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	// Handover proof remains private even if later attached to a public post.
+	isHandover, isRecipient := false, false
+	if h.db.Migrator().HasTable(&models.HandoverRecord{}) {
+		var records []models.HandoverRecord
+		if err := h.db.Select("recipient_id", "evidence_image", "evidence_images").
+			Where("evidence_image = ? OR evidence_images LIKE ?", url, "%\""+url+"\"%").Find(&records).Error; err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		for _, record := range records {
+			linked := record.EvidenceImage == url
+			for _, evidence := range record.EvidenceImages {
+				linked = linked || evidence == url
+			}
+			if linked {
+				isHandover = true
+				isRecipient = isRecipient || id == record.RecipientID
+			}
+		}
+	}
+	if publicCount == 0 || isHandover {
+		if id != image.UserID && role != models.RoleStaff && role != models.RoleAdmin && !isRecipient {
+			c.Status(http.StatusForbidden)
+			return
+		}
+	}
+	c.Header("Cache-Control", "private, no-store")
 	c.Header("Content-Disposition", "inline")
 	c.Data(http.StatusOK, image.ContentType, image.Data)
 }
@@ -153,7 +191,7 @@ func (h *Handler) Delete(c *gin.Context) {
 
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, uploadRateLimit gin.HandlerFunc) {
 	uploads := r.Group("/uploads")
-	uploads.GET("/:id", h.Get)
+	uploads.GET("/:id", middleware.OptionalAuth(), h.Get)
 	if uploadRateLimit != nil {
 		uploads.POST("", authMiddleware, uploadRateLimit, h.Upload)
 	} else {

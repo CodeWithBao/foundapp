@@ -1,11 +1,25 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
-import apiClient, { withFallback } from './apiClient';
+import apiClient from './apiClient';
+// Persisted API only: never report browser demo data as a successful server operation.
+const withFallback = api => api();
 import { mergeCanonicalLocations } from '../data/locations';
+import { normalizeItem } from './itemService';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
 const adminService = {
+  async getAllItems() {
+    const items = [];
+    for (let page = 1; ; page += 1) {
+      const res = await apiClient.get(`/items?page=${page}&limit=50`);
+      const rows = Array.isArray(res) ? res : res.items || [];
+      items.push(...rows);
+      if (Array.isArray(res) || rows.length === 0 || items.length >= Number(res.total ?? items.length)) break;
+    }
+    return items.map(normalizeItem);
+  },
+
   async getStats() {
     return withFallback(
       async () => {
@@ -192,7 +206,9 @@ const adminService = {
         if (filters.search) queryParams.append('search', filters.search);
         const qs = queryParams.toString();
         const res = await apiClient.get(`/admin/audit-logs${qs ? '?' + qs : ''}`);
-        return Array.isArray(res) ? res : res.logs || [];
+        return (Array.isArray(res) ? res : res.logs || []).map(log => ({
+          ...log, userName: log.user_name || `#${log.user_id}`, entityId: log.entity_id, createdAt: log.created_at,
+        }));
       },
       async () => {
         await delay();

@@ -25,8 +25,19 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerF
 		} else {
 			group.POST("/:id/messages", h.SendMessage)
 		}
+		group.PUT("/:id/pin", h.SetPinned)
+		group.PUT("/:id/unread", h.SetUnread)
+		group.POST("/:id/messages/:messageId/recall", h.Recall)
+		group.POST("/:id/report", h.Report)
+		if sendRateLimit != nil {
+			group.POST("/:id/forward", sendRateLimit, h.Forward)
+		} else {
+			group.POST("/:id/forward", h.Forward)
+		}
 		group.PUT("/:id/read", h.MarkRead)
 		group.PUT("/:id/block", h.SetBlocked)
+		group.PUT("/:id/archive", h.SetArchived)
+		group.DELETE("/:id", h.DeleteConversation)
 	}
 }
 
@@ -111,6 +122,37 @@ func (h *Handler) SetBlocked(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "Conversation block state updated", nil)
+}
+
+func (h *Handler) SetArchived(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var dto struct {
+		Archived bool `json:"archived"`
+	}
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.service.SetArchived(c.MustGet("user_id").(uint), id, dto.Archived); err != nil {
+		handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "Conversation archive state updated", nil)
+}
+
+func (h *Handler) DeleteConversation(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	if err := h.service.DeleteConversation(c.MustGet("user_id").(uint), id); err != nil {
+		handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "Conversation deleted for current user", nil)
 }
 
 func parseID(c *gin.Context) (uint, bool) {

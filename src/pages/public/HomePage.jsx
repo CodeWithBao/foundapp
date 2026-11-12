@@ -9,6 +9,7 @@ import CategoryIcon from '../../components/common/CategoryIcon';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import itemService from '../../services/itemService';
 import scrollRestorationService from '../../services/scrollRestorationService';
+import { subscribeStatistics } from '../../services/siteStatistics';
 
 export default function HomePage() {
   const [items, setItems] = useState([]);
@@ -16,6 +17,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({ total: 0, returned: 0, lost: 0, found: 0 });
+  const [liveStats, setLiveStats] = useState(null);
+  useEffect(() => subscribeStatistics(setLiveStats), []);
+  const formatMetric = value => Number.isFinite(value) ? value.toLocaleString('vi-VN') : '--';
   const navigate = useNavigate();
   const navType = useNavigationType();
   const shouldRestoreRef = useRef(false);
@@ -236,7 +240,8 @@ export default function HomePage() {
       </section>
 
       {/* Stats Ribbon Bar matching 01_home.png */}
-      <section className="bg-white border-y border-hairline py-5">
+      <section className="bg-white border-y border-hairline py-5" aria-label="Thống kê thực tế, cập nhật mỗi 30 giây">
+        <p className="page-container text-xs text-ink-muted mb-3">{liveStats ? 'Dữ liệu thực tế · Cập nhật mỗi 30 giây' : 'Thống kê chưa cập nhật'}</p>
         <div className="page-container flex flex-wrap items-center justify-between gap-6">
           <div className="grid w-full flex-1 grid-cols-1 gap-5 min-[430px]:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             {/* Stat 1 */}
@@ -245,7 +250,7 @@ export default function HomePage() {
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-serif font-bold text-xl text-ink leading-tight">2.500+</p>
+                <p className="font-serif font-bold text-xl text-ink leading-tight">{formatMetric(liveStats?.members)}</p>
                 <p className="text-xs text-ink-muted">Thành viên cộng đồng</p>
               </div>
             </div>
@@ -256,8 +261,8 @@ export default function HomePage() {
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-serif font-bold text-xl text-ink leading-tight">430+</p>
-                <p className="text-xs text-ink-muted">Tin đăng đã được xử lý</p>
+                <p className="font-serif font-bold text-xl text-ink leading-tight">{formatMetric(liveStats?.returned_posts)}</p>
+                <p className="text-xs text-ink-muted" title="Tin công khai có trạng thái RETURNED; không tính tin đóng, ẩn hoặc đã xóa">Tin đăng đã trao trả</p>
               </div>
             </div>
 
@@ -267,8 +272,8 @@ export default function HomePage() {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-serif font-bold text-xl text-ink leading-tight">92%</p>
-                <p className="text-xs text-ink-muted">Tỷ lệ tìm lại thành công</p>
+                <p className="font-serif font-bold text-xl text-ink leading-tight">{Number.isFinite(liveStats?.returned_post_rate) ? `${liveStats.returned_post_rate.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%` : '--'}</p>
+                <p className="text-xs text-ink-muted" title="Số tin RETURNED / tổng tin công khai chưa xóa × 100. Đây là tỷ lệ tin, không phải tỷ lệ người tìm lại đồ.">Tỷ lệ tin đã trao trả</p>
               </div>
             </div>
 
@@ -278,8 +283,8 @@ export default function HomePage() {
                 <Heart className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-sm text-accent leading-tight">Vì một DNTU</p>
-                <p className="text-xs text-ink-muted">Văn minh – Nghĩa tình – Tử tế</p>
+                <p className="font-serif font-bold text-xl text-ink leading-tight">{formatMetric(liveStats?.active_sessions)}</p>
+                <p className="text-xs text-ink-muted" title="Phiên trình duyệt hoạt động trong 90 giây qua trên website; các tab dùng chung mã ẩn danh. Không phải số người duy nhất.">Đang truy cập · phiên / 90s</p>
               </div>
             </div>
           </div>

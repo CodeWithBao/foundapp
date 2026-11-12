@@ -69,7 +69,7 @@ export default function App() {
             <Route path="/my-posts" element={<ProtectedRoute><MyPostsPage /></ProtectedRoute>} />
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/student-card" element={<ProtectedRoute><StudentCardPage /></ProtectedRoute>} />
           </Route>
@@ -79,13 +79,14 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
 
       {/* Staff Routes */}
-      <Route path="/staff" element={<RoleRoute roles={[ROLES.STAFF, ROLES.ADMIN]}><StaffLayout /></RoleRoute>}>
+      <Route path="/staff" element={<RoleRoute roles={[ROLES.STAFF]}><StaffLayout /></RoleRoute>}>
             <Route index element={<StaffDashboard />} />
             <Route path="items" element={<StaffItems />} />
             <Route path="claims" element={<StaffClaims />} />
             <Route path="claims/:id" element={<StaffClaimDetail />} />
             <Route path="handovers" element={<StaffHandovers />} />
             <Route path="tickets" element={<StaffTickets />} />
+            <Route path="*" element={<StaffDashboard />} />
           </Route>
 
       {/* Admin Routes */}
@@ -96,6 +97,10 @@ export default function App() {
         <Route path="locations" element={<AdminLocations />} />
         <Route path="posts" element={<AdminPosts />} />
         <Route path="claims" element={<AdminClaims />} />
+        <Route path="claims/:id" element={<StaffClaimDetail />} />
+        <Route path="items" element={<StaffItems />} />
+        <Route path="handovers" element={<StaffHandovers />} />
+        <Route path="tickets" element={<StaffTickets />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="audit-logs" element={<AdminAuditLogs />} />
         <Route path="statistics" element={<AdminStatistics />} />

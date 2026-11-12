@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
-import apiClient, { withFallback } from './apiClient';
+import apiClient from './apiClient';
+const withFallback = api => api();
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
@@ -15,7 +16,11 @@ const userService = {
 
         const qs = queryParams.toString();
         const res = await apiClient.get(`/users${qs ? '?' + qs : ''}`);
-        return Array.isArray(res) ? res : res.users || [];
+        return (Array.isArray(res) ? res : res.users || []).filter(u =>
+          (!filters.role || filters.role === 'all' || u.role.toLowerCase() === filters.role.toLowerCase()) &&
+          (!filters.status || filters.status === 'all' || (u.status === 'BANNED' ? 'blocked' : u.status.toLowerCase()) === filters.status.toLowerCase()) &&
+          (!filters.search || `${u.name} ${u.email}`.toLowerCase().includes(filters.search.toLowerCase()))
+        ).map(u => ({ ...u, status: u.status === 'BANNED' ? 'blocked' : u.status.toLowerCase(), fullName: u.name, studentId: u.student_id, createdAt: u.created_at }));
       },
       async () => {
         await delay();
@@ -70,7 +75,8 @@ const userService = {
         // Backend uses admin route: PUT /admin/users/:id/status
         const users = await apiClient.get('/users');
         const userList = Array.isArray(users) ? users : users.users || [];
-        const user = userList.find(u => u.id === id);
+        const user = userList.find(u => String(u.id) === String(id));
+        if (!user) throw new Error('Không tìm thấy người dùng');
         const newStatus = user?.status === 'BANNED' || user?.status === 'blocked' ? 'ACTIVE' : 'BANNED';
         return await apiClient.put(`/admin/users/${id}/status`, { status: newStatus });
       },
@@ -90,7 +96,10 @@ const userService = {
     return withFallback(
       async () => {
         // Backend doesn't have a dedicated role endpoint yet; use admin status endpoint
-        return await apiClient.put(`/admin/users/${id}/status`, { status: 'ACTIVE', role: newRole });
+        const users = await apiClient.get('/users');
+        const target = (Array.isArray(users) ? users : users.users || []).find(u => String(u.id) === String(id));
+        if (!target) throw new Error('Không tìm thấy người dùng');
+        return await apiClient.put(`/admin/users/${id}/status`, { status: target.status, role: newRole.toUpperCase() });
       },
       async () => {
         await delay();

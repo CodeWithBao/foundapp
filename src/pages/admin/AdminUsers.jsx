@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Shield, ShieldOff, Lock, Unlock, UserCheck, ShieldAlert, Filter, UserCog, KeyRound } from 'lucide-react';
 import userService from '../../services/userService';
-import itemService from '../../services/itemService';
+import adminService from '../../services/adminService';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -33,7 +33,7 @@ export default function AdminUsers() {
     try {
       const [uData, iData] = await Promise.all([
         userService.getUsers(),
-        itemService.getItems()
+        adminService.getAllItems()
       ]);
       setUsers(uData);
       setItems(iData);
@@ -109,7 +109,7 @@ export default function AdminUsers() {
       }
       return true;
     });
-  }, [users, roleFilter, search]);
+  }, [users, roleFilter, statusFilter, search]);
 
   const totalPages = Math.ceil(filtered.length / perPage) || 1;
   const paginated = useMemo(() => {

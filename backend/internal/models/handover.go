@@ -16,6 +16,8 @@ type HandoverRecord struct {
 	HandoverLocation   string    `gorm:"type:varchar(255)" json:"handover_location"`
 	Notes              string    `gorm:"type:text" json:"notes"`
 	CreatedAt          time.Time `json:"created_at"`
+	EvidenceImage      string    `gorm:"type:text" json:"evidence_image"`
+	EvidenceImages     []string  `gorm:"serializer:json;type:text" json:"evidence_images"`
 
 	Claim     Claim `gorm:"foreignKey:ClaimID" json:"claim,omitempty"`
 	Item      Item  `gorm:"foreignKey:ItemID" json:"item,omitempty"`

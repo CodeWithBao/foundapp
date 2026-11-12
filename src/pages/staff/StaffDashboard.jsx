@@ -5,7 +5,7 @@ import {
   CheckSquare, History, Calendar, Eye
 } from 'lucide-react';
 import claimService from '../../services/claimService';
-import itemService from '../../services/itemService';
+import adminService from '../../services/adminService';
 import userService from '../../services/userService';
 import { CLAIM_STATUS } from '../../constants';
 import { StatusBadge } from '../../components/common/Badge';
@@ -22,6 +22,7 @@ export default function StaffDashboard() {
   });
   const [reviewList, setReviewList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadDashboardData();
@@ -32,19 +33,19 @@ export default function StaffDashboard() {
     try {
       const [allClaims, allItems, allUsers] = await Promise.all([
         claimService.getClaims(),
-        itemService.getItems(),
+        adminService.getAllItems(),
         userService.getUsers(),
       ]);
 
       const itemsMap = new Map(allItems.map(i => [i.id, i]));
       const usersMap = new Map(allUsers.map(u => [u.id, u]));
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const isToday = value => value && new Date(value).toDateString() === new Date().toDateString();
 
       const pendingClaims = allClaims.filter(c => c.status === CLAIM_STATUS.PENDING);
-      const todayClaims = allClaims.filter(c => c.createdAt && c.createdAt.startsWith(todayStr));
+      const todayClaims = allClaims.filter(c => isToday(c.createdAt));
       const processedClaims = allClaims.filter(
-        c => [CLAIM_STATUS.APPROVED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.COMPLETED, CLAIM_STATUS.READY_FOR_HANDOVER].includes(c.status)
+        c => isToday(c.updatedAt) && [CLAIM_STATUS.APPROVED, CLAIM_STATUS.REJECTED, CLAIM_STATUS.COMPLETED, CLAIM_STATUS.READY_FOR_HANDOVER].includes(c.status)
       );
       const storageItems = allItems.filter(i => i.status === 'FOUND');
 
@@ -80,11 +81,13 @@ export default function StaffDashboard() {
 
       setReviewList(needsReview);
     } catch (err) {
-      console.error('Error loading staff dashboard:', err);
+      setError(err.message || 'Không thể tải số liệu từ máy chủ.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (error) return <div role="alert" className="surface p-6 text-red-700">{error}</div>;
 
   return (
     <div className="space-y-6">

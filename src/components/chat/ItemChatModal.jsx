@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 import { 
@@ -33,11 +33,13 @@ function mergeMessages(serverMessages = [], localMessages = []) {
   const transient = localMessages.filter(message => {
     if (!['sending', 'failed', 'uncertain'].includes(message.deliveryStatus)) return false;
     if (serverIds.has(String(message.id))) return false;
+    if (message.clientId && serverMessages.some(row => row.clientId === message.clientId)) return false;
     if (message.deliveryStatus === 'failed') return true;
 
     const localTime = new Date(message.createdAt).getTime();
     const matchIndex = serverMessages.findIndex((serverMessage, index) => {
       if (matchedServerIndexes.has(index)) return false;
+      if (serverMessage.clientId || message.clientId) return false;
       const serverTime = new Date(serverMessage.createdAt).getTime();
       return String(serverMessage.senderId) === String(message.senderId)
         && String(serverMessage.text || '') === String(message.text || '')
@@ -90,8 +92,10 @@ export default function ItemChatModal({
   const previousMessageIdsRef = useRef(new Set());
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
-  const chatRequestRunningRef = useRef(false);
   const loadedSessionRef = useRef('');
+  const activeSessionRef = useRef('');
+  const messageRevisionRef = useRef(0);
+  const lastScrollMessageRef = useRef('');
   useBodyScrollLock(isOpen);
 
   const itemId = item?.id;
@@ -106,6 +110,24 @@ export default function ItemChatModal({
     avatar: item?.contactAvatar || null
   };
   const isSelfChat = isSameEntityId(currentUser?.id, recipient?.id);
+  const sessionKey = `${itemId}:${currentUser?.id}:${recipient?.id}`;
+  useLayoutEffect(() => {
+    activeSessionRef.current = isOpen ? sessionKey : '';
+    return () => { activeSessionRef.current = ''; };
+  }, [isOpen, sessionKey]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = event => {
+      if (event.key !== 'Escape') return;
+      event.stopPropagation();
+      if (showReportModal) setShowReportModal(false);
+      else if (showMenu) setShowMenu(false);
+      else onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, showReportModal, showMenu, onClose]);
 
   // Close menu on click outside
   useEffect(() => {
@@ -145,7 +167,7 @@ export default function ItemChatModal({
     }
 
     let isMounted = true;
-    const sessionKey = `${itemId}:${currentUser.id}:${recipient.id}`;
+    let requestRunning = false;
     const isNewSession = loadedSessionRef.current !== sessionKey;
     if (isNewSession) {
       setInitialLoading(true);
@@ -155,11 +177,15 @@ export default function ItemChatModal({
       previousMessageIdsRef.current = new Set();
       nearBottomRef.current = true;
       setShowNewMessages(false);
+      setInputText('');
+      setSelectedImage(null);
+      lastScrollMessageRef.current = '';
     }
 
     const loadChat = async ({ silent = false } = {}) => {
-      if (chatRequestRunningRef.current) return;
-      chatRequestRunningRef.current = true;
+      if (requestRunning) return;
+      requestRunning = true;
+      const revision = messageRevisionRef.current;
       try {
         const conv = await chatService.getConversation(
           itemId, 
@@ -167,7 +193,7 @@ export default function ItemChatModal({
           recipient.id, 
           item
         );
-        if (isMounted) {
+        if (isMounted && activeSessionRef.current === sessionKey && revision === messageRevisionRef.current) {
           setConversation(conv);
           const nextMessages = conv.messages || [];
           const incomingNewMessage = nextMessages.some(message =>
@@ -198,7 +224,7 @@ export default function ItemChatModal({
           }
         }
       } finally {
-        chatRequestRunningRef.current = false;
+        requestRunning = false;
       }
     };
 
@@ -215,21 +241,24 @@ export default function ItemChatModal({
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose, isSelfChat, reloadKey]);
+  }, [isOpen, itemId, currentUser, recipient?.id, item, onClose, isSelfChat, reloadKey, sessionKey]);
 
-  // Auto scroll to bottom
-  useEffect(() => {
-    if (isOpen && nearBottomRef.current) {
-      scrollToLatest(messages.length <= 1 ? 'auto' : 'smooth');
-    } else if (isOpen && messages.length > 0) {
-      setShowNewMessages(true);
+  // FRONTEND UI ONLY: unchanged polling snapshots must not move the viewport.
+  useLayoutEffect(() => {
+    const latest = messages.at(-1);
+    const key = latest ? String(latest.clientId || latest.id) : '';
+    if (isOpen && key && key !== lastScrollMessageRef.current && nearBottomRef.current) {
+      scrollToLatest(lastScrollMessageRef.current ? 'smooth' : 'auto');
     }
+    lastScrollMessageRef.current = key;
   }, [messages, isOpen, scrollToLatest]);
 
   if (!isOpen || !item) return null;
 
   const deliverMessage = async pendingMessage => {
     if (!conversation?.id) return;
+    const requestSession = sessionKey;
+    const conversationId = conversation.id;
     try {
       const { message } = await chatService.sendMessage({
         conversationId: conversation.id,
@@ -242,6 +271,8 @@ export default function ItemChatModal({
         clientMessageId: pendingMessage.clientId,
       });
 
+      if (activeSessionRef.current !== requestSession) return;
+      messageRevisionRef.current += 1;
       setMessages(previous => {
         const withoutPendingOrDuplicate = previous.filter(current =>
           current.clientId !== pendingMessage.clientId
@@ -252,9 +283,10 @@ export default function ItemChatModal({
           deliveryStatus: 'sent',
         }].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       });
-      setConversation(previous => previous ? { ...previous, updatedAt: message.createdAt } : previous);
+      setConversation(previous => String(previous?.id) === String(conversationId) ? { ...previous, updatedAt: message.createdAt } : previous);
       setConnectionState('connected');
     } catch (err) {
+      if (activeSessionRef.current !== requestSession) return;
       const deliveryStatus = err.isUncertain ? 'uncertain' : 'failed';
       setMessages(previous => previous.map(current =>
         current.clientId === pendingMessage.clientId
@@ -299,6 +331,7 @@ export default function ItemChatModal({
       deliveryStatus: 'sending',
     };
 
+    nearBottomRef.current = true;
     setMessages(previous => [...previous, pendingMessage]);
     setInputText('');
     setSelectedImage(null);
@@ -404,7 +437,6 @@ export default function ItemChatModal({
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="relative shrink-0">
               <Avatar name={recipient.name} src={recipient.avatar} size="md" className="ring-2 ring-white/20" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#741216] rounded-full" />
             </div>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
@@ -612,7 +644,7 @@ export default function ItemChatModal({
               {/* Security Header within thread */}
               <div className="text-center my-2">
                 <span className="inline-block px-3 py-1 rounded-full bg-gray-200/70 text-gray-600 text-[10px] font-medium">
-                  Cuộc trò chuyện được mã hóa lưu trữ an toàn trên UniFind DNTU
+                  Tin nhắn được đồng bộ qua tài khoản UniFind DNTU
                 </span>
               </div>
 

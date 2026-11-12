@@ -42,11 +42,12 @@ const menuItems = [
 
 function SidebarContent({ onClose, user, handleLogout }) {
   const location = useLocation();
-  const [unreadTicketCount, setUnreadTicketCount] = useState(() => ticketService.getUnreadCountForStaff());
+  const [unreadTicketCount, setUnreadTicketCount] = useState(0);
 
   useEffect(() => {
+    ticketService.getUnreadCountForStaff().then(setUnreadTicketCount).catch(() => {});
     const unsubscribe = ticketService.subscribe(() => {
-      setUnreadTicketCount(ticketService.getUnreadCountForStaff());
+      ticketService.getUnreadCountForStaff().then(setUnreadTicketCount).catch(() => {});
     });
     return () => unsubscribe();
   }, []);
@@ -133,18 +134,18 @@ function SidebarContent({ onClose, user, handleLogout }) {
       <div className="absolute inset-x-0 bottom-0 h-[72px] border-t border-white/10 bg-black/5 px-4 flex items-center justify-between shrink-0 z-10 backdrop-blur-sm">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-[42px] h-[42px] rounded-full bg-white text-[#981B1E] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
-            {user?.fullName
+            {user?.avatar_url || user?.avatar ? <img src={user.avatar_url || user.avatar} alt="" className="h-full w-full rounded-full object-cover" /> : (user?.fullName
               ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
               : user?.name
               ? user.name.charAt(0)
-              : 'TM'}
+              : '?' )}
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-semibold text-white truncate leading-tight">
-              {user?.fullName || user?.name || 'Trần Minh Tuấn'}
+              {user?.fullName || user?.name || 'Nhân viên'}
             </p>
             <p className="text-[12px] text-white/70 truncate leading-tight mt-[3px]">
-              {user?.email || 'staff@dntu.edu.vn'}
+              {user?.email || ''}
             </p>
           </div>
         </div>
@@ -323,7 +324,7 @@ export default function StaffLayout() {
         }`}
       >
         {/* Top Header Bar */}
-        <header className="relative sticky top-0 z-40 h-[72px] border-b border-[#E8E2DD] bg-white/97 shadow-xs">
+        <header className="sticky top-0 z-40 h-[72px] min-h-[72px] max-h-[72px] flex-none border-b border-[#E8E2DD] bg-white shadow-xs">
           {/* DNTU Campus Watermark Background Container */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
             <img
@@ -499,15 +500,15 @@ export default function StaffLayout() {
                   className="flex items-center gap-2.5 rounded-xl p-1.5 pr-2.5 hover:bg-[#F8F6F3] transition-colors"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#981B1E]/15 bg-[#FBEDEE] text-sm font-bold text-[#981B1E] shrink-0">
-                    {user?.fullName
+                    {user?.avatar_url || user?.avatar ? <img src={user.avatar_url || user.avatar} alt="" className="h-full w-full rounded-full object-cover" /> : (user?.fullName
                       ? user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
                       : user?.name
                       ? user.name.charAt(0).toUpperCase()
-                      : 'TM'}
+                      : '?' )}
                   </div>
                   <div className="hidden sm:block text-left">
                     <p className="text-sm font-bold leading-tight text-[#18181B]">
-                      {user?.fullName || user?.name || 'Trần Minh Tuấn'}
+                      {user?.fullName || user?.name || 'Nhân viên'}
                     </p>
                     <p className="mt-0.5 text-[11px] leading-tight text-[#667085]">
                       Nhân viên

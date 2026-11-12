@@ -1,0 +1,62 @@
+.handover-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgb(15 23 42 / .65)}
+.handover-dialog{width:100%;max-width:512px;max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;border-radius:18px;background:white;color:#1e293b;box-shadow:0 24px 80px #0004;scroll-padding:16px}
+.handover-dialog :is(button,input,textarea,[tabindex]):focus-visible,.handover-dialog:focus-visible{outline:3px solid #8F1822;outline-offset:3px}
+.handover-header{display:flex;align-items:flex-start;gap:12px;padding:20px;border-bottom:1px solid #e5e7eb;color:#8F1822}
+.handover-header h2{flex:1;font-size:20px;line-height:1.4;font-weight:700}
+.handover-dialog button{min-height:44px;padding:8px 12px;border-radius:9px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.handover-dialog button:disabled{opacity:.5;cursor:not-allowed}
+.handover-dialog button:not(:disabled):hover{background:#f9ecee;color:#8F1822}
+.handover-body{padding:20px;display:grid;gap:16px;font-size:14px}
+.handover-intro,.handover-count,.handover-label span,.handover-upload span{color:#526071;font-size:13px;line-height:1.6}
+.handover-item{background:#faf1f2;padding:12px;border-radius:10px;font-weight:700;overflow-wrap:anywhere}
+.handover-summary>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+.handover-summary dt{color:#526071}.handover-summary dd{text-align:right;font-weight:600;overflow-wrap:anywhere}
+.handover-body fieldset{min-width:0;display:grid;gap:14px}.handover-body legend{font-weight:700;margin-bottom:12px}.handover-body legend span{color:#8F1822}
+.handover-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;background:#f1f5f9;border-radius:12px}.handover-tabs button{font-size:13px;padding:8px 4px}.handover-tabs [aria-selected=true]{background:#8F1822;color:white}
+/* FRONTEND UI ONLY: immersive camera; capture keeps the full video resolution. */
+.handover-camera-shell{min-width:0}.handover-camera{height:440px;background:#141416;position:relative;border-radius:24px;overflow:hidden;color:white;isolation:isolate}.handover-camera video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.handover-camera-top{position:absolute;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 16px 40px;background:linear-gradient(#0009,transparent);font-size:12px;font-weight:600}.handover-camera-top>span:first-child{display:flex;align-items:center;gap:8px}.handover-camera-badge{padding:6px 10px;border:1px solid #ffffff59;border-radius:99px;background:#0006;white-space:nowrap}
+.handover-camera-bottom{position:absolute;inset:auto 0 0;padding:36px 20px 16px;background:linear-gradient(transparent,#000c 35%,#000e)}.handover-camera-meta{display:flex;align-items:center;gap:12px;margin-bottom:18px}.handover-camera-meta p{flex:1;min-width:0;font-size:12px;line-height:1.5}.handover-camera-meta small{display:block;color:#e0e0e0;font-size:11px;margin-top:3px}.handover-dialog .handover-camera-thumbnail{flex:none;width:48px;height:48px;padding:0;border:1px solid #ffffff90;border-radius:12px;background:#ffffff1f;overflow:hidden}.handover-camera-thumbnail img{width:100%;height:100%;object-fit:cover}.handover-dialog .handover-camera-done{background:#8F1822;color:white;min-width:64px}.handover-camera-controls{display:grid;grid-template-columns:1fr 80px 1fr;align-items:center;gap:24px;justify-items:center}.handover-dialog .handover-camera-round{width:48px;height:48px;padding:0;border-radius:50%;background:#ffffff24;color:white;border:1px solid #ffffff60}.handover-dialog .handover-shutter{width:76px;height:76px;padding:5px;border:3px solid white;border-radius:50%;background:transparent}.handover-shutter::after{content:'';width:100%;height:100%;border-radius:50%;background:white}.handover-dialog .handover-shutter:not(:disabled):hover{background:#ffffff30;color:white}.handover-camera-caption{text-align:center;font-size:10px;letter-spacing:2px;font-weight:700;margin-top:12px;color:#fff}.handover-camera-feedback{font-size:12px;color:#fff;padding:8px;background:#8F1822;border-radius:8px;margin-bottom:8px}
+.handover-camera-message{position:absolute;inset:70px 20px 220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;font-size:13px;line-height:1.6;overflow:auto}.handover-camera-message>svg{flex-shrink:0}.handover-dialog .handover-camera-message button{background:white;color:#8F1822;flex-shrink:0}.handover-camera :is(button):focus-visible{outline-color:white}.handover-dialog .handover-camera button:active{opacity:.75}.handover-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.handover-camera-images{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 3px 10px;margin-bottom:8px;max-width:100%}.handover-camera-image{position:relative;flex:0 0 76px;height:76px;border:2px solid white;border-radius:10px;overflow:hidden;background:#141416}.handover-camera-image img{width:100%;height:100%;object-fit:cover}.handover-dialog .handover-camera-remove{position:absolute;top:0;right:0;width:44px;height:44px;min-height:44px;padding:0;border-radius:0 0 0 10px;border:1px solid #fff;background:#991b1b;color:white;box-shadow:0 2px 6px #0008}.handover-dialog .handover-camera-remove:not(:disabled):hover{background:#74131c;color:white}
+@media(max-width:600px),(max-height:500px) and (pointer:coarse){
+ .handover-camera-active.handover-dialog{position:fixed;inset:0;max-width:none;max-height:none;height:100vh;height:100dvh;border-radius:0;overflow:hidden;background:#141416}
+ .handover-camera-active>.handover-header,.handover-camera-active .handover-body>:not(fieldset),.handover-camera-active fieldset>:not(.handover-panel){display:none}
+ .handover-camera-active .handover-body,.handover-camera-active fieldset,.handover-camera-active .handover-panel,.handover-camera-active .handover-camera-shell{display:block;padding:0;margin:0;border:0;height:100%;min-height:0}
+ .handover-camera-active .handover-camera{height:100%;border-radius:28px}
+ .handover-camera-active .handover-camera-top{padding-top:max(20px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+ .handover-camera-active .handover-camera-bottom{padding:48px max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+ .handover-camera-active .handover-camera-meta{margin-bottom:24px}.handover-camera-active .handover-camera-message{bottom:260px}
+ .handover-label input,.handover-label textarea{font-size:16px}
+}
+@media(max-height:500px) and (min-width:601px){
+ .handover-camera-active.handover-dialog{position:fixed;inset:0;max-width:none;max-height:none;height:100dvh;border-radius:0;overflow:hidden;background:#141416}
+ .handover-camera-active>.handover-header,.handover-camera-active .handover-body>:not(fieldset),.handover-camera-active fieldset>:not(.handover-panel){display:none}
+ .handover-camera-active .handover-body,.handover-camera-active fieldset,.handover-camera-active .handover-panel,.handover-camera-active .handover-camera-shell{display:block;padding:0;margin:0;border:0;height:100%;min-height:0}
+ .handover-camera-active .handover-camera{height:100%;border-radius:24px}
+ .handover-camera-active .handover-camera-bottom{padding:8px max(24px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+ .handover-camera-active .handover-camera-top{padding-top:max(12px,env(safe-area-inset-top));padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+ .handover-camera-active .handover-camera-meta{position:absolute;right:max(20px,env(safe-area-inset-right));bottom:112px;max-width:250px;margin:0;gap:8px}
+ .handover-camera-active .handover-camera-images{max-width:calc(100% - 270px);margin-bottom:4px}
+ .handover-camera-active .handover-camera-message{inset:60px 20px 180px}
+ .handover-camera-active .handover-camera-caption{margin-top:6px}
+}
+/* FRONTEND UI ONLY: preview overlay controls and compact actions disclosure. */
+.handover-camera-bottom{background:transparent}
+.handover-camera-controls{grid-template-columns:48px 80px 48px;justify-content:center}
+.handover-dialog .handover-camera-round{background:rgb(119 73 20 / .48);color:#fffaf0;border:1px solid #e5ab53;backdrop-filter:blur(12px)}
+.handover-dialog .handover-shutter{padding:6px;border:1px solid #f0bd71;background:rgb(163 104 29 / .38)}
+.handover-shutter::after{background:#fffaf0}
+.handover-dialog .handover-shutter:not(:disabled):hover{background:rgb(163 104 29 / .58);color:white}
+.handover-camera-actions{position:relative}
+.handover-camera-menu{position:absolute;right:0;bottom:calc(100% + 14px);z-index:2;width:248px;max-width:calc(100vw - 48px);padding:6px;border:1px solid #e5ab53;border-radius:16px;background:rgb(57 36 15 / .96);box-shadow:0 8px 24px #0005;color:#fffaf0}
+.handover-dialog .handover-camera-menu button{width:100%;justify-content:flex-start;text-align:left;font-size:13px;min-height:48px;color:#fffaf0}
+.handover-dialog :is(.handover-camera-round,.handover-camera-menu button):not(:disabled):hover{background:rgb(163 104 29 / .7);color:#fffaf0}
+.handover-camera-meta p,.handover-camera-caption{text-shadow:0 1px 4px #000,0 1px 8px #000}
+.handover-label,.handover-upload{display:grid;gap:8px;font-weight:600}.handover-upload{padding:18px;border:1px dashed #94a3b8;border-radius:12px}.handover-upload input{max-width:100%;min-width:0;font-size:13px}
+.handover-label input,.handover-label textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid #94a3b8;border-radius:9px;font-weight:400;background:white}.handover-label textarea{resize:vertical}
+.handover-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.handover-images>div{min-width:0;border:1px solid #e2e8f0;border-radius:10px;padding:4px}.handover-images>div>button:first-child{width:100%;padding:0}.handover-images img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px}.handover-remove{width:100%;color:#8F1822}
+.handover-preview{display:grid;gap:8px;padding:8px;border:1px solid #e2e8f0;border-radius:12px}.handover-preview img{width:100%;max-height:360px;object-fit:contain}
+.handover-error{padding:12px;border:1px solid #fca5a5;background:#fff1f2;color:#991b1b;border-radius:9px;overflow-wrap:anywhere}
+.handover-footer{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid #e5e7eb}.handover-dialog .handover-confirm{background:#8F1822;color:white}.handover-dialog .handover-confirm:not(:disabled):hover{background:#74131c;color:white}
+@media(max-width:400px){.handover-overlay{padding:8px}.handover-dialog{max-height:calc(100dvh - 16px)}.handover-body,.handover-header{padding:16px}.handover-header h2{font-size:18px}.handover-summary>div{grid-template-columns:1fr}.handover-summary dd{text-align:left}.handover-tabs button{flex-direction:column}.handover-footer button{flex:1}}

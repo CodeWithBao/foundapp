@@ -100,7 +100,7 @@ export default function Navbar({ compactMobile = false }) {
         </Link>
 
         {/* CENTER: Desktop Nav Links */}
-        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-2 min-w-0">
+        <nav className="hidden xl:flex shrink-0 items-center gap-0.5 2xl:gap-2">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -123,7 +123,7 @@ export default function Navbar({ compactMobile = false }) {
           {/* Interactive Search Input with Filter Dropdown */}
           <form
             onSubmit={handleNavSearch}
-            className="hidden 2xl:flex min-w-0 items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
+            className="hidden min-[1800px]:flex min-w-0 items-center bg-[#F5F2EB] hover:bg-white focus-within:bg-white border border-[#E4DDD5] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 rounded-full pl-3 pr-1 py-1 transition-all duration-200 shadow-2xs group"
           >
             <div className="relative flex items-center shrink-0">
               <select
@@ -176,7 +176,7 @@ export default function Navbar({ compactMobile = false }) {
 
           <Link
             to="/search"
-            className="2xl:hidden inline-flex w-9 h-9 items-center justify-center rounded-full border border-[#E4DDD5] bg-[#F5F2EB] text-ink-slate hover:text-accent hover:border-accent transition-colors"
+            className="min-[1800px]:hidden inline-flex w-9 h-9 items-center justify-center rounded-full border border-[#E4DDD5] bg-[#F5F2EB] text-ink-slate hover:text-accent hover:border-accent transition-colors"
             aria-label="Mở trang tìm kiếm"
             title="Tìm kiếm vật phẩm"
           >

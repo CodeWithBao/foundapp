@@ -9,6 +9,7 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 import RouteScrollManager from './components/common/RouteScrollManager'
 import './index.css'
 import App from './App.jsx'
+import SiteStatisticsTracker from './components/common/SiteStatisticsTracker'
 
 storageService.init()
 
@@ -45,6 +46,7 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <RouteScrollManager />
+        <SiteStatisticsTracker />
         <AuthProvider>
           <RealtimeProvider>
             <Toaster position="top-center" richColors visibleToasts={1} toastOptions={{ duration: 2200 }} />

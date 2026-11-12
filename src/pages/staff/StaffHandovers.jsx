@@ -1,9 +1,10 @@
+import { portalPath } from '../../routes/portalPaths';
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Truck, CheckCircle, Search, PackageCheck, UserCheck,
-  Calendar, ClipboardCheck, User, FileText, Hash, ShieldCheck, Image as ImageIcon,
+  Calendar, ClipboardCheck, User, FileText,
   ArrowLeft
 } from 'lucide-react';
 import claimService from '../../services/claimService';
@@ -15,10 +16,9 @@ import EmptyState from '../../components/common/EmptyState';
 import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import Button from '../../components/common/Button';
-import Textarea from '../../components/common/Textarea';
-import ImageUploadCamera from '../../components/common/ImageUploadCamera';
-import { Modal } from '../../components/common/Modal';
-import { formatDateTime, formatDate } from '../../utils';
+import HandoverModal from '../../components/staff/HandoverModal';
+import HandoverEvidence from '../../components/staff/HandoverEvidence';
+import { formatDateTime } from '../../utils';
 import { toast } from 'sonner';
 
 export default function StaffHandovers() {
@@ -34,9 +34,6 @@ export default function StaffHandovers() {
   // Handover modal
   const [handoverModalOpen, setHandoverModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState(null);
-  const [handoverNote, setHandoverNote] = useState('');
-  const [evidenceImage, setEvidenceImage] = useState('');
-  const [handoverLoading, setHandoverLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -64,8 +61,8 @@ export default function StaffHandovers() {
           ...h,
           itemTitle: item?.title || h.itemId,
           itemImage: item?.images?.[0] || 'https://placehold.co/100x100?text=No+Image',
-          receiverName: receiver?.fullName || receiver?.name || 'Người nhận',
-          receiverIdCode: receiver?.studentId || receiver?.employeeId || '',
+          receiverName: receiver?.fullName || receiver?.name || h.recipient_name || 'Chưa cập nhật',
+          receiverIdCode: receiver?.studentId || receiver?.employeeId || h.recipient_student_id || '',
           receiverPhone: receiver?.phone || '',
           staffName: staff?.fullName || staff?.name || 'Nhân viên',
           handoverDate: h.date || h.createdAt,
@@ -101,41 +98,22 @@ export default function StaffHandovers() {
 
   const openHandoverModal = (claim) => {
     setSelectedClaim(claim);
-    setHandoverNote('');
-    setEvidenceImage('');
     setHandoverModalOpen(true);
   };
 
-  const handleCompleteHandover = async () => {
-    if (!selectedClaim) return;
-    if (!evidenceImage) {
-      toast.error('Vui lòng chụp hoặc tải ảnh bằng chứng sinh viên nhận đồ');
-      return;
-    }
-    setHandoverLoading(true);
-    try {
-      await claimService.completeHandover(selectedClaim.id, {
-        staffId: user.id,
-        notes: handoverNote,
-        date: new Date().toISOString(),
-        evidenceImage,
-      });
-      toast.success('Bàn giao tài sản thành công! Hồ sơ đã được lưu trữ.');
-      setHandoverModalOpen(false);
-      setSelectedClaim(null);
-      setEvidenceImage('');
-      await loadData();
-    } catch (err) {
-      toast.error(err.message || 'Không thể hoàn tất bàn giao');
-    } finally {
-      setHandoverLoading(false);
-    }
+  const handleCompleteHandover = async (data) => {
+    if (!selectedClaim) throw new Error('Không tìm thấy yêu cầu bàn giao');
+    await claimService.completeHandover(selectedClaim.id, data);
+    toast.success('Bàn giao tài sản thành công! Hồ sơ đã được lưu trữ.');
+    setHandoverModalOpen(false);
+    setSelectedClaim(null);
+    await loadData();
   };
 
   const filtered = search
     ? handovers.filter(h =>
-        h.id.toLowerCase().includes(search.toLowerCase()) ||
-        h.itemTitle.toLowerCase().includes(search.toLowerCase()) ||
+        String(h.id).toLowerCase().includes(search.toLowerCase()) ||
+        String(h.itemTitle).toLowerCase().includes(search.toLowerCase()) ||
         h.receiverName.toLowerCase().includes(search.toLowerCase()) ||
         h.receiverIdCode.toLowerCase().includes(search.toLowerCase()) ||
         h.staffName.toLowerCase().includes(search.toLowerCase()) ||
@@ -151,7 +129,7 @@ export default function StaffHandovers() {
       {/* Back navigation row */}
       <div className="-mt-1 mb-2 flex items-center h-8">
         <button
-          onClick={() => navigate('/staff/claims')}
+          onClick={() => navigate(portalPath(user.role, '/staff/claims'))}
           className="inline-flex items-center gap-2 text-sm font-medium text-[#344054] hover:text-[#981B1E] transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 text-[#981B1E] group-hover:-translate-x-0.5 transition-transform" />
@@ -360,6 +338,7 @@ export default function StaffHandovers() {
                         <p className="line-clamp-2" title={h.handoverNote}>
                           {h.handoverNote || <span className="text-slate-400 italic">Không có ghi chú</span>}
                         </p>
+                        <HandoverEvidence images={h.evidenceImages} />
                       </td>
                     </tr>
                   ))}
@@ -381,89 +360,15 @@ export default function StaffHandovers() {
         )}
       </div>
 
-      {/* MODAL: Xác nhận bàn giao */}
-      <Modal
-        isOpen={handoverModalOpen}
+      <HandoverModal
+        isOpen={handoverModalOpen && !!selectedClaim}
         onClose={() => setHandoverModalOpen(false)}
-        title="Biên bản Xác nhận bàn giao tài sản"
-      >
-        {selectedClaim && (
-          <div className="space-y-5 max-h-[80vh] overflow-y-auto px-1 py-1">
-            {/* Info Banner */}
-            <div className="p-4 bg-emerald-50 text-emerald-800 text-sm rounded-xl border border-emerald-200">
-              Bạn đang lập biên bản bàn giao tài sản tại Bộ phận Lost &amp; Found DNTU.
-            </div>
-
-            {/* Thông tin vật phẩm */}
-            <div className="flex items-center gap-3 p-3 bg-cream-50 rounded-xl border border-cream-200">
-              <img
-                src={selectedClaim.itemImage}
-                alt={selectedClaim.itemTitle}
-                className="w-12 h-12 rounded-lg object-cover border border-cream-300 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-text-dark text-sm truncate">{selectedClaim.itemTitle}</p>
-                <p className="text-xs text-warm-gray-500 font-mono">Claim: {selectedClaim.id}</p>
-              </div>
-            </div>
-
-            {/* Summary rows */}
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2 border-b border-cream-100">
-                <span className="text-warm-gray-500 font-medium">Người nhận:</span>
-                <span className="font-bold text-text-dark">{selectedClaim.claimantName}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-cream-100">
-                <span className="text-warm-gray-500 font-medium">MSSV / Mã nhân viên:</span>
-                <span className="font-mono font-semibold">{selectedClaim.claimantStudentId || 'Chưa cập nhật'}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-cream-100">
-                <span className="text-warm-gray-500 font-medium">Nhân viên thực hiện:</span>
-                <span className="font-bold text-text-dark">{user?.fullName || user?.name}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-cream-100">
-                <span className="text-warm-gray-500 font-medium">Ngày bàn giao:</span>
-                <span className="font-semibold">{formatDate(new Date().toISOString())}</span>
-              </div>
-            </div>
-
-            {/* Chụp ảnh bằng chứng nhận đồ */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-text-dark">
-                Bằng chứng sinh viên nhận đồ <span className="text-red-500">*</span>
-              </label>
-              <ImageUploadCamera
-                value={evidenceImage}
-                onChange={setEvidenceImage}
-                label="Chụp hoặc tải ảnh sinh viên cùng thẻ SV khi nhận đồ"
-              />
-            </div>
-
-            {/* Ghi chú bàn giao */}
-            <Textarea
-              label="Ghi chú bàn giao"
-              placeholder="Ghi chú (ví dụ: đã kiểm tra CCCD/Thẻ SV trực tiếp, tài sản còn nguyên vẹn, sinh viên xác nhận nhận đồ)..."
-              value={handoverNote}
-              onChange={(e) => setHandoverNote(e.target.value)}
-              rows={3}
-            />
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-2 border-t border-cream-200 sticky bottom-0 bg-white p-2 -mx-1">
-              <Button variant="ghost" onClick={() => setHandoverModalOpen(false)}>Hủy</Button>
-              <Button
-                variant="primary"
-                className="bg-emerald-700 hover:bg-emerald-800"
-                loading={handoverLoading}
-                onClick={handleCompleteHandover}
-                icon={CheckCircle}
-              >
-                Xác nhận bàn giao thành công
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        onSubmit={handleCompleteHandover}
+        itemTitle={selectedClaim?.itemTitle}
+        recipientName={selectedClaim?.claimantName}
+        recipientCode={selectedClaim?.claimantStudentId}
+        staffName={user?.fullName || user?.name}
+      />
     </div>
   );
 }

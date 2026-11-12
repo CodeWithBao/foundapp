@@ -59,6 +59,10 @@ func (h *ItemHandler) GetItemByID(c *gin.Context) {
 		return
 	}
 
+	if !canViewItem(c, item) {
+		response.Error(c, http.StatusForbidden, "Access denied")
+		return
+	}
 	sanitizedItem := h.sanitizeItem(c, item)
 	response.Success(c, http.StatusOK, "Item retrieved successfully", sanitizedItem)
 }
@@ -91,6 +95,15 @@ func (h *ItemHandler) GetItemContact(c *gin.Context) {
 		return
 	}
 
+	item, err := h.itemService.GetItemByID(uint(id), false)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Item not found")
+		return
+	}
+	if !canViewItem(c, item) {
+		response.Error(c, http.StatusForbidden, "Access denied")
+		return
+	}
 	contact, err := h.itemService.GetItemContact(uint(id))
 	if err != nil {
 		response.Error(c, http.StatusNotFound, err.Error())
@@ -153,7 +166,11 @@ func (h *ItemHandler) UpdateItem(c *gin.Context) {
 
 	item, err := h.itemService.UpdateItem(uint(id), userIDVal.(uint), userRole, dto)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "permission denied") {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, err.Error())
 		return
 	}
 
@@ -180,7 +197,11 @@ func (h *ItemHandler) DeleteItem(c *gin.Context) {
 	}
 
 	if err := h.itemService.DeleteItem(uint(id), userIDVal.(uint), userRole); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "permission denied") {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, err.Error())
 		return
 	}
 
@@ -201,6 +222,15 @@ func (h *ItemHandler) GetMyItems(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "User items retrieved successfully", items)
+}
+
+func canViewItem(c *gin.Context, item *models.Item) bool {
+	if !item.IsHidden {
+		return true
+	}
+	id, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	return id == item.UserID || role == models.RoleStaff || role == models.RoleAdmin
 }
 
 func maskPhone(phone string) string {

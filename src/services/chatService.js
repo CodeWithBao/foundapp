@@ -1,10 +1,6 @@
-import apiClient, { withFallback } from './apiClient';
-import { STORAGE_KEYS } from '../constants';
-import storageService from './storageService';
-import notificationService from './notificationService';
+import apiClient from './apiClient';
 import { isSameEntityId } from '../utils';
 
-const delay = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
 
 function notifyDataChanged() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('unifind:data-changed'));
@@ -13,6 +9,9 @@ function notifyDataChanged() {
 function normalizeMessage(message = {}) {
   return {
     ...message,
+    clientId: message.clientId ?? message.client_message_id ?? null,
+    replyToId: message.replyToId ?? message.reply_to_id ?? null,
+    recalledAt: message.recalledAt ?? message.recalled_at ?? null,
     conversationId: message.conversationId ?? message.conversation_id,
     senderId: message.senderId ?? message.sender_id,
     senderName: message.senderName ?? message.sender_name ?? message.sender?.name ?? 'Người dùng DNTU',
@@ -35,6 +34,7 @@ function normalizeConversation(conversation = {}) {
     itemType: conversation.itemType ?? conversation.item_type,
     itemStatus: conversation.itemStatus ?? conversation.item_status,
     itemLocation: conversation.itemLocation ?? conversation.item_location ?? '',
+    manualUnread: conversation.manualUnread ?? conversation.manual_unread ?? false,
     blockedByMe: conversation.blockedByMe ?? conversation.blocked_by_me ?? false,
     unreadCount: conversation.unreadCount ?? conversation.unread_count ?? 0,
     lastMessageAt: conversation.lastMessageAt ?? conversation.last_message_at ?? conversation.updated_at,
@@ -47,103 +47,31 @@ function normalizeConversation(conversation = {}) {
   };
 }
 
-const localChat = {
-  getChats() {
-    const chats = storageService.get(STORAGE_KEYS.CHATS);
-    return Array.isArray(chats) ? chats : [];
-  },
-  saveChats(chats) {
-    storageService.set(STORAGE_KEYS.CHATS, chats);
-  },
-  makeId(itemId, userA, userB) {
-    const sorted = [String(userA), String(userB)].sort();
-    return `chat_${itemId}_${sorted[0]}_${sorted[1]}`;
-  },
-  async getOrCreate(itemId, currentUser, recipient, itemData = {}) {
-    await delay();
-    if (!currentUser?.id || !recipient?.id) {
-      throw new Error('Thiếu thông tin người gửi hoặc người nhận. Vui lòng tải lại trang.');
-    }
-    if (isSameEntityId(currentUser.id, recipient.id)) {
-      throw new Error('Bạn không thể tạo cuộc trò chuyện với chính mình.');
-    }
-    const chats = this.getChats();
-    const id = this.makeId(itemId, currentUser.id, recipient.id);
-    let conversation = chats.find(row => row.id === id);
-    if (!conversation) {
-      conversation = {
-        id,
-        itemId: String(itemId),
-        itemTitle: itemData.title || 'Vật phẩm',
-        itemImage: itemData.images?.[0] || null,
-        itemType: itemData.type,
-        itemStatus: itemData.status,
-        itemLocation: typeof itemData.location === 'object' ? itemData.location?.name : itemData.location,
-        recipient,
-        participants: [String(currentUser.id), String(recipient.id)],
-        messages: [],
-        blocked: false,
-        blockedByMe: false,
-        updatedAt: new Date().toISOString(),
-      };
-      chats.unshift(conversation);
-      this.saveChats(chats);
-    }
-    return normalizeConversation(conversation);
-  },
-};
-
 export const chatService = {
-  async getConversation(itemId, currentUserId, recipientId, itemData = {}) {
+  async getConversation(itemId, currentUserId, recipientId) {
     if (!currentUserId || !recipientId) {
       throw new Error('Không xác định được người gửi hoặc người nhận.');
     }
     if (isSameEntityId(currentUserId, recipientId)) {
       throw new Error('Bạn không thể tạo cuộc trò chuyện với chính mình.');
     }
-    return withFallback(
-      async () => normalizeConversation(await apiClient.post('/chats', {
-        item_id: Number(itemId),
-        recipient_id: Number(recipientId),
-      })),
-      async () => localChat.getOrCreate(
-        itemId,
-        { id: currentUserId },
-        { id: recipientId },
-        itemData,
-      ),
-    );
+    return normalizeConversation(await apiClient.post('/chats', {
+      item_id: Number(itemId),
+      recipient_id: Number(recipientId),
+    }));
   },
 
   async getConversationById(conversationId) {
-    return withFallback(
-      async () => normalizeConversation(await apiClient.get(`/chats/${conversationId}`)),
-      async () => {
-        await delay();
-        const conversation = localChat.getChats().find(row => String(row.id) === String(conversationId));
-        if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện');
-        return normalizeConversation(conversation);
-      },
-    );
+    return normalizeConversation(await apiClient.get('/chats/' + conversationId));
   },
 
   async getConversationsForUser(userId) {
-    return withFallback(
-      async () => {
-        const rows = await apiClient.get('/chats');
-        return (Array.isArray(rows) ? rows : []).map(normalizeConversation);
-      },
-      async () => {
-        await delay();
-        return localChat.getChats()
-          .filter(row => row.participants?.map(String).includes(String(userId)))
-          .map(normalizeConversation)
-          .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
-      },
-    );
+    if (!userId) throw new Error('Bạn cần đăng nhập để xem trò chuyện.');
+    const rows = await apiClient.get('/chats');
+    return (Array.isArray(rows) ? rows : []).map(normalizeConversation);
   },
 
-  async sendMessage({ conversationId, itemId, sender, recipientId, text, image = null, itemData = {}, clientMessageId }) {
+  async sendMessage({ conversationId, itemId, sender, recipientId, text, image = null, itemData = {}, clientMessageId, replyToId }) {
     if (!text?.trim() && !image) throw new Error('Nội dung tin nhắn hoặc hình ảnh không được để trống');
     if (!sender?.id || !recipientId) throw new Error('Không xác định được người gửi hoặc người nhận. Vui lòng tải lại trang.');
     if (isSameEntityId(sender.id, recipientId)) throw new Error('Bạn không thể gửi tin nhắn cho chính mình.');
@@ -156,40 +84,57 @@ export const chatService = {
       text: text?.trim() || '',
       image_url: image || '',
       client_message_id: clientMessageId || '',
+      reply_to_id: replyToId || null,
     }, { timeout: 12000 }));
     notifyDataChanged();
     return { message, conversationId: activeConversationId };
   },
 
-  async markAsRead(conversationId, currentUserId) {
-    const result = await withFallback(
-      async () => apiClient.put(`/chats/${conversationId}/read`, {}),
-      async () => {
-        const chats = localChat.getChats();
-        const conversation = chats.find(row => String(row.id) === String(conversationId));
-        conversation?.messages?.forEach(message => {
-          if (String(message.senderId) !== String(currentUserId)) message.read = true;
-        });
-        localChat.saveChats(chats);
-      },
-    );
+  async markAsRead(conversationId) {
+    const result = await apiClient.put('/chats/' + conversationId + '/read', {});
     notifyDataChanged();
     return result;
   },
 
+  async setPinned(conversationId, pinned) {
+    await apiClient.put(`/chats/${conversationId}/pin`, { pinned });
+    notifyDataChanged();
+  },
+
+  async setUnread(conversationId, unread) {
+    await apiClient.put(`/chats/${conversationId}/unread`, { unread });
+    notifyDataChanged();
+  },
+
+  async recallMessage(conversationId, messageId) {
+    await apiClient.post(`/chats/${conversationId}/messages/${messageId}/recall`, {});
+    notifyDataChanged();
+  },
+
+  async forwardMessage(conversationId, sourceConversationId, messageId, clientMessageId) {
+    const message = normalizeMessage(await apiClient.post(`/chats/${conversationId}/forward`, {
+      source_conversation_id: Number(sourceConversationId), message_id: Number(messageId), client_message_id: clientMessageId,
+    }));
+    notifyDataChanged();
+    return message;
+  },
+
+  async reportConversation(conversationId, reason) {
+    return apiClient.post(`/chats/${conversationId}/report`, { reason });
+  },
+
+  async setArchived(conversationId, archived) {
+    await apiClient.put(`/chats/${conversationId}/archive`, { archived });
+    notifyDataChanged();
+  },
+
+  async deleteConversation(conversationId) {
+    await apiClient.delete(`/chats/${conversationId}`);
+    notifyDataChanged();
+  },
+
   async setBlocked(conversationId, blocked) {
-    const result = await withFallback(
-      async () => apiClient.put(`/chats/${conversationId}/block`, { blocked }),
-      async () => {
-        const chats = localChat.getChats();
-        const conversation = chats.find(row => String(row.id) === String(conversationId));
-        if (conversation) {
-          conversation.blocked = blocked;
-          conversation.blockedByMe = blocked;
-          localChat.saveChats(chats);
-        }
-      },
-    );
+    const result = await apiClient.put('/chats/' + conversationId + '/block', { blocked });
     notifyDataChanged();
     return result;
   },

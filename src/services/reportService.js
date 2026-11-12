@@ -1,4 +1,5 @@
-import { apiClient, withFallback } from './apiClient';
+import { apiClient } from './apiClient';
+const withFallback = api => api();
 import storageService from './storageService';
 
 const REPORT_STORAGE_KEY = 'unifind_reports';

@@ -12,8 +12,10 @@ type ReviewClaimDTO struct {
 }
 
 type HandoverClaimDTO struct {
-	RecipientName      string `json:"recipient_name"`
-	RecipientStudentID string `json:"recipient_student_id"`
-	Location           string `json:"location"`
-	Notes              string `json:"notes"`
+	RecipientName      string   `json:"recipient_name"`
+	RecipientStudentID string   `json:"recipient_student_id"`
+	Location           string   `json:"location"`
+	Notes              string   `json:"notes"`
+	EvidenceImage      string   `json:"evidence_image"`
+	EvidenceImages     []string `json:"evidence_images"`
 }

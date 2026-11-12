@@ -34,6 +34,7 @@ const STATUS_CONFIG = {
 export default function StaffTickets() {
   const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
+  const [allTickets, setAllTickets] = useState([]);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -44,13 +45,14 @@ export default function StaffTickets() {
   const replyInputRef = useRef(null);
 
   // Load danh sách tickets
-  const loadTickets = () => {
+  const loadTickets = async () => {
     try {
-      const data = ticketService.getTickets({
+      const data = await ticketService.getTickets({
         status: statusFilter,
         search,
       });
       setTickets(data);
+      setAllTickets(await ticketService.getTickets());
 
       // Nếu đang chọn một ticket, cập nhật lại dữ liệu mới nhất của ticket đó
       if (selectedTicketId) {
@@ -62,7 +64,7 @@ export default function StaffTickets() {
         setSelectedTicketId(data[0].id);
       }
     } catch (err) {
-      console.error('Lỗi tải tickets:', err);
+      toast.error(err.message || 'Không thể tải tickets');
     } finally {
       setLoading(false);
     }
@@ -77,12 +79,12 @@ export default function StaffTickets() {
     const unsubscribe = ticketService.subscribe((detail) => {
       loadTickets();
       if (detail?.action === 'new_message' && detail?.ticketId === selectedTicketId) {
-        ticketService.markAsRead(selectedTicketId, 'staff');
+        ticketService.markAsRead(selectedTicketId, 'staff').catch(err => toast.error(err.message));
       }
     });
 
     return () => unsubscribe();
-  }, [selectedTicketId]);
+  }, [selectedTicketId, statusFilter, search]);
 
   // Lấy ticket đang được chọn
   const selectedTicket = useMemo(() => {
@@ -92,7 +94,7 @@ export default function StaffTickets() {
   // Khi chọn ticket, tự động đánh dấu đã đọc và scroll xuống cuối
   useEffect(() => {
     if (selectedTicketId) {
-      ticketService.markAsRead(selectedTicketId, 'staff');
+      ticketService.markAsRead(selectedTicketId, 'staff').catch(err => toast.error(err.message));
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         replyInputRef.current?.focus();
@@ -102,7 +104,7 @@ export default function StaffTickets() {
 
   // Thống kê nhanh
   const stats = useMemo(() => {
-    const all = ticketService.getTickets();
+    const all = allTickets;
     return {
       total: all.length,
       open: all.filter((t) => t.status === 'OPEN').length,
@@ -110,17 +112,18 @@ export default function StaffTickets() {
       resolved: all.filter((t) => t.status === 'RESOLVED').length,
       unread: all.filter((t) => t.unreadByStaff || t.unreadByAdmin).length,
     };
-  }, [tickets]);
+  }, [allTickets]);
 
   // Gửi tin nhắn trả lời từ Nhân viên Staff
-  const handleSendReply = (e) => {
+  const handleSendReply = async (e) => {
     e?.preventDefault();
     if (!staffReply.trim() || !selectedTicket) return;
 
     const replyText = staffReply.trim();
     setStaffReply('');
 
-    const updated = ticketService.addMessage(selectedTicket.id, {
+    try {
+    const updated = await ticketService.addMessage(selectedTicket.id, {
       sender: 'staff',
       senderName: user?.name ? `${user.name} (Nhân viên DNTU)` : 'Nhân viên Tiếp nhận DNTU',
       text: replyText,
@@ -130,14 +133,17 @@ export default function StaffTickets() {
       loadTickets();
       toast.success('Đã gửi phản hồi đến sinh viên!');
     }
+    } catch (err) { setStaffReply(replyText); toast.error(err.message); }
   };
 
   // Thay đổi trạng thái Ticket
-  const handleChangeStatus = (newStatus) => {
+  const handleChangeStatus = async (newStatus) => {
     if (!selectedTicket) return;
-    ticketService.updateStatus(selectedTicket.id, newStatus);
-    loadTickets();
-    toast.success(`Đã cập nhật trạng thái ticket: ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+    try {
+      await ticketService.updateStatus(selectedTicket.id, newStatus);
+      await loadTickets();
+      toast.success(`Đã cập nhật trạng thái ticket: ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+    } catch (err) { toast.error(err.message); }
   };
 
   return (

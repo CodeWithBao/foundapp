@@ -10,6 +10,11 @@ import (
 )
 
 type Repository interface {
+	FindMessage(id uint) (*models.ChatMessage, error)
+	FindClientMessage(conversationID, senderID uint, clientID string) (*models.ChatMessage, error)
+	SetPreference(conversationID, userID uint, preference string, value bool) error
+	RecallMessage(message *models.ChatMessage) error
+	CreateReport(report *models.ChatReport) error
 	FindItem(id uint) (*models.Item, error)
 	FindUser(id uint) (*models.User, error)
 	FindConversation(itemID, participantA, participantB uint) (*models.ChatConversation, error)
@@ -20,6 +25,7 @@ type Repository interface {
 	CreateMessage(conversation *models.ChatConversation, message *models.ChatMessage, notification *models.Notification, sender *models.User) error
 	MarkMessagesRead(conversationID, currentUserID uint, readAt time.Time) error
 	SetBlocked(conversationID, currentUserID uint, blocked bool) error
+	SetConversationState(conversationID, currentUserID uint, archived *bool, deletedAt *time.Time) error
 }
 
 type repository struct{ db *gorm.DB }
@@ -89,8 +95,29 @@ func (r *repository) FindMessages(conversationID uint) ([]models.ChatMessage, er
 
 func (r *repository) CreateMessage(conversation *models.ChatConversation, message *models.ChatMessage, notification *models.Notification, sender *models.User) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(message).Error; err != nil {
-			return err
+		// Lock referenced content through insert to serialize forward/reply with recall.
+		for _, id := range []*uint{message.ReplyToID, message.ForwardSourceID} {
+			if id == nil {
+				continue
+			}
+			var source models.ChatMessage
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&source, *id).Error; err != nil {
+				return err
+			}
+			if source.RecalledAt != nil {
+				return ErrInvalidChat
+			}
+		}
+		query := tx.Omit("Sender")
+		if message.ClientMessageID != nil {
+			query = query.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "conversation_id"}, {Name: "sender_id"}, {Name: "client_message_id"}}, DoNothing: true})
+		}
+		result := query.Create(message)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return tx.Where("conversation_id = ? AND sender_id = ? AND client_message_id = ?", message.ConversationID, message.SenderID, *message.ClientMessageID).First(message).Error
 		}
 		if sender != nil {
 			message.Sender = *sender
@@ -112,6 +139,28 @@ func (r *repository) MarkMessagesRead(conversationID, currentUserID uint, readAt
 	return r.db.Model(&models.ChatMessage{}).
 		Where("conversation_id = ? AND sender_id <> ? AND read_at IS NULL", conversationID, currentUserID).
 		Update("read_at", readAt).Error
+}
+
+func (r *repository) SetConversationState(conversationID, currentUserID uint, archived *bool, deletedAt *time.Time) error {
+	var conversation models.ChatConversation
+	if err := r.db.First(&conversation, conversationID).Error; err != nil {
+		return err
+	}
+	suffix := "b"
+	if conversation.ParticipantA == currentUserID {
+		suffix = "a"
+	} else if conversation.ParticipantB != currentUserID {
+		return ErrForbidden
+	}
+	updates := map[string]interface{}{}
+	if archived != nil {
+		updates["archived_by_"+suffix] = *archived
+	}
+	if deletedAt != nil {
+		updates["deleted_by_"+suffix+"_at"] = deletedAt
+		updates["archived_by_"+suffix] = false
+	}
+	return r.db.Model(&conversation).Updates(updates).Error
 }
 
 func (r *repository) SetBlocked(conversationID, currentUserID uint, blocked bool) error {

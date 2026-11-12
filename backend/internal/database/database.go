@@ -93,7 +93,10 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.AuditLog{},
 		&models.Match{},
 		&models.Report{},
+		&models.SupportTicket{},
+		&models.SupportTicketMessage{},
 		&models.ChatConversation{},
 		&models.ChatMessage{},
+		&models.ChatReport{},
 	)
 }

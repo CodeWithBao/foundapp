@@ -183,6 +183,9 @@ export default function AdminClaims() {
 
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Link to={`/admin/claims/${claim.id}`} className="text-burgundy-700 text-xs font-semibold">
+                          Xử lý / bàn giao
+                        </Link>
                         <button
                           onClick={() => setDetailClaim(claim)}
                           className="p-1.5 rounded text-warm-gray-600 hover:text-burgundy-800 hover:bg-cream-200 transition-colors"

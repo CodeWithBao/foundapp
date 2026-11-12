@@ -1,89 +1,56 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
-import apiClient, { withFallback } from './apiClient';
+import apiClient, { withFallback, getAuthToken } from './apiClient';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
+let sessionVersion = 0;
+
 const authService = {
-  async login(email, password) {
-    return withFallback(
-      async () => {
-        const data = await apiClient.post('/auth/login', { email, password });
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        const user = data.user || data;
-        storageService.set(STORAGE_KEYS.CURRENT_USER, user);
-        return user;
-      },
-      async () => {
-        await delay();
-        const users = storageService.get(STORAGE_KEYS.USERS) || [];
-        const user = users.find(u => u.email === email && u.password === password);
-        if (!user) throw new Error('Email hoặc mật khẩu không đúng');
-        if (user.status === 'blocked') throw new Error('Tài khoản đã bị khóa');
-        const { password: _, ...safeUser } = user;
-        storageService.set(STORAGE_KEYS.CURRENT_USER, safeUser);
-        return safeUser;
-      }
-    );
+  async authenticate(endpoint, body) {
+    const version = ++sessionVersion;
+    const data = await apiClient.post(endpoint, body);
+    if (version !== sessionVersion) throw new Error('Authentication superseded');
+    if (!data.token || !data.user?.id || !data.user?.role) throw new Error('Invalid authentication response');
+    localStorage.setItem('token', data.token);
+    storageService.set(STORAGE_KEYS.CURRENT_USER, data.user);
+    return data.user;
   },
 
-  async googleLogin(idToken) {
-    return withFallback(
-      async () => {
-        const data = await apiClient.post('/auth/google', { credential: idToken, id_token: idToken });
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        const user = data.user || data;
-        storageService.set(STORAGE_KEYS.CURRENT_USER, user);
-        return user;
-      },
-      async () => {
-        await delay();
-        throw new Error('Google authentication requires active backend server');
-      }
-    );
+  login(email, password) {
+    return this.authenticate('/auth/login', { email, password });
   },
 
-  async register(data) {
-    return withFallback(
-      async () => {
-        const res = await apiClient.post('/auth/register', data);
-        if (res.token) {
-          localStorage.setItem('token', res.token);
-        }
-        const user = res.user || res;
-        storageService.set(STORAGE_KEYS.CURRENT_USER, user);
-        return user;
-      },
-      async () => {
-        await delay();
-        const users = storageService.get(STORAGE_KEYS.USERS) || [];
-        if (users.find(u => u.email === data.email)) throw new Error('Email đã tồn tại');
-        const newUser = {
-          id: 'U' + String(users.length + 1).padStart(3, '0'),
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          role: 'USER',
-          phone: data.phone || '',
-          studentId: data.studentId || '',
-          avatar: null,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-        };
-        users.push(newUser);
-        storageService.set(STORAGE_KEYS.USERS, users);
-        const { password: _, ...safeUser } = newUser;
-        storageService.set(STORAGE_KEYS.CURRENT_USER, safeUser);
-        return safeUser;
-      }
-    );
+  googleLogin(idToken) {
+    return this.authenticate('/auth/google', { credential: idToken, id_token: idToken });
+  },
+
+  register(data) {
+    return this.authenticate('/auth/register', data);
+  },
+
+  async restoreSession() {
+    const version = sessionVersion;
+    if (!getAuthToken()) {
+      storageService.remove(STORAGE_KEYS.CURRENT_USER);
+      return null;
+    }
+    const token = getAuthToken();
+    let user;
+    try {
+      user = await apiClient.get('/auth/me');
+    } catch (error) {
+      if (version !== sessionVersion || token !== getAuthToken()) return null;
+      throw error;
+    }
+    if (version !== sessionVersion || token !== getAuthToken()) return null;
+    if (!user?.id || !user?.role || ['INACTIVE', 'BANNED'].includes(user.status)) throw new Error('Invalid session user');
+    storageService.set(STORAGE_KEYS.CURRENT_USER, user);
+    return user;
   },
 
   logout() {
+    sessionVersion++;
     localStorage.removeItem('token');
     storageService.remove(STORAGE_KEYS.CURRENT_USER);
     if (typeof window !== 'undefined') {
@@ -96,14 +63,18 @@ const authService = {
   },
 
   async updateProfile(userId, data) {
+    const version = sessionVersion;
+    const token = getAuthToken();
     return withFallback(
       async () => {
         const user = await apiClient.put('/users/profile', data);
+        if (version !== sessionVersion || token !== getAuthToken()) throw new Error('Session changed');
         storageService.set(STORAGE_KEYS.CURRENT_USER, user);
         return user;
       },
       async () => {
         await delay();
+        if (version !== sessionVersion || token !== getAuthToken()) throw new Error('Session changed');
         const users = storageService.get(STORAGE_KEYS.USERS) || [];
         const idx = users.findIndex(u => u.id === userId);
         if (idx === -1) throw new Error('User not found');

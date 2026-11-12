@@ -46,7 +46,7 @@ const itemService = {
 	async uploadSelectedImages(images, onUpdate) {
 		const ordered = normalizeImageOrder(images || []);
 		if (ordered.length > MAX_IMAGES) throw new Error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh.`);
-		const results = new Array(ordered.length);
+		const results = new Array(ordered.length).fill(null);
 		let cursor = 0;
 
 		const updateImage = (id, patch) => {

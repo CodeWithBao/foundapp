@@ -21,7 +21,7 @@ func NewClaimRepository(db *gorm.DB) ClaimRepository {
 }
 
 func (r *claimRepository) FindAll(status string, claimantID uint, itemID uint) ([]models.Claim, error) {
-	query := r.db.Preload("Item").Preload("Claimant").Preload("Reviewer")
+	query := r.db.Preload("Item").Preload("Claimant").Preload("Reviewer").Preload("Evidences")
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}

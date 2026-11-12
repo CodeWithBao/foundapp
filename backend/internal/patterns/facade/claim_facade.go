@@ -3,6 +3,8 @@ package facade
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"unifind-dntu/internal/models"
@@ -101,6 +103,12 @@ func (cf *ClaimFacade) ProcessClaimReview(claimID uint, staffID uint, newStatus 
 		return errors.New("claim not found")
 	}
 
+	if claim.Status == models.ClaimStatusCompleted || claim.Status == models.ClaimStatusRejected {
+		return errors.New("claim is already finalized")
+	}
+	if newStatus == models.ClaimStatusReadyForHandover && claim.Status != models.ClaimStatusApproved {
+		return errors.New("claim must be approved before handover preparation")
+	}
 	claim.Status = newStatus
 	claim.ReviewedBy = &staffID
 	claim.ReviewNote = note
@@ -126,14 +134,45 @@ func (cf *ClaimFacade) ProcessClaimReview(claimID uint, staffID uint, newStatus 
 	return nil
 }
 
-func (cf *ClaimFacade) Handover(claimID uint, staffID uint, recipientName string, recipientStudentID string, location string, notes string) (*models.HandoverRecord, error) {
+func (cf *ClaimFacade) Handover(claimID uint, staffID uint, recipientName string, recipientStudentID string, location string, notes string, evidenceImages ...string) (*models.HandoverRecord, error) {
 	var claim models.Claim
 	if err := cf.db.Preload("Item").First(&claim, claimID).Error; err != nil {
 		return nil, errors.New("claim not found")
 	}
 
+	if claim.Status != models.ClaimStatusApproved && claim.Status != models.ClaimStatusReadyForHandover {
+		return nil, errors.New("only approved claims can be handed over")
+	}
 	var record models.HandoverRecord
 	err := cf.db.Transaction(func(tx *gorm.DB) error {
+		images := make([]string, 0, len(evidenceImages))
+		seen := make(map[string]bool)
+		for _, imageURL := range evidenceImages {
+			const prefix = "/api/v1/uploads/"
+			id := strings.TrimPrefix(imageURL, prefix)
+			if !strings.HasPrefix(imageURL, prefix) || !regexp.MustCompile(`^[a-f0-9]{32}$`).MatchString(id) {
+				return errors.New("handover evidence must be a private uploaded image")
+			}
+			var image models.UploadedImage
+			if err := tx.Select("id", "user_id", "content_type").Where("id = ? AND user_id = ?", id, staffID).First(&image).Error; err != nil {
+				return errors.New("handover evidence must belong to the current staff")
+			}
+			if image.ContentType != "image/jpeg" && image.ContentType != "image/png" && image.ContentType != "image/webp" {
+				return errors.New("invalid handover evidence image type")
+			}
+			// Reject even hidden post attachments: they must never become public proof later.
+			var attached int64
+			if err := tx.Model(&models.ItemImage{}).Where("image_url = ?", imageURL).Count(&attached).Error; err != nil {
+				return err
+			}
+			if attached > 0 {
+				return errors.New("handover evidence must not be a post image")
+			}
+			if !seen[imageURL] {
+				images = append(images, imageURL)
+				seen[imageURL] = true
+			}
+		}
 		claim.Status = models.ClaimStatusCompleted
 		claim.ReviewedBy = &staffID
 		if err := tx.Save(&claim).Error; err != nil {
@@ -175,6 +214,10 @@ func (cf *ClaimFacade) Handover(claimID uint, staffID uint, recipientName string
 			Notes:              notes,
 		}
 
+		record.EvidenceImages = images
+		if len(images) > 0 {
+			record.EvidenceImage = images[0]
+		}
 		if err := tx.Create(&record).Error; err != nil {
 			return err
 		}

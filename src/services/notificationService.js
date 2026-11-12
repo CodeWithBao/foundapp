@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from '../constants';
 import storageService from './storageService';
-import apiClient, { withFallback } from './apiClient';
+import apiClient from './apiClient';
+// Persisted API only: never report browser demo data as a successful server operation.
+const withFallback = api => api();
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms));
 

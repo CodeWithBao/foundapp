@@ -41,8 +41,13 @@ export async function apiFetch(endpoint, options = {}) {
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      const error = new Error(data.message || data.error || `HTTP Error ${response.status}`);
+      const error = new Error(data.message || data.error || (response.status === 429
+        ? 'Máy chủ đang giới hạn yêu cầu hoặc tạm ngừng phục vụ. Vui lòng thử lại sau; đây không phải kết quả tìm kiếm trống.'
+        : `HTTP Error ${response.status}`));
       error.status = response.status;
+      if (response.status === 401 && token && token === getAuthToken() && !['/auth/login', '/auth/google', '/auth/register'].includes(endpoint) && typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('unifind:authentication-invalid'));
+      }
       error.code = data.error;
       error.method = method;
       error.endpoint = endpoint;
@@ -108,7 +113,9 @@ export function apiUpload(endpoint, formData, { onProgress, timeout = 60000 } = 
         resolve(payload.data !== undefined ? payload.data : payload);
         return;
       }
-      const error = new Error(payload.message || payload.error || `HTTP Error ${xhr.status}`);
+      const error = new Error(payload.message || payload.error || (xhr.status === 429
+        ? 'Máy chủ đang giới hạn yêu cầu hoặc tạm ngừng phục vụ. Chưa thể tải ảnh lên, vui lòng thử lại sau.'
+        : `HTTP Error ${xhr.status}`));
       error.status = xhr.status;
       error.method = 'POST';
       error.endpoint = endpoint;

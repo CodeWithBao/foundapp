@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const values = new Map();
+const localStorage = { getItem: k => values.get(k) ?? null, setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) };
+let get, post;
+const storageService = { get: k => values.get(k), set: (k,v) => values.set(k,v), remove: k => values.delete(k) };
+const context = vm.createContext({ localStorage, storageService, STORAGE_KEYS: { CURRENT_USER:'user' }, apiClient:{get:(...a)=>get(...a),post:(...a)=>post(...a)}, getAuthToken:()=>localStorage.getItem('token'),withFallback:()=>{throw Error('Authentication must not fallback');},setTimeout,window:{dispatchEvent(){}},Event });
+let source=fs.readFileSync('src/services/authService.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export default authService;','globalThis.auth = authService;');
+vm.runInContext(source,context);
+const auth=context.auth;
+let passed=0;
+async function check(name,fn){values.clear();auth.logout();await fn();passed++;console.log('PASS',name);}
+for(const role of ['ADMIN','STAFF']) await check(`${role}: stale cache replaced by backend /me`,async()=>{values.set('token','actual');values.set('user',{id:99,role:'ADMIN',name:'Stale'});const actual={id:2,role,name:`Actual ${role}`,email:'actual@example.test',avatar_url:'/actual.png'};get=async endpoint=>{assert.equal(endpoint,'/auth/me');return actual;};assert.deepEqual(await auth.restoreSession(),actual);assert.deepEqual(values.get('user'),actual);});
+await check('no token never trusts cached roles',async()=>{values.set('user',{role:'ADMIN'});get=()=>{throw Error('unexpected call');};assert.equal(await auth.restoreSession(),null);assert.equal(values.has('user'),false);});
+await check('invalid token rejects /me',async()=>{values.set('token','invalid');get=async()=>{throw Object.assign(Error('Invalid token'),{status:401});};await assert.rejects(auth.restoreSession(),{status:401});});
+await check('offline login cannot authenticate demo user',async()=>{post=async()=>{throw Object.assign(Error('offline'),{isNetworkError:true});};await assert.rejects(auth.login('demo@example.test','not-a-real-password'));assert.equal(values.has('token'),false);assert.equal(values.has('user'),false);});
+await check('logout prevents late login from restoring authentication',async()=>{let resolve;post=()=>new Promise(r=>resolve=r);const pending=auth.login('x','x');auth.logout();resolve({token:'late',user:{id:1,role:'ADMIN'}});await assert.rejects(pending,/superseded/);assert.equal(values.has('token'),false);});
+await check('logout prevents late /me cache write',async()=>{values.set('token','old');let resolve;get=()=>new Promise(r=>resolve=r);const pending=auth.restoreSession();auth.logout();resolve({id:1,role:'ADMIN'});assert.equal(await pending,null);assert.equal(values.has('user'),false);});
+await check('new login wins older overlapping login',async()=>{const resolves=[];post=()=>new Promise(r=>resolves.push(r));const old=auth.login('old','x');const current=auth.login('new','x');resolves[1]({token:'new',user:{id:2,role:'STAFF'}});assert.equal((await current).id,2);resolves[0]({token:'old',user:{id:1,role:'ADMIN'}});await assert.rejects(old,/superseded/);assert.equal(values.get('token'),'new');});
+console.log(`${passed} auth identity tests passed`);
