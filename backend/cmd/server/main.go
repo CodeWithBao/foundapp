@@ -20,6 +20,7 @@ import (
 	"unifind-dntu/internal/patterns/facade"
 	"unifind-dntu/internal/patterns/observer"
 	"unifind-dntu/internal/report"
+	"unifind-dntu/internal/saveditem"
 	"unifind-dntu/internal/statistics"
 	"unifind-dntu/internal/ticket"
 	"unifind-dntu/internal/upload"
@@ -141,6 +142,7 @@ func main() {
 	matchingHandler.RegisterRoutes(apiV1, authMiddleware)
 	notifHandler.RegisterRoutes(apiV1, authMiddleware)
 	ticket.NewHandler(db).RegisterRoutes(apiV1, authMiddleware)
+	saveditem.NewHandler(db).RegisterRoutes(apiV1, authMiddleware)
 	catHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	locHandler.RegisterRoutes(apiV1, authMiddleware, requireStaffOrAdmin)
 	adminHandler.RegisterRoutes(apiV1, authMiddleware, requireAdmin)

@@ -1,3 +1,4 @@
+import SavedItemsPage from './pages/user/SavedItemsPage';
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute, RoleRoute } from './routes/guards';
 import { ROLES } from './constants';
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/report-lost" element={<ProtectedRoute><ReportLostPage /></ProtectedRoute>} />
             <Route path="/report-found" element={<ProtectedRoute><ReportFoundPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/saved-items" element={<ProtectedRoute><SavedItemsPage /></ProtectedRoute>} />
             <Route path="/my-posts" element={<ProtectedRoute><MyPostsPage /></ProtectedRoute>} />
             <Route path="/my-claims" element={<ProtectedRoute><MyClaimsPage /></ProtectedRoute>} />
             <Route path="/matches" element={<ProtectedRoute><MatchesPage /></ProtectedRoute>} />

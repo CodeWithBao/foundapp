@@ -1,9 +1,10 @@
+import SaveItemButton from '../../components/common/SaveItemButton';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation, useNavigationType } from 'react-router-dom';
 import {
   Home, ArrowLeft, MapPin, Calendar, Eye, Phone, Mail,
   Share2, ShieldAlert, ChevronRight,
-  Bookmark, Send, MessageCircle, ShieldCheck, Smartphone, Sparkles,
+  Send, MessageCircle, ShieldCheck, Smartphone, Sparkles,
   FileText, Star, Heart, ExternalLink, Building2, Lock
 } from 'lucide-react';
 import itemService from '../../services/itemService';
@@ -43,8 +44,7 @@ export default function ItemDetailPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   
-  // Bookmark state
-  const [isSaved, setIsSaved] = useState(false);
+
 
   // Claim Modal states
   const [showClaimModal, setShowClaimModal] = useState(false);
@@ -169,11 +169,6 @@ export default function ItemDetailPage() {
     toast.success('Thông tin đã được ghi nhận. Đội ngũ quản lý sẽ kết nối với bạn và chủ sở hữu!');
     setShowFoundModal(false);
     setFoundNote('');
-  };
-
-  const handleToggleSave = () => {
-    setIsSaved(!isSaved);
-    toast.success(!isSaved ? 'Đã lưu bài đăng vào mục yêu thích' : 'Đã bỏ lưu bài đăng');
   };
 
   const handleShare = () => {
@@ -666,18 +661,7 @@ export default function ItemDetailPage() {
                 ))}
 
                 {/* 4. Bookmark button */}
-                <button
-                  type="button"
-                  onClick={handleToggleSave}
-                  className={`w-full py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition border ${
-                    isSaved
-                      ? 'bg-red-50 border-red-200 text-[#741216]'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
-                  <span>{isSaved ? 'Đã lưu bài đăng' : 'Lưu bài đăng'}</span>
-                </button>
+                <SaveItemButton itemId={item.id} variant="detail" />
               </div>
 
               {/* Safety notice box */}

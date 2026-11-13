@@ -1,6 +1,7 @@
+import SaveItemButton from './SaveItemButton';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Eye, Heart, ArrowUpRight, Edit3 } from 'lucide-react';
+import { MapPin, Clock, Eye, Heart, Edit3 } from 'lucide-react';
 import CategoryIcon from './CategoryIcon';
 import { formatDate, getItemOwnerId, isSameEntityId } from '../../utils';
 import { getCampusLocationUrl } from '../../data/locations';
@@ -97,10 +98,7 @@ export default function ItemCard({ item, onClick }) {
           )}
         </div>
 
-        {/* Hover Arrow Overlay */}
-        <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/95 backdrop-blur-sm text-ink opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 flex items-center justify-center shadow-md">
-          <ArrowUpRight className="w-3.5 h-3.5 text-accent" />
-        </div>
+        <SaveItemButton itemId={item.id} />
       </div>
 
       {/* Card Body */}

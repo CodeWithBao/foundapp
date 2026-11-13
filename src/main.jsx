@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { SavedItemsProvider } from './context/SavedItemsContext'
 import { AuthProvider } from './context/AuthContext'
 import { RealtimeProvider } from './context/RealtimeContext'
 import storageService from './services/storageService'
@@ -48,10 +49,12 @@ createRoot(document.getElementById('root')).render(
         <RouteScrollManager />
         <SiteStatisticsTracker />
         <AuthProvider>
+          <SavedItemsProvider>
           <RealtimeProvider>
             <Toaster position="top-center" richColors visibleToasts={1} toastOptions={{ duration: 2200 }} />
             <App />
           </RealtimeProvider>
+          </SavedItemsProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

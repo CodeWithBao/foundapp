@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, Search, User, Shield, FileText, CheckSquare, LogOut, CreditCard, Phone, Mail, Building2, ChevronDown, MessageCircle } from 'lucide-react';
+import { Bookmark, Bell, Menu, X, Search, User, Shield, FileText, CheckSquare, LogOut, CreditCard, Phone, Mail, Building2, ChevronDown, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DNTULogo from '../common/DNTULogo';
 import Avatar from '../common/Avatar';
@@ -296,6 +296,7 @@ export default function Navbar({ compactMobile = false }) {
                       <CreditCard className="w-4 h-4 text-ink-muted" />
                       Thẻ sinh viên
                     </Link>
+                    <Link to="/saved-items" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-ink-soft hover:bg-paper-panel"><Bookmark className="w-4 h-4" aria-hidden="true" />Tin đã lưu</Link>
                     <Link
                       to="/my-posts"
                       onClick={() => setUserDropdownOpen(false)}
@@ -444,6 +445,7 @@ export default function Navbar({ compactMobile = false }) {
               >
                 Thẻ sinh viên
               </Link>
+              <Link to="/saved-items" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm text-ink-soft hover:bg-paper-panel"><Bookmark className="w-4 h-4" aria-hidden="true" />Tin đã lưu</Link>
               <Link
                 to="/my-posts"
                 onClick={() => setMobileMenuOpen(false)}
